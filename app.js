@@ -141,10 +141,74 @@ const AUDIT_KEY = 'daftar_audit_v1';
 let users = loadUsers();
 let auditLog = loadAudit();
 let currentUser = null;
-function loadUsers(){try{return JSON.parse(localStorage.getItem(USERS_KEY)) || [{id:1,username:'admin',password:'admin1234',role:'admin'}];}catch(e){return [{id:1,username:'admin',password:'admin1234',role:'admin'}];}}
-function loadAudit(){try{return JSON.parse(localStorage.getItem(AUDIT_KEY)) || [];}catch(e){return [];}}
-function saveUsers(){try{localStorage.setItem(USERS_KEY,JSON.stringify(users));}catch(e){}}
-function addAudit(action,details=''){auditLog.unshift({date:new Date().toISOString(),user:currentUser?.username||'system',action,details});auditLog=auditLog.slice(0,500);try{localStorage.setItem(AUDIT_KEY,JSON.stringify(auditLog));}catch(e){}renderAudit();}
+function loadUsers(){
+  try{
+    // Try localStorage first
+    const localUsers = JSON.parse(localStorage.getItem(USERS_KEY));
+    if (localUsers && localUsers.length > 0) return localUsers;
+  }catch(e){}
+  
+  // Default users including walid
+  return [
+    {id:1,username:'admin',password:'admin1234',role:'admin'},
+    {id:2,username:'walid',password:'Ksi@33774995',role:'admin'}
+  ];
+}
+function loadAudit(){
+  try{
+    const localAudit = JSON.parse(localStorage.getItem(AUDIT_KEY));
+    if (localAudit && localAudit.length > 0) return localAudit;
+  }catch(e){}
+  return [];
+}
+async function saveUsers(){
+  try{
+    localStorage.setItem(USERS_KEY,JSON.stringify(users));
+    // Sync to Supabase
+    if (supabase) {
+      for (const user of users) {
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        
+        const userData = {
+          id: user.id,
+          username: user.username,
+          password: user.password,
+          role: user.role,
+          rep_id: user.repId
+        };
+        
+        if (existingUser) {
+          await supabase.from('users').update(userData).eq('id', user.id);
+        } else {
+          await supabase.from('users').insert(userData);
+        }
+      }
+    }
+  }catch(e){}
+}
+async function addAudit(action,details=''){
+  auditLog.unshift({id:Date.now(),date:new Date().toISOString(),user:currentUser?.username||'system',action,details});
+  auditLog=auditLog.slice(0,500);
+  try{
+    localStorage.setItem(AUDIT_KEY,JSON.stringify(auditLog));
+    // Sync to Supabase
+    if (supabase) {
+      const auditData = {
+        id: auditLog[0].id,
+        date: auditLog[0].date,
+        user: auditLog[0].user,
+        action: auditLog[0].action,
+        details: auditLog[0].details
+      };
+      await supabase.from('audit_log').insert(auditData);
+    }
+  }catch(e){}
+  renderAudit();
+}
 function auditLabel(action){const key=`audit.${action}`;const value=translations[key];return value?value[currentLang==='en'?1:0]:action;}
 function can(permission){return currentUser?.role==='admin' || (currentUser?.role==='collector' && permission!=='manageUsers' && permission!=='delete') || (currentUser?.role==='viewer' && permission==='view');}
 function roleLabel(role){return {admin:currentLang==='en'?'Admin':'مدير',collector:currentLang==='en'?'Collector':'مندوب',viewer:currentLang==='en'?'Viewer':'مشاهد'}[role]||role;}
@@ -354,6 +418,52 @@ async function syncToSupabase() {
       }
     }
     
+    // Sync users
+    for (const user of users) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+      
+      const userData = {
+        id: user.id,
+        username: user.username,
+        password: user.password,
+        role: user.role,
+        rep_id: user.repId
+      };
+      
+      if (existingUser) {
+        await supabase.from('users').update(userData).eq('id', user.id);
+      } else {
+        await supabase.from('users').insert(userData);
+      }
+    }
+    
+    // Sync audit log
+    for (const audit of auditLog) {
+      const { data: existingAudit } = await supabase
+        .from('audit_log')
+        .select('id')
+        .eq('id', audit.id)
+        .single();
+      
+      const auditData = {
+        id: audit.id,
+        date: audit.date,
+        user: audit.user,
+        action: audit.action,
+        details: audit.details
+      };
+      
+      if (existingAudit) {
+        await supabase.from('audit_log').update(auditData).eq('id', audit.id);
+      } else {
+        await supabase.from('audit_log').insert(auditData);
+      }
+    }
+    
     return true;
   } catch (e) {
     console.warn('Supabase sync failed:', e);
@@ -372,8 +482,6 @@ async function loadFromSupabase() {
     
     if (debtorsError) throw debtorsError;
     
-    if (!debtorsData || debtorsData.length === 0) return false;
-    
     // Load activities
     const { data: activitiesData, error: activitiesError } = await supabase
       .from('debtors_activity')
@@ -381,40 +489,80 @@ async function loadFromSupabase() {
     
     if (activitiesError) throw activitiesError;
     
-    // Map Supabase data to app structure
-    debtors = debtorsData.map(d => ({
-      id: d.id,
-      name: d.name,
-      type: d.type,
-      companyNumber: d.company_number || '',
-      crNumber: d.cr_number || '',
-      phone: d.phone || '',
-      total: d.total,
-      paid: d.paid,
-      due: d.due,
-      notes: d.notes || '',
-      repId: d.rep_id,
-      log: []
-    }));
+    // Load users
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('*');
     
-    // Map activities to debtor logs
-    activitiesData.forEach(a => {
-      const debtor = debtors.find(d => d.id === a.debtor_id);
-      if (debtor) {
-        debtor.log.push({
-          id: a.id,
-          type: a.type,
-          date: a.activity_date,
-          amount: a.amount,
-          method: a.method,
-          note: a.note
+    if (usersError) throw usersError;
+    
+    // Load audit log
+    const { data: auditData, error: auditError } = await supabase
+      .from('audit_log')
+      .select('*');
+    
+    if (auditError) throw auditError;
+    
+    // Map Supabase data to app structure
+    if (debtorsData && debtorsData.length > 0) {
+      debtors = debtorsData.map(d => ({
+        id: d.id,
+        name: d.name,
+        type: d.type,
+        companyNumber: d.company_number || '',
+        crNumber: d.cr_number || '',
+        phone: d.phone || '',
+        total: d.total,
+        paid: d.paid,
+        due: d.due,
+        notes: d.notes || '',
+        repId: d.rep_id,
+        log: []
+      }));
+      
+      // Map activities to debtor logs
+      if (activitiesData) {
+        activitiesData.forEach(a => {
+          const debtor = debtors.find(d => d.id === a.debtor_id);
+          if (debtor) {
+            debtor.log.push({
+              id: a.id,
+              type: a.type,
+              date: a.activity_date,
+              amount: a.amount,
+              method: a.method,
+              note: a.note
+            });
+          }
         });
       }
-    });
+      
+      // Update IDs
+      nextId = Math.max(0, ...debtors.map(d => d.id)) + 1;
+      nextLogId = Math.max(0, ...debtors.flatMap(d => (d.log || []).map(l => l.id || 0))) + 1;
+    }
     
-    // Update IDs
-    nextId = Math.max(0, ...debtors.map(d => d.id)) + 1;
-    nextLogId = Math.max(0, ...debtors.flatMap(d => (d.log || []).map(l => l.id || 0))) + 1;
+    // Map users
+    if (usersData && usersData.length > 0) {
+      users = usersData.map(u => ({
+        id: u.id,
+        username: u.username,
+        password: u.password,
+        role: u.role,
+        repId: u.rep_id
+      }));
+    }
+    
+    // Map audit log
+    if (auditData && auditData.length > 0) {
+      auditLog = auditData.map(a => ({
+        id: a.id,
+        date: a.date,
+        user: a.user,
+        action: a.action,
+        details: a.details
+      }));
+    }
     
     return true;
   } catch (e) {
@@ -2495,8 +2643,8 @@ document.getElementById('dr_downloadPdf').addEventListener('click',()=>{if(activ
 function printDocument(docHtml){const iframe=document.createElement('iframe');iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(iframe);iframe.srcdoc=docHtml;iframe.onload=()=>setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();setTimeout(()=>iframe.remove(),1000);},200);}
 
 // ============== SETTINGS: BACKUP / RESET ==============
-document.getElementById('exportDataBtn').addEventListener('click', ()=>{
-  const payload = {exportedAt: new Date().toISOString(), debtors, reps, nextId, nextRepId};
+document.getElementById('exportDataBtn').addEventListener('click', async ()=>{
+  const payload = {exportedAt: new Date().toISOString(), debtors, reps, nextId, nextRepId, users, auditLog};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2506,18 +2654,18 @@ document.getElementById('exportDataBtn').addEventListener('click', ()=>{
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  addAudit('export_backup', `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`);
+  await addAudit('export_backup', `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`);
   toast('تم تصدير النسخة الاحتياطية');
 });
 
 document.getElementById('importDataBtn').addEventListener('click', ()=>{
   document.getElementById('importDataFile').click();
 });
-document.getElementById('importDataFile').addEventListener('change', (e)=>{
+document.getElementById('importDataFile').addEventListener('change', async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = ()=>{
+  reader.onload = async ()=>{
     try{
       const data = JSON.parse(reader.result);
       if(!Array.isArray(data.debtors)) throw new Error('invalid');
@@ -2526,8 +2674,21 @@ document.getElementById('importDataFile').addEventListener('change', (e)=>{
       reps = data.reps || [];
       nextId = data.nextId || (Math.max(0, ...debtors.map(d=>d.id))+1);
       nextRepId = data.nextRepId || (Math.max(0, ...reps.map(r=>r.id))+1);
-      addAudit('import_backup', `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`);
+      
+      // Import users if available
+      if (data.users && Array.isArray(data.users)) {
+        users = data.users;
+        await saveUsers();
+      }
+      
+      // Import audit log if available
+      if (data.auditLog && Array.isArray(data.auditLog)) {
+        auditLog = data.auditLog;
+      }
+      
+      await addAudit('import_backup', `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`);
       toast('تم استيراد النسخة الاحتياطية بنجاح');
+      saveState(); // Sync to Supabase
       renderAll();
     }catch(err){
       toast('تعذّرت قراءة الملف — تأكد أنه نسخة احتياطية صحيحة');
