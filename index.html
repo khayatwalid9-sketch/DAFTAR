@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر — نظام إدارة تحصيل الديون</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== Login Screen ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="seal">د</div>
+    <div class="lang-switch" style="justify-content:center; margin-bottom:16px">
+      <button type="button" data-login-lang="ar">AR</button>
+      <button type="button" data-login-lang="en">EN</button>
+    </div>
+    <h2 data-i18n="login.title">دفتر — تسجيل الدخول</h2>
+    <p data-i18n="login.sub">الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون</p>
+    <div class="field">
+      <label data-i18n="login.user">اسم المستخدم</label>
+      <input id="login_user" autocomplete="username">
+    </div>
+    <div class="field">
+      <label data-i18n="login.pass">كلمة المرور</label>
+      <input id="login_pass" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn" id="loginBtn" style="width:100%" data-i18n="login.btn">دخول</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-hint" data-i18n="login.hint">بيانات الدخول الافتراضية: admin / admin1234 — يمكن تغييرها لاحقًا من الإعدادات.</div>
+  </div>
+</div>
+
+<button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="seal">د</div>
+    <div class="brand-text"><b>دفتر</b><span data-i18n="brand.subtitle">نظام تحصيل الديون</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" data-page="dashboard"><span class="ic">◈</span> <span data-i18n="nav.dashboard">لوحة التحكم</span></div>
+    <div class="nav-item" data-page="debtors"><span class="ic">☰</span> <span data-i18n="nav.debtors">المدينون</span></div>
+    <div class="nav-item" data-page="reps"><span class="ic">☺</span> <span data-i18n="nav.reps">المندوبون</span></div>
+    <div class="nav-item" data-page="payments"><span class="ic">﷼</span> <span data-i18n="nav.payments">سجل السداد</span></div>
+    <div class="nav-item" data-page="followups"><span class="ic">☏</span> <span data-i18n="nav.followups">المتابعات</span></div>
+    <div class="nav-item" data-page="aging"><span class="ic">⧗</span> <span data-i18n="nav.aging">أعمار الديون</span></div>
+    <div class="nav-item" data-page="reports"><span class="ic">▤</span> <span data-i18n="nav.reports">التقارير</span></div>
+    <div class="nav-item" data-page="settings"><span class="ic">⚙</span> <span data-i18n="nav.settings">الإعدادات</span></div>
+  </nav>
+  <div class="sidebar-foot">
+    <div id="sidebarUserLine" style="margin-bottom:8px; color:var(--ink); font-weight:600;"></div>
+    <div data-i18n="nav.footnote">يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.</div>
+    <button class="btn secondary small" id="logoutBtn" style="width:100%; margin-top:12px" data-i18n="nav.logout">🚪 تسجيل الخروج</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">لوحة التحكم</h1>
+      <div class="sub" id="pageSub">نظرة عامة على حالة التحصيل اليوم</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="lang-switch">
+        <button id="langArBtn" class="active" data-lang="ar">AR</button>
+        <button id="langEnBtn" data-lang="en">EN</button>
+      </div>
+      <button class="icon-btn notification-btn" id="notificationsBtn" title="الإشعارات" aria-label="الإشعارات">🔔<span id="notificationCount" class="notification-count">0</span></button>
+      <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي" aria-label="الوضع الليلي">◐</button>
+      <input class="search" id="globalSearch" data-i18n-ph="topbar.search" placeholder="بحث عن مدين، هاتف...">
+      <button class="btn" id="addDebtorBtn" data-i18n="topbar.addDebtor">+ إضافة مدين</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ================= DASHBOARD ================= -->
+    <section class="page active" id="page-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card" style="--accent:var(--gold)">
+          <div class="lbl" data-i18n="dash.totalDebts">إجمالي الديون المسجلة</div>
+          <div class="val figures" id="statTotal">0</div>
+          <div class="delta"><span data-i18n="dash.via">عبر</span> <span id="statCount">0</span> <span data-i18n="dash.file">ملف تحصيل</span></div>
+          <div class="trend" id="statTotalTrend">—</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--teal)">
+          <div class="lbl" data-i18n="dash.collected">المبلغ المحصَّل</div>
+          <div class="val figures" id="statCollected">0</div>
+          <div class="delta" id="statCollectedPct">0% <span data-i18n="dash.ofTotal">من الإجمالي</span></div>
+          <div class="trend" id="statCollectedTrend">—</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--red)">
+          <div class="lbl" data-i18n="dash.overdueTotal">متأخرات قائمة</div>
+          <div class="val figures" id="statOverdue">0</div>
+          <div class="delta"><span id="statOverdueCount">0</span> <span data-i18n="dash.overdueCase">حالة متأخرة</span></div>
+          <div class="trend" id="statOverdueTrend">—</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--gold)">
+          <div class="lbl" data-i18n="dash.activeCases">حالات نشطة قيد المتابعة</div>
+          <div class="val figures" id="statActive">0</div>
+          <div class="delta" data-i18n="dash.needsFollow">تحتاج متابعة مستمرة</div>
+          <div class="trend" id="statActiveTrend">—</div>
+        </div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:repeat(2, 1fr)">
+        <div class="stat-card" style="--accent:var(--teal)">
+          <div class="lbl" data-i18n="dash.companyDebts">ديون الشركات</div>
+          <div class="val figures" id="statCompanyTotal">0</div>
+          <div class="delta"><span id="statCompanyCount">0</span> <span data-i18n="dash.companyUnit">شركة مدينة</span></div>
+        </div>
+        <div class="stat-card" style="--accent:var(--muted)">
+          <div class="lbl" data-i18n="dash.individualDebts">ديون الأفراد</div>
+          <div class="val figures" id="statIndividualTotal">0</div>
+          <div class="delta"><span id="statIndividualCount">0</span> <span data-i18n="dash.individualUnit">فرد مدين</span></div>
+        </div>
+      </div>
+      
+      <div class="stat-grid" style="grid-template-columns:repeat(3, 1fr)">
+        <div class="stat-card" style="--accent:var(--gold)">
+          <div class="lbl" data-i18n="dash.monthlyTarget">المستهدف الشهري</div>
+          <div class="val figures" id="statMonthlyTarget">0</div>
+          <div class="delta" data-i18n="dash.targetProgress">تقدم الهدف</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--teal)">
+          <div class="lbl" data-i18n="dash.collectionRate">نسبة التحصيل</div>
+          <div class="val figures" id="statCollectionRate">0%</div>
+          <div class="delta" data-i18n="dash.rateComparison">مقارنة بالشهر الماضي</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--red)">
+          <div class="lbl" data-i18n="dash.avgDaysToCollect">متوسط أيام التحصيل</div>
+          <div class="val figures" id="statAvgDays">0</div>
+          <div class="delta" data-i18n="dash.daysTrend">اتجاه الأيام</div>
+        </div>
+      </div>
+
+      <div class="dash-cols">
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="dash.topOverdue">أعلى المدينين تأخرًا</h3></div>
+          <div class="panel-body">
+            <div class="bars" id="topOverdueBars"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="dash.recentActivity">آخر المتابعات</h3></div>
+          <div class="panel-body" id="recentActivity"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="analytics.collectionTrend">اتجاه التحصيل الشهري</h3></div>
+        <div class="panel-body">
+          <canvas id="collectionChart" style="max-height:250px;"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="analytics.collectorPerformance">أداء المندوبين</h3></div>
+        <div class="panel-body">
+          <canvas id="collectorChart" style="max-height:250px;"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="dash.upcomingDue">⏰ تنبيهات الاستحقاق القادمة</h3>
+          <span style="font-size:11.5px; color:var(--muted)" id="reminderWindowLabel">خلال 7 أيام</span>
+        </div>
+        <div class="panel-body" id="dueReminders"></div>
+      </div>
+    </section>
+
+    <!-- ================= DEBTORS ================= -->
+    <section class="page" id="page-debtors">
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="debtors.title">قائمة المدينين</h3>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn secondary small" id="advancedSearchBtn" data-i18n="filter.advancedSearch">🔍 بحث متقدم</button>
+            <select id="typeFilter" class="field" style="width:140px; background:var(--surface-2); border:1px solid var(--border); border-radius:7px; padding:8px 10px; color:var(--ink); font-size:12.5px;">
+              <option value="all" data-i18n="debtors.allTypes">كل الأنواع</option>
+              <option value="individual" data-i18n="debtors.individuals">أفراد</option>
+              <option value="company" data-i18n="debtors.companies">شركات</option>
+            </select>
+            <select id="statusFilter" class="field" style="width:160px; background:var(--surface-2); border:1px solid var(--border); border-radius:7px; padding:8px 10px; color:var(--ink); font-size:12.5px;">
+              <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
+              <option value="active" data-i18n="status.active">نشط</option>
+              <option value="overdue" data-i18n="status.overdue">متأخر</option>
+              <option value="paid" data-i18n="status.paid">مسدد بالكامل</option>
+            </select>
+            <div class="file-btn-wrap">
+              <button class="btn secondary small" type="button" data-i18n="debtors.importExcel">⭱ استيراد من إكسل</button>
+              <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv">
+            </div>
+            <button class="btn secondary small" id="downloadExcelTemplateBtn" data-i18n="debtors.downloadTemplate">⭳ نموذج الاستيراد</button>
+            <button class="btn secondary small" id="saveSearchBtn" data-i18n="filter.saveSearch">💾 حفظ البحث</button>
+          </div>
+        </div>
+        <div class="advanced-search-panel" id="advancedSearchPanel" style="display:none; padding:16px; background:var(--surface-2); border-bottom:1px solid var(--border); margin-bottom:16px; border-radius:8px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+            <div class="field">
+              <label data-i18n="filter.amountRange">نطاق المبلغ</label>
+              <div style="display:flex; gap:8px;">
+                <input type="number" id="minAmount" placeholder="من" style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+                <input type="number" id="maxAmount" placeholder="إلى" style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="filter.dateRange">نطاق التاريخ</label>
+              <div style="display:flex; gap:8px;">
+                <input type="date" id="minDate" style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+                <input type="date" id="maxDate" style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="filter.collector">المندوب</label>
+              <select id="collectorFilter" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+                <option value="all" data-i18n="debtors.allStatuses">الكل</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="filter.riskLevel">مستوى الخطورة</label>
+              <select id="riskFilter" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+                <option value="all" data-i18n="debtors.allStatuses">الكل</option>
+                <option value="low" data-i18n="filter.lowRisk">منخفض</option>
+                <option value="medium" data-i18n="filter.mediumRisk">متوسط</option>
+                <option value="high" data-i18n="filter.highRisk">عالي</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn small" id="applyAdvancedSearch" data-i18n="filter.apply">تطبيق</button>
+            <button class="btn secondary small" id="resetAdvancedSearch" data-i18n="filter.reset">إعادة تعيين</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="table-wide">
+          <thead>
+            <tr>
+              <th data-i18n="th.name">الاسم</th><th data-i18n="th.type">النوع</th><th data-i18n="th.phone">الهاتف</th><th data-i18n="th.total">إجمالي الدين</th><th data-i18n="th.paid">المسدد</th><th data-i18n="th.remaining">المتبقي</th><th data-i18n="th.status">الحالة</th><th data-i18n="th.rep">المندوب</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.due">تاريخ الدفع المتوقع</th><th data-i18n="th.lastContact">آخر تواصل</th><th data-i18n="th.actions">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="debtorsTableBody"></tbody>
+        </table>
+        </div>
+        <div class="empty" id="debtorsEmpty" style="display:none">
+          <div class="mark">▤</div>
+          <span data-i18n="debtors.empty">لا يوجد مدينون مطابقون لبحثك.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REPS ================= -->
+    <section class="page" id="page-reps">
+      <div class="stat-grid" style="grid-template-columns:repeat(3, 1fr)">
+        <div class="stat-card" style="--accent:var(--gold)">
+          <div class="lbl" data-i18n="reps.count">عدد المندوبين</div>
+          <div class="val figures" id="repStatCount">0</div>
+          <div class="delta" data-i18n="reps.workOn">يعملون على ملفات التحصيل</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--teal)">
+          <div class="lbl" data-i18n="reps.collectedBy">المحصَّل بواسطة المندوبين</div>
+          <div class="val figures" id="repStatCollected">0</div>
+          <div class="delta" data-i18n="reps.ofAssigned">من إجمالي الحالات المسندة</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--red)">
+          <div class="lbl" data-i18n="reps.unassigned">حالات غير مسندة</div>
+          <div class="val figures" id="repStatUnassigned">0</div>
+          <div class="delta" data-i18n="reps.noRep">مدينون بلا مندوب مسؤول</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="reps.team">فريق المندوبين</h3>
+          <button class="btn small" id="addRepBtn" data-i18n="reps.addRep">+ إضافة مندوب</button>
+        </div>
+        <div class="table-scroll">
+          <table class="table-wide">
+          <thead>
+            <tr><th data-i18n="th.name">الاسم</th><th data-i18n="th.phone">الهاتف</th><th data-i18n="th.area">المنطقة</th><th data-i18n="th.assignedCases">الحالات المسندة</th><th data-i18n="th.collected">المحصَّل</th><th data-i18n="th.rate">نسبة الإنجاز</th><th data-i18n="reps.rating">التقييم</th><th data-i18n="th.actions">إجراءات</th></tr>
+          </thead>
+          <tbody id="repsTableBody"></tbody>
+        </table>
+        </div>
+        <div class="empty" id="repsEmpty" style="display:none">
+          <div class="mark">☺</div>
+          <span data-i18n="reps.empty">لا يوجد مندوبون مسجّلون بعد.</span>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="reps.monthlyReport">التقرير الشهري للمندوبين</h3></div>
+        <div class="panel-body">
+          <canvas id="repsMonthlyChart" style="max-height:250px;"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PAYMENTS ================= -->
+    <section class="page" id="page-payments">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="payments.title">سجل كل عمليات السداد</h3></div>
+        <div class="table-scroll">
+          <table>
+          <thead><tr><th data-i18n="th.date">التاريخ</th><th data-i18n="th.debtor">المدين</th><th data-i18n="th.amountPaid">المبلغ المسدد</th><th data-i18n="th.method">طريقة الدفع</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.actions">إجراءات</th></tr></thead>
+          <tbody id="paymentsTableBody"></tbody>
+        </table>
+        </div>
+        <div class="empty" id="paymentsEmpty" style="display:none">
+          <div class="mark">﷼</div>
+          <span data-i18n="payments.empty">لم يتم تسجيل أي عملية سداد بعد.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FOLLOWUPS ================= -->
+    <section class="page" id="page-followups">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="followups.title">سجل المتابعات والاتصالات</h3></div>
+        <div class="table-scroll">
+          <table>
+          <thead><tr><th data-i18n="th.date">التاريخ</th><th data-i18n="th.debtor">المدين</th><th data-i18n="th.contactMethod">طريقة التواصل</th><th data-i18n="th.outcome">النتيجة</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.actions">إجراءات</th></tr></thead>
+          <tbody id="followupsTableBody"></tbody>
+        </table>
+        </div>
+        <div class="empty" id="followupsEmpty" style="display:none">
+          <div class="mark">☏</div>
+          <span data-i18n="followups.empty">لم يتم تسجيل أي متابعة بعد.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= AGING ================= -->
+    <section class="page" id="page-aging">
+      <div class="aging-grid">
+        <div class="aging-card b1" style="background:rgba(217,179,74,.08)">
+          <div class="lbl" data-i18n="aging.b1">1 – 30 يوم تأخير</div>
+          <div class="val figures" id="aging_b1_amt">0</div>
+          <div class="cnt" id="aging_b1_cnt">0 حالة</div>
+        </div>
+        <div class="aging-card b2" style="background:rgba(214,138,60,.08)">
+          <div class="lbl" data-i18n="aging.b2">31 – 60 يوم تأخير</div>
+          <div class="val figures" id="aging_b2_amt">0</div>
+          <div class="cnt" id="aging_b2_cnt">0 حالة</div>
+        </div>
+        <div class="aging-card b3" style="background:rgba(200,86,47,.08)">
+          <div class="lbl" data-i18n="aging.b3">61 – 90 يوم تأخير</div>
+          <div class="val figures" id="aging_b3_amt">0</div>
+          <div class="cnt" id="aging_b3_cnt">0 حالة</div>
+        </div>
+        <div class="aging-card b4" style="background:rgba(179,58,58,.08)">
+          <div class="lbl" data-i18n="aging.b4">أكثر من 90 يوم</div>
+          <div class="val figures" id="aging_b4_amt">0</div>
+          <div class="cnt" id="aging_b4_cnt">0 حالة</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="aging.title">تقرير أعمار الديون التفصيلي</h3>
+          <div style="display:flex; gap:10px">
+            <button class="btn secondary small" id="agingPrintBtn" data-i18n="aging.print">🖶 طباعة التقرير</button>
+            <button class="btn small" id="agingPdfBtn" data-i18n="aging.pdf">⭳ تحميل PDF</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="table-wide">
+          <thead>
+            <tr>
+              <th data-i18n="th.name">الاسم</th><th data-i18n="th.type">النوع</th><th data-i18n="th.phone">الهاتف</th>
+              <th data-i18n="th.due">تاريخ الاستحقاق</th><th data-i18n="aging.daysLate">أيام التأخير</th>
+              <th data-i18n="aging.bucket">الفئة العمرية</th><th data-i18n="th.remaining">المتبقي</th><th data-i18n="th.rep">المندوب</th><th data-i18n="th.notes">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody id="agingTableBody"></tbody>
+        </table>
+        </div>
+        <div class="empty" id="agingEmpty" style="display:none">
+          <div class="mark">⧗</div>
+          <span data-i18n="aging.empty">لا توجد ديون متأخرة حاليًا — جميع الحالات ضمن موعدها.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REPORTS ================= -->
+    <section class="page" id="page-reports">
+      <div class="panel-head report-toolbar" style="display:flex; justify-content:space-between; align-items:center">
+        <h3 data-i18n="reports.title">التقارير المالية</h3>
+        <div style="display:flex; gap:10px">
+          <button class="btn secondary small" id="reportPrintBtn" data-i18n="reports.print">🖶 طباعة التقرير</button>
+          <button class="btn small" id="reportPdfBtn" data-i18n="reports.pdf">⭳ تحميل PDF</button>
+        </div>
+      </div>
+      <div class="dash-cols">
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="reports.statusDist">توزيع حالات المدينين</h3></div>
+          <div class="panel-body">
+            <div class="donut-wrap">
+              <svg width="170" height="170" viewBox="0 0 42 42" id="donutSvg"></svg>
+              <div class="legend" id="donutLegend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="reports.financialSummary">ملخص مالي</h3></div>
+          <div class="panel-body">
+            <div class="dr-stat"><span data-i18n="reports.totalDebts">إجمالي الديون</span><span class="figures" id="repTotal">0</span></div>
+            <div class="dr-stat"><span data-i18n="reports.totalCollected">إجمالي المحصَّل</span><span class="figures" id="repCollected">0</span></div>
+            <div class="dr-stat"><span data-i18n="reports.totalRemaining">إجمالي المتبقي</span><span class="figures" id="repRemaining">0</span></div>
+            <div class="dr-stat"><span data-i18n="reports.collectionRate">نسبة التحصيل</span><span class="figures" id="repRate">0%</span></div>
+            <div class="dr-stat"><span data-i18n="reports.paymentsCount">عدد عمليات السداد</span><span class="figures" id="repPaymentsCount">0</span></div>
+            <div class="dr-stat"><span data-i18n="reports.followupsCount">عدد المتابعات المسجّلة</span><span class="figures" id="repFollowupsCount">0</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="reports.debtorsNotes">المدينون والملاحظات</h3></div>
+        <div class="table-scroll">
+          <table>
+          <thead>
+            <tr>
+              <th data-i18n="th.name">الاسم</th>
+              <th data-i18n="th.status">الحالة</th>
+              <th data-i18n="th.remaining">المتبقي</th>
+              <th data-i18n="th.notes">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody id="reportsNotesBody"></tbody>
+        </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="reports.advanced">التحليل المالي المتقدم</h3></div>
+        <div class="panel-body"><div class="stat-grid" style="grid-template-columns:repeat(3,1fr)"><div class="stat-card"><div class="lbl" data-i18n="reports.averageDebt">متوسط الدين</div><div class="val figures" id="repAverageDebt">0</div></div><div class="stat-card"><div class="lbl" data-i18n="reports.overdueRate">نسبة المتأخرات</div><div class="val figures" id="repOverdueRate">0%</div></div><div class="stat-card"><div class="lbl" data-i18n="reports.expectedMonthly">المتوقع شهريًا</div><div class="val figures" id="repExpectedMonthly">0</div></div></div><div class="table-scroll"><table><thead><tr><th data-i18n="reports.month">الشهر</th><th data-i18n="reports.dueAmount">مستحق</th><th data-i18n="reports.paidAmount">محصل</th><th data-i18n="reports.collectionRate">نسبة التحصيل</th></tr></thead><tbody id="financialReportBody"></tbody></table></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="analytics.paymentMethods">تحليل طرق الدفع</h3></div>
+        <div class="panel-body">
+          <canvas id="paymentMethodsChart" style="max-height:250px;"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="analytics.debtDistribution">توزيع الديون حسب الحالة</h3></div>
+        <div class="panel-body">
+          <canvas id="debtDistributionChart" style="max-height:250px;"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section class="page" id="page-settings">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.account">بيانات تسجيل الدخول</h3></div>
+        <div class="panel-body">
+          <div class="field-row">
+            <div class="field">
+              <label data-i18n="settings.username">اسم المستخدم</label>
+              <input id="s_authUser">
+            </div>
+            <div class="field">
+              <label data-i18n="settings.newPassword">كلمة مرور جديدة (اتركها فارغة لعدم التغيير)</label>
+              <input id="s_authPass" type="password">
+            </div>
+          </div>
+          <button class="btn secondary" id="saveAuthBtn" data-i18n="settings.saveAccount">حفظ بيانات الدخول</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.users">المستخدمون والصلاحيات</h3></div>
+        <div class="panel-body">
+          <div class="field-row">
+            <div class="field"><label data-i18n="settings.userName">اسم المستخدم</label><input id="u_name"></div>
+            <div class="field"><label data-i18n="settings.userPassword">كلمة المرور</label><input id="u_password" type="password"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label data-i18n="settings.userRole">الدور</label><select id="u_role"><option value="admin" data-i18n="role.admin">مدير</option><option value="collector" data-i18n="role.collector">مندوب</option><option value="viewer" data-i18n="role.viewer">مشاهد</option></select></div>
+            <div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="addUserBtn" style="width:100%" data-i18n="settings.addUser">إضافة مستخدم</button></div>
+          </div>
+          <div id="usersList"></div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.security">إعدادات الأمان</h3></div>
+        <div class="panel-body">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_autoLogout" style="width:auto">
+            <span data-i18n="settings.autoLogout">تسجيل خروج تلقائي بعد 30 دقيقة من عدم النشاط</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_sessionTimeout" style="width:auto">
+            <span data-i18n="settings.sessionTimeout">تنبيه قبل انتهاء الجلسة بـ 5 دقائق</span>
+          </label>
+          <div class="field" style="margin-top:12px;">
+            <label data-i18n="settings.passwordMinLength">الحد الأدنى لطول كلمة المرور</label>
+            <input type="number" id="s_passwordMinLength" min="6" max="20" value="8" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+          </div>
+          <button class="btn secondary small" id="changeAdminPasswordBtn" data-i18n="settings.changeAdminPassword">تغيير كلمة مرور المدير</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.appearance">المظهر</h3></div>
+        <div class="panel-body">
+          <div class="field">
+            <label data-i18n="settings.palette">لون الواجهة</label>
+            <div class="theme-swatches" id="paletteSwatches">
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="navy" style="background:#16213A" title="أزرق بحري" data-i18n-title="palette.navy" aria-label="أزرق بحري"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="forest" style="background:#14241c" title="أخضر غامق" data-i18n-title="palette.forest" aria-label="أخضر غامق"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="burgundy" style="background:#2a151c" title="عنابي" data-i18n-title="palette.burgundy" aria-label="عنابي"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="charcoal" style="background:#1c1c1c" title="رمادي فحمي" data-i18n-title="palette.charcoal" aria-label="رمادي فحمي"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="purple" style="background:#1e1733" title="بنفسجي" data-i18n-title="palette.purple" aria-label="بنفسجي"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="teal" style="background:#102428" title="زيتي" data-i18n-title="palette.teal" aria-label="زيتي"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="midnight" style="background:#111830" title="منتصف الليل" data-i18n-title="palette.midnight" aria-label="منتصف الليل"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="sunset" style="background:#2a1c15" title="غروب" data-i18n-title="palette.sunset" aria-label="غروب"></button>
+              <div style="width:1px; height:20px; background:var(--border); margin:0 8px;"></div>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-navy" style="background:#e8ecf4" title="أزرق فاتح" data-i18n-title="palette.lightNavy" aria-label="أزرق فاتح"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-forest" style="background:#e8f0e8" title="أخضر فاتح" data-i18n-title="palette.lightForest" aria-label="أخضر فاتح"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-rose" style="background:#f0e8f0" title="وردي فاتح" data-i18n-title="palette.lightRose" aria-label="وردي فاتح"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-lavender" style="background:#ece8f4" title="بنفسجي فاتح" data-i18n-title="palette.lightLavender" aria-label="بنفسجي فاتح"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-peach" style="background:#f0ece8" title="خوخي فاتح" data-i18n-title="palette.lightPeach" aria-label="خوخي فاتح"></button>
+              <label class="theme-swatch theme-swatch-custom" id="paletteSwatchCustom" title="لون مخصص" data-i18n-title="palette.custom">
+                🎨<input type="color" id="s_customPalette" value="#16213A">
+              </label>
+              <span class="theme-current-label" id="paletteCurrentLabel"></span>
+            </div>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label data-i18n="settings.theme">لون التمييز</label>
+            <div class="theme-swatches" id="themeSwatches">
+              <button type="button" class="theme-swatch" data-theme-preset="gold" style="background:#C9A227" title="ذهبي" data-i18n-title="theme.gold" aria-label="ذهبي"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="teal" style="background:#2BB3A3" title="فيروزي" data-i18n-title="theme.teal" aria-label="فيروزي"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="blue" style="background:#5EA9E8" title="أزرق" data-i18n-title="theme.blue" aria-label="أزرق"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="rose" style="background:#E28A9A" title="وردي" data-i18n-title="theme.rose" aria-label="وردي"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="orange" style="background:#FF8C42" title="برتقالي" data-i18n-title="theme.orange" aria-label="برتقالي"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="purple" style="background:#9C6ADE" title="بنفسجي" data-i18n-title="theme.purple" aria-label="بنفسجي"></button>
+              <button type="button" class="theme-swatch" data-theme-preset="green" style="background:#6BCB77" title="أخضر" data-i18n-title="theme.green" aria-label="أخضر"></button>
+              <label class="theme-swatch theme-swatch-custom" id="themeSwatchCustom" title="لون مخصص" data-i18n-title="theme.custom">
+                🎨<input type="color" id="s_customColor" value="#C9A227">
+              </label>
+              <span class="theme-current-label" id="themeCurrentLabel"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.sync">مزامنة Supabase</h3></div>
+        <div class="panel-body">
+          <div class="field-row"><div class="field"><label>Supabase URL</label><input id="s_supabaseUrl" placeholder="https://project.supabase.co"></div><div class="field"><label>Anon key</label><input id="s_supabaseKey" type="password"></div></div>
+          <button class="btn secondary" id="syncNowBtn" data-i18n="settings.syncNow">مزامنة الآن</button><span id="syncStatus" class="wm-note"></span>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="integration.title">التكامل الخارجي</h3></div>
+        <div class="panel-body">
+          <div class="field">
+            <label data-i18n="integration.smsProvider">مزود خدمة SMS</label>
+            <select id="s_smsProvider" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+              <option value="none" data-i18n="integration.none">بدون</option>
+              <option value="twilio">Twilio</option>
+              <option value="custom">مخصص</option>
+            </select>
+          </div>
+          <div class="field" id="smsConfigFields" style="display:none;">
+            <label data-i18n="integration.smsApiKey">مفتاح API</label>
+            <input type="text" id="s_smsApiKey" placeholder="Enter API key" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+          </div>
+          <div class="field">
+            <label data-i18n="integration.emailProvider">مزود خدمة البريد الإلكتروني</label>
+            <select id="s_emailProvider" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+              <option value="none" data-i18n="integration.none">بدون</option>
+              <option value="sendgrid">SendGrid</option>
+              <option value="mailgun">Mailgun</option>
+              <option value="custom">مخصص</option>
+            </select>
+          </div>
+          <div class="field" id="emailConfigFields" style="display:none;">
+            <label data-i18n="integration.emailApiKey">مفتاح API</label>
+            <input type="text" id="s_emailApiKey" placeholder="Enter API key" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+          </div>
+          <button class="btn secondary small" id="testIntegrationBtn" data-i18n="integration.testIntegration">اختبار التكامل</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.audit">سجل التدقيق</h3></div>
+        <div class="panel-body">
+          <div class="field" style="margin-bottom:10px"><input id="auditFilter" placeholder="تصفية حسب المستخدم أو الإجراء..." data-i18n-ph="settings.auditFilter"></div>
+          <div id="auditList" class="audit-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.printWatermark">شعار الطباعة</h3></div>
+        <div class="panel-body">
+          <p style="font-size:13px; color:var(--muted); line-height:1.9" data-i18n="settings.printWatermarkDesc">
+            يظهر شعار الشركة تلقائيًا كخلفية شفافة في كل كشوفات الحساب والتقارير المطبوعة أو التي يتم تحميلها كملف PDF.
+          </p>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-top:10px; cursor:pointer">
+            <input type="checkbox" id="s_watermarkEnabled" checked style="width:auto">
+            <span data-i18n="settings.enableWatermark">تفعيل شعار الخلفية عند الطباعة/التصدير</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.dueAlerts">تنبيهات الاستحقاق</h3></div>
+        <div class="panel-body">
+          <div class="field-row" style="align-items:end">
+            <div class="field" style="margin-bottom:0">
+              <label data-i18n="settings.reminderDays">تنبيه قبل تاريخ الاستحقاق بـ (أيام)</label>
+              <input type="number" id="s_reminderDays" min="1" max="60" value="7">
+            </div>
+            <div class="field" style="margin-bottom:0; display:flex; align-items:flex-end">
+              <button class="btn secondary" id="enableNotifBtn" style="width:100%" data-i18n="settings.enableNotif">🔔 تفعيل تنبيهات المتصفح</button>
+            </div>
+          </div>
+          <div style="font-size:12px; color:var(--muted); margin-top:10px" id="notifStatus" data-i18n="settings.notifOff">تنبيهات المتصفح غير مفعّلة حاليًا.</div>
+          
+          <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+              <input type="checkbox" id="s_soundAlerts" checked style="width:auto">
+              <span data-i18n="alerts.soundAlert">تنبيهات صوتية</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+              <input type="checkbox" id="s_emailAlerts" style="width:auto">
+              <span data-i18n="alerts.emailAlert">تنبيهات بريد إلكتروني</span>
+            </label>
+            <div class="field" id="emailConfigField" style="display:none;">
+              <label data-i18n="alerts.emailConfig">إعدادات البريد الإلكتروني</label>
+              <input type="email" id="s_notificationEmail" placeholder="example@email.com" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.dataStorage">حفظ البيانات</h3></div>
+        <div class="panel-body">
+          <p style="font-size:13px; color:var(--muted); line-height:1.9" data-i18n="settings.dataStorageDesc">
+            يتم حفظ جميع بيانات المدينين والمندوبين وسجلات السداد والمتابعات تلقائيًا في متصفحك على هذا الجهاز.
+            استخدم "تصدير نسخة احتياطية" لحفظ ملف يمكن استيراده لاحقًا أو نقله لجهاز آخر.
+          </p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="settings.backup">نسخ احتياطي</h3></div>
+        <div class="panel-body" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+          <button class="btn secondary" id="exportDataBtn" data-i18n="settings.exportBackup">⭳ تصدير نسخة احتياطية (JSON)</button>
+          <button class="btn secondary" id="importDataBtn" data-i18n="settings.importBackup">⭱ استيراد نسخة احتياطية</button>
+          <input type="file" id="importDataFile" accept="application/json" style="display:none">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 style="color:#e07373" data-i18n="settings.dangerZone">منطقة الخطر</h3></div>
+        <div class="panel-body" style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap">
+          <div style="font-size:13px; color:var(--muted); max-width:420px" data-i18n="settings.dangerDesc">
+            سيؤدي هذا إلى مسح جميع المدينين والمندوبين وسجلات السداد والمتابعات المسجّلة في هذا النظام بشكل نهائي. هذا الإجراء لا يمكن التراجع عنه.
+          </div>
+          <button class="btn danger" id="clearAllDataBtn" data-i18n="settings.clearAll">مسح جميع البيانات المسجلة</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="automation.title">الأتمتة والقواعد</h3></div>
+        <div class="panel-body">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_autoFollowups" style="width:auto">
+            <span data-i18n="automation.autoFollowups">إنشاء متابعات تلقائية للديون المتأخرة</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_autoReports" style="width:auto">
+            <span data-i18n="automation.autoReports">إنشاء تقارير أسبوعية تلقائية</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_smartReminders" style="width:auto">
+            <span data-i18n="automation.smartReminders">تنبيهات ذكية تعتمد على أنماط السداد</span>
+          </label>
+          <div class="field" style="margin-top:12px;">
+            <label data-i18n="automation.followupFrequency">تكرار المتابعة التلقائية (أيام)</label>
+            <input type="number" id="s_followupFrequency" min="1" max="30" value="7" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="compliance.title">الامتثال القانوني</h3></div>
+        <div class="panel-body">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_dataRetention" style="width:auto">
+            <span data-i18n="compliance.dataRetention">الالتزام بسياسة الاحتفاظ بالبيانات</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_gdprCompliance" style="width:auto">
+            <span data-i18n="compliance.gdprCompliance">الامتثال للوائح حماية البيانات</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer">
+            <input type="checkbox" id="s_auditTrail" checked style="width:auto">
+            <span data-i18n="compliance.auditTrail">تفعيل سجل التدقيق الكامل</span>
+          </label>
+          <div class="field" style="margin-top:12px;">
+            <label data-i18n="compliance.companyInfo">معلومات الشركة للامتثال</label>
+            <input type="text" id="s_companyName" placeholder="اسم الشركة" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px; margin-bottom:8px;">
+            <input type="text" id="s_companyTaxId" placeholder="الرقم الضريبي" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--ink); font-size:12px;">
+          </div>
+          <button class="btn secondary small" id="generateComplianceReportBtn" data-i18n="compliance.generateReport">إنشاء تقرير الامتثال</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ===== Add Debtor Modal ===== -->
+<div class="overlay" id="debtorModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="debtorModalTitle" data-i18n="modal.addDebtor">إضافة مدين جديد</h3><button class="modal-close" data-close="debtorModal">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label data-i18n="modal.debtorType">نوع المدين</label>
+        <div class="toggle-group">
+          <div class="toggle-opt active" id="f_type_individual" data-type="individual" data-i18n="debtors.individual">فرد</div>
+          <div class="toggle-opt" id="f_type_company" data-type="company" data-i18n="debtors.company">شركة</div>
+        </div>
+      </div>
+      <div class="field" id="f_nameLabelWrap"><label id="f_nameLabel" data-i18n="modal.fullName">الاسم الكامل</label><input id="f_name" data-i18n-ph="modal.fullNamePh" placeholder="مثال: محمد عبدالله السويدي"></div>
+      <div class="field-row company-fields" id="f_companyFields">
+        <div class="field"><label data-i18n="modal.companyNumber">رقم الشركة</label><input id="f_companyNumber" placeholder="مثال: CO-10452"></div>
+        <div class="field"><label data-i18n="modal.crNumber">رقم السجل التجاري</label><input id="f_crNumber" placeholder="مثال: 123456"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.phone">رقم الهاتف</label><input id="f_phone" placeholder="+974 5xxxxxxx"></div>
+        <div class="field"><label data-i18n="modal.totalAmount">إجمالي مبلغ الدين</label><input id="f_amount" type="number" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.installments">عدد الأقساط</label><input id="f_installments" type="number" min="1" value="1"></div>
+        <div class="field"><label data-i18n="modal.frequency">دورية القسط</label><select id="f_frequency"><option value="monthly" data-i18n="frequency.monthly">شهري</option><option value="quarterly" data-i18n="frequency.quarterly">ربع سنوي</option><option value="weekly" data-i18n="frequency.weekly">أسبوعي</option></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.dueDate">تاريخ الاستحقاق</label><input id="f_due" type="date"></div>
+        <div class="field"><label data-i18n="modal.expectedPaymentDate">تاريخ الدفع المتوقع</label><input id="f_expectedPaymentDate" type="date"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.paidUpfront">مبلغ مسدد مسبقًا (اختياري)</label><input id="f_paid" type="number" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.collectionMethod">طريقة التحصيل (إن وُجد مبلغ مسدد)</label>
+          <select id="f_paidMethod">
+            <option value="نقدًا" data-i18n="method.cash">نقدًا</option>
+            <option value="شيك" data-i18n="method.cheque">شيك</option>
+            <option value="تحويل بنكي" data-i18n="method.transfer">تحويل بنكي</option>
+          </select>
+        </div>
+        <div class="field"><label data-i18n="modal.collectionDate">تاريخ التحصيل</label><input id="f_paidDate" type="date"></div>
+      </div>
+      <div class="field"><label data-i18n="modal.assignedRep">المندوب المسؤول (اختياري)</label>
+        <select id="f_rep"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
+      </div>
+      <div class="field"><label data-i18n="th.notes">ملاحظات</label><textarea id="f_notes" data-i18n-ph="modal.notesPh" placeholder="تفاصيل إضافية عن الحالة..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="saveDebtorBtn" data-i18n="modal.saveDebtor">حفظ المدين</button>
+      <button class="btn secondary" data-close="debtorModal" data-i18n="modal.cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add Rep Modal ===== -->
+<div class="overlay" id="repModal">
+  <div class="modal">
+    <div class="modal-head"><h3 data-i18n="modal.addRep">إضافة مندوب جديد</h3><button class="modal-close" data-close="repModal">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label data-i18n="modal.repName">اسم المندوب</label><input id="r_name" placeholder="مثال: أحمد سالم الكواري"></div>
+      <div class="field-row">
+        <div class="field"><label data-i18n="modal.phone">رقم الهاتف</label><input id="r_phone" placeholder="+974 5xxxxxxx"></div>
+        <div class="field"><label data-i18n="modal.repArea">المنطقة المسؤول عنها</label><input id="r_area" placeholder="مثال: الدوحة - الوسط"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="saveRepBtn" data-i18n="modal.saveRep">حفظ المندوب</button>
+      <button class="btn secondary" data-close="repModal" data-i18n="modal.cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Rep Detail Drawer ===== -->
+<div class="drawer-overlay" id="repDrawerOverlay"></div>
+<div class="drawer" id="repDrawer">
+  <div class="drawer-head">
+    <div class="stamp-wrap">
+      <div class="name-seal" id="rd_seal">؟</div>
+      <div>
+        <div style="font-weight:700; font-size:15.5px" id="rd_name">—</div>
+        <div style="color:var(--muted); font-size:12px; margin-top:2px" id="rd_phone">—</div>
+      </div>
+    </div>
+    <button class="modal-close" id="repDrawerClose">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="dr-stat"><span data-i18n="th.area">المنطقة</span><span id="rd_area">—</span></div>
+    <div class="dr-stat"><span data-i18n="th.assignedCases">عدد الحالات المسندة</span><span class="figures" id="rd_cases">0</span></div>
+    <div class="dr-stat"><span data-i18n="drawer.totalAssigned">إجمالي المسند</span><span class="figures" id="rd_total">0</span></div>
+    <div class="dr-stat"><span data-i18n="reports.totalCollected">إجمالي المحصَّل</span><span class="figures" id="rd_collected">0</span></div>
+    <div class="dr-stat"><span data-i18n="th.rate">نسبة الإنجاز</span><span class="figures" id="rd_rate">0%</span></div>
+
+    <div class="dr-section-title" data-i18n="drawer.repCases">الحالات المسندة لهذا المندوب</div>
+    <div id="rd_cases_list"></div>
+
+    <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn secondary small" id="rd_edit" data-i18n="drawer.editRep">✎ تعديل بيانات المندوب</button>
+      <button class="btn danger small" id="rd_delete" data-i18n="drawer.deleteRep">حذف هذا المندوب</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Detail Drawer ===== -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="stamp-wrap">
+      <div class="name-seal" id="dr_seal">؟</div>
+      <div>
+        <div style="font-weight:700; font-size:15.5px" id="dr_name">—</div>
+        <div style="color:var(--muted); font-size:12px; margin-top:2px" id="dr_phone">—</div>
+      </div>
+    </div>
+    <button class="modal-close" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="dr-stat"><span data-i18n="th.type">النوع</span><span id="dr_type">—</span></div>
+    <div class="dr-stat" id="dr_companyNumberRow" style="display:none"><span data-i18n="modal.companyNumber">رقم الشركة</span><span class="figures" id="dr_companyNumber">—</span></div>
+    <div class="dr-stat" id="dr_crNumberRow" style="display:none"><span data-i18n="modal.crNumber">رقم السجل التجاري</span><span class="figures" id="dr_crNumber">—</span></div>
+    <div class="dr-stat"><span data-i18n="th.total">إجمالي الدين</span><span class="figures" id="dr_total">0</span></div>
+    <div class="dr-stat"><span data-i18n="th.paid">المسدد</span><span class="dr-stat-value"><span class="figures" id="dr_paid">0</span><button class="link-btn" id="dr_editPaidBtn" type="button" title="تعديل المبلغ المسدد" data-i18n-title="drawer.editPaidTitle">✎</button></span></div>
+    <div class="dr-stat"><span data-i18n="th.remaining">المتبقي</span><span class="figures" id="dr_remaining">0</span></div>
+    <div class="dr-stat"><span data-i18n="th.status">الحالة</span><span id="dr_status">—</span></div>
+    <div class="dr-stat"><span data-i18n="modal.dueDate">تاريخ الاستحقاق</span><span id="dr_due">—</span></div>
+    <div class="dr-section-title" data-i18n="drawer.installmentPlan">خطة الأقساط</div>
+    <div id="dr_installments" class="installment-list"></div>
+    <div class="dr-stat"><span data-i18n="drawer.assignedRep">المندوب المسؤول</span><span id="dr_repName">—</span></div>
+
+    <div class="dr-section-title" id="dr_assignRepTitle" data-i18n="drawer.assignRep">إسناد / تغيير المندوب</div>
+    <div class="mini-form" id="dr_assignRepBox">
+      <select id="dr_repSelect"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
+      <button class="btn small" id="dr_assignRep" data-i18n="drawer.assign">تعيين</button>
+    </div>
+
+    <div class="dr-section-title" data-i18n="drawer.recordPayment">تسجيل دفعة سداد</div>
+    <div class="mini-form">
+      <input type="number" id="dr_paymentAmount" data-i18n-ph="drawer.amount" placeholder="المبلغ">
+      <select id="dr_paymentMethod">
+        <option value="نقدًا" data-i18n="method.cash">نقدًا</option>
+        <option value="شيك" data-i18n="method.cheque">شيك</option>
+        <option value="تحويل بنكي" data-i18n="method.transfer">تحويل بنكي</option>
+      </select>
+      <input type="date" id="dr_paymentDate">
+      <button class="btn small" id="dr_addPayment" data-i18n="drawer.add">إضافة</button>
+    </div>
+
+    <div class="dr-section-title" data-i18n="drawer.addFollow">إضافة متابعة</div>
+    <div class="mini-form">
+      <select id="dr_followMethod">
+        <option data-i18n="method.call">اتصال هاتفي</option>
+        <option data-i18n="method.sms">رسالة نصية</option>
+        <option data-i18n="method.visit">زيارة ميدانية</option>
+        <option data-i18n="method.email">بريد إلكتروني</option>
+      </select>
+      <input type="date" id="dr_followDate">
+      <input type="text" id="dr_followOutcome" data-i18n-ph="drawer.outcomePh" placeholder="النتيجة / الملاحظة">
+      <button class="btn small" id="dr_addFollow" data-i18n="drawer.add">إضافة</button>
+    </div>
+
+    <div class="dr-section-title" data-i18n="drawer.activityLog">سجل النشاط</div>
+    <div id="dr_log"></div>
+
+    <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn secondary small" id="dr_editDebtor" data-i18n="drawer.editDebtor">✎ تعديل بيانات المدين</button>
+      <button class="btn secondary small" id="dr_print" data-i18n="drawer.printStatement">🖶 طباعة كشف حساب</button>
+      <button class="btn small" id="dr_downloadPdf" data-i18n="drawer.downloadPdf">⭳ تحميل PDF</button>
+      <button class="btn danger small" id="dr_delete" data-i18n="drawer.deleteDebtor">حذف هذا المدين نهائيًا</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="notification-panel" id="notificationPanel" aria-live="polite">
+  <div class="panel-head"><h3 data-i18n="notifications.title">الإشعارات</h3><button class="modal-close" id="clearNotificationsBtn">✕</button></div>
+  <div class="panel-body" id="notificationsList"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
+
