@@ -28,4 +28,25 @@ create table if not exists public.debtors_activity (
 alter table public.debtors enable row level security;
 alter table public.debtors_activity enable row level security;
 
--- Add policies after enabling Supabase Auth. Do not expose service keys in app.js.
+-- RLS Policies for debtors table
+-- Allow public read access (for demo purposes - restrict in production)
+create policy "Enable read access for all users" on public.debtors for select using (true);
+-- Allow public insert access (for demo purposes - restrict in production)
+create policy "Enable insert access for all users" on public.debtors for insert with check (true);
+-- Allow public update access (for demo purposes - restrict in production)
+create policy "Enable update access for all users" on public.debtors for update using (true);
+-- Allow public delete access (for demo purposes - restrict in production)
+create policy "Enable delete access for all users" on public.debtors for delete using (true);
+
+-- RLS Policies for debtors_activity table
+-- Allow public read access (for demo purposes - restrict in production)
+create policy "Enable read access for all users" on public.debtors_activity for select using (true);
+-- Allow public insert access (for demo purposes - restrict in production)
+create policy "Enable insert access for all users" on public.debtors_activity for insert with check (true);
+-- Allow public update access (for demo purposes - restrict in production)
+create policy "Enable update access for all users" on public.debtors_activity for update using (true);
+-- Allow public delete access (for demo purposes - restrict in production)
+create policy "Enable delete access for all users" on public.debtors_activity for delete using (true);
+
+-- Note: For production, replace 'true' with proper authentication checks:
+-- Example: using (auth.uid() is not null) or more specific role-based policies

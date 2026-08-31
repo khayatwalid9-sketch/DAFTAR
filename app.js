@@ -3,6 +3,16 @@
 const IMAGE_PATH = '305922021_523349173131481_1401793005313797692_n.jpg';
 let currentLang = localStorage.getItem('daftar_language') || 'ar';
 
+// ============== SUPABASE CLIENT ==============
+let supabase = null;
+try {
+  if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+    supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+  }
+} catch (e) {
+  console.warn('Supabase client initialization failed:', e);
+}
+
 // Page titles for English mode
 const EN_TITLES = {
   dashboard:['Dashboard','Overview of collection status today'], 
@@ -282,13 +292,152 @@ debtors[3].repId = 2;
 
 // ============== PERSISTENCE ==============
 const STORAGE_KEY = 'daftar_debt_system_v1';
+
+// Supabase sync functions
+async function syncToSupabase() {
+  if (!supabase) return false;
+  
+  try {
+    // Sync debtors
+    for (const debtor of debtors) {
+      const { data: existing } = await supabase
+        .from('debtors')
+        .select('id')
+        .eq('id', debtor.id)
+        .single();
+      
+      const debtorData = {
+        id: debtor.id,
+        name: debtor.name,
+        type: debtor.type,
+        company_number: debtor.companyNumber,
+        cr_number: debtor.crNumber,
+        phone: debtor.phone,
+        total: debtor.total,
+        paid: debtor.paid,
+        due: debtor.due,
+        notes: debtor.notes,
+        rep_id: debtor.repId
+      };
+      
+      if (existing) {
+        await supabase.from('debtors').update(debtorData).eq('id', debtor.id);
+      } else {
+        await supabase.from('debtors').insert(debtorData);
+      }
+      
+      // Sync activity log for this debtor
+      if (debtor.log && debtor.log.length > 0) {
+        for (const activity of debtor.log) {
+          const { data: existingActivity } = await supabase
+            .from('debtors_activity')
+            .select('id')
+            .eq('id', activity.id)
+            .single();
+          
+          const activityData = {
+            id: activity.id,
+            debtor_id: debtor.id,
+            type: activity.type,
+            activity_date: activity.date,
+            amount: activity.amount,
+            method: activity.method,
+            note: activity.note
+          };
+          
+          if (existingActivity) {
+            await supabase.from('debtors_activity').update(activityData).eq('id', activity.id);
+          } else {
+            await supabase.from('debtors_activity').insert(activityData);
+          }
+        }
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    console.warn('Supabase sync failed:', e);
+    return false;
+  }
+}
+
+async function loadFromSupabase() {
+  if (!supabase) return false;
+  
+  try {
+    // Load debtors
+    const { data: debtorsData, error: debtorsError } = await supabase
+      .from('debtors')
+      .select('*');
+    
+    if (debtorsError) throw debtorsError;
+    
+    if (!debtorsData || debtorsData.length === 0) return false;
+    
+    // Load activities
+    const { data: activitiesData, error: activitiesError } = await supabase
+      .from('debtors_activity')
+      .select('*');
+    
+    if (activitiesError) throw activitiesError;
+    
+    // Map Supabase data to app structure
+    debtors = debtorsData.map(d => ({
+      id: d.id,
+      name: d.name,
+      type: d.type,
+      companyNumber: d.company_number || '',
+      crNumber: d.cr_number || '',
+      phone: d.phone || '',
+      total: d.total,
+      paid: d.paid,
+      due: d.due,
+      notes: d.notes || '',
+      repId: d.rep_id,
+      log: []
+    }));
+    
+    // Map activities to debtor logs
+    activitiesData.forEach(a => {
+      const debtor = debtors.find(d => d.id === a.debtor_id);
+      if (debtor) {
+        debtor.log.push({
+          id: a.id,
+          type: a.type,
+          date: a.activity_date,
+          amount: a.amount,
+          method: a.method,
+          note: a.note
+        });
+      }
+    });
+    
+    // Update IDs
+    nextId = Math.max(0, ...debtors.map(d => d.id)) + 1;
+    nextLogId = Math.max(0, ...debtors.flatMap(d => (d.log || []).map(l => l.id || 0))) + 1;
+    
+    return true;
+  } catch (e) {
+    console.warn('Supabase load failed:', e);
+    return false;
+  }
+}
+
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({debtors, reps, nextId, nextRepId}));
+    // Also sync to Supabase if available
+    syncToSupabase();
   }catch(e){ /* تجاهل أخطاء التخزين (مثل وضع التصفح الخاص) */ }
 }
 function loadState(){
   try{
+    // Try loading from Supabase first
+    if (supabase && loadFromSupabase()) {
+      return true;
+    }
+    
+    // Fallback to localStorage
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return false;
     const data = JSON.parse(raw);
