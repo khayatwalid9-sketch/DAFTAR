@@ -4,10 +4,10 @@ const IMAGE_PATH = '305922021_523349173131481_1401793005313797692_n.jpg';
 let currentLang = localStorage.getItem('daftar_language') || 'ar';
 
 // ============== SUPABASE CLIENT ==============
-let supabase = null;
+let supabaseClient = null;
 try {
   if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
-    supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
   }
 } catch (e) {
   console.warn('Supabase client initialization failed:', e);
@@ -78,7 +78,7 @@ Object.assign(translations,{
   'palette.navy':['أزرق بحري','Navy'],'palette.forest':['أخضر غامق','Forest'],'palette.burgundy':['عنابي','Burgundy'],'palette.charcoal':['رمادي فحمي','Charcoal'],'palette.purple':['بنفسجي','Purple'],'palette.teal':['زيتي','Teal'],'palette.midnight':['منتصف الليل','Midnight'],'palette.sunset':['غروب','Sunset'],'palette.lightNavy':['أزرق فاتح','Light Navy'],'palette.lightForest':['أخضر فاتح','Light Forest'],'palette.lightRose':['وردي فاتح','Light Rose'],'palette.lightLavender':['بنفسجي فاتح','Light Lavender'],'palette.lightPeach':['خوخي فاتح','Light Peach'],'palette.custom':['لون مخصص...','Custom color...'],'palette.currentCustom':['لون مخصص','Custom color'],
   'modal.installments':['عدد الأقساط','Number of installments'],'modal.frequency':['دورية القسط','Installment frequency'],'frequency.monthly':['شهري','Monthly'],'frequency.quarterly':['ربع سنوي','Quarterly'],'frequency.weekly':['أسبوعي','Weekly'],
   'msg.assign':['تم إسناد الحالة للمندوب','Case assigned to collector'],'msg.unassign':['تم إلغاء إسناد الحالة','Case unassigned'],'msg.paymentAdded':['تم تسجيل الدفعة وخصمها من إجمالي الدين','Payment recorded and deducted from total debt'],'msg.followAdded':['تم تسجيل المتابعة','Follow-up recorded'],'msg.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'msg.debtorDeleted':['تم حذف المدين','Debtor deleted'],'msg.repRequired':['الرجاء إدخال اسم المندوب','Enter the collector name'],'msg.repDeleted':['تم حذف المندوب','Collector deleted'],'msg.invalidAmount':['أدخل مبلغًا صحيحًا','Enter a valid amount'],'msg.noCases':['لا توجد حالات مسندة لهذا المندوب.','No cases assigned to this collector.'],'msg.exported':['تم تصدير النسخة الاحتياطية','Backup exported'],'msg.imported':['تم استيراد النسخة الاحتياطية بنجاح','Backup imported'],'msg.clearConfirm':['هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.','Clear all saved data permanently? This cannot be undone.'],'msg.clearConfirm2':['تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟','Final confirmation: delete all debtors, collectors, payments and follow-ups?'],'msg.cleared':['تم مسح جميع البيانات المسجلة','All saved data cleared'],'msg.noUpcoming':['لا توجد ديون مستحقة خلال هذه الفترة.','No debts are due in this period.'],'msg.todayDue':['مستحق اليوم','Due today'],'msg.daysLeft':['متبقي','remaining'],'msg.days':['يوم','days'],'msg.printedOn':['تم إصدار هذا الكشف إلكترونيًا من نظام دفتر لإدارة تحصيل الديون بتاريخ','This statement was generated electronically by Daftar on'],'msg.debtorSignature':['توقيع المدين','Debtor signature'],'msg.collectorSignature':['توقيع المسؤول عن التحصيل','Collector signature'],'msg.originalBalance':['رصيد الدين الأصلي','Original debt balance'],'msg.payment':['دفعة سداد','Payment'],'msg.statement':['كشف حساب مدين','Debtor statement'],'msg.statementSystem':['دفتر — نظام إدارة تحصيل الديون','Daftar - Debt collection system'],'msg.issued':['تاريخ الإصدار','Issued'],'msg.statusLabel':['الحالة','Status'],'msg.debtorData':['بيانات المدين','Debtor details'],'msg.companyData':['بيانات الشركة','Company details'],'msg.accountSummary':['ملخص الحساب','Account summary'],'msg.name':['الاسم','Name'],'msg.phone':['الهاتف','Phone'],'msg.companyNumber':['رقم الشركة','Company number'],'msg.crNumber':['السجل التجاري','Commercial registration'],'msg.dueDate':['تاريخ الاستحقاق','Due date'],'msg.collector':['المندوب المسؤول','Assigned collector'],'msg.notes':['ملاحظات','Notes'],'msg.date':['التاريخ','Date'],'msg.description':['البيان','Description'],'msg.debit':['مدين (سداد)','Debit (payment)'],'msg.credit':['دائن (دين)','Credit (debt)'],'msg.balance':['الرصيد المتبقي','Remaining balance'],'msg.totalDebt':['إجمالي الدين','Total debt'],'msg.totalPaid':['إجمالي المسدد','Total paid'],'msg.remainingBalance':['الرصيد المتبقي','Remaining balance'],'msg.followups':['سجل المتابعات','Follow-ups'],'msg.notAssigned':['غير مسند','Unassigned'],
-  'audit.login':['تسجيل دخول','Login'],'audit.logout':['تسجيل خروج','Logout'],'audit.add_debtor':['إضافة مدين','Add debtor'],'audit.update_debtor':['تعديل مدين','Update debtor'],'audit.delete_debtor':['حذف مدين','Delete debtor'],'audit.add_payment':['تسجيل دفعة','Record payment'],'audit.add_followup':['إضافة متابعة','Add follow-up'],'audit.assign_rep':['إسناد مندوب','Assign collector'],'audit.unassign_rep':['إلغاء إسناد مندوب','Unassign collector'],'audit.add_rep':['إضافة مندوب','Add collector'],'audit.delete_rep':['حذف مندوب','Delete collector'],'audit.add_user':['إضافة مستخدم','Add user'],'audit.delete_user':['حذف مستخدم','Delete user'],'audit.link_user_rep':['ربط مستخدم بمندوب','Link user to collector'],'audit.save_auth':['تحديث بيانات الدخول','Update login details'],'audit.sync_supabase':['مزامنة Supabase','Supabase sync'],'audit.theme_change':['تغيير لون النظام','Change system color'],'audit.palette_change':['تغيير لون الواجهة','Change interface color'],'audit.export_excel':['تصدير إكسل','Export Excel'],'audit.settings_change':['تغيير إعداد','Settings change'],'audit.export_backup':['تصدير نسخة احتياطية','Export backup'],'audit.import_backup':['استيراد نسخة احتياطية','Import backup'],'audit.clear_all_data':['مسح جميع البيانات','Clear all data'],
+  'audit.login':['تسجيل دخول','Login'],'audit.logout':['تسجيل خروج','Logout'],'audit.add_debtor':['إضافة مدين','Add debtor'],'audit.update_debtor':['تعديل مدين','Update debtor'],'audit.delete_debtor':['حذف مدين','Delete debtor'],'audit.add_payment':['تسجيل دفعة','Record payment'],'audit.add_followup':['إضافة متابعة','Add follow-up'],'audit.assign_rep':['إسناد مندوب','Assign collector'],'audit.unassign_rep':['إلغاء إسناد مندوب','Unassign collector'],'audit.add_rep':['إضافة مندوب','Add collector'],'audit.delete_rep':['حذف مندوب','Delete collector'],'audit.add_user':['إضافة مستخدم','Add user'],'audit.delete_user':['حذف مستخدم','Delete user'],'audit.link_user_rep':['ربط مستخدم بمندوب','Link user to collector'],'audit.save_auth':['تحديث بيانات الدخول','Update login details'],'audit.sync_supabaseClient':['مزامنة Supabase','Supabase sync'],'audit.theme_change':['تغيير لون النظام','Change system color'],'audit.palette_change':['تغيير لون الواجهة','Change interface color'],'audit.export_excel':['تصدير إكسل','Export Excel'],'audit.settings_change':['تغيير إعداد','Settings change'],'audit.export_backup':['تصدير نسخة احتياطية','Export backup'],'audit.import_backup':['استيراد نسخة احتياطية','Import backup'],'audit.clear_all_data':['مسح جميع البيانات','Clear all data'],
   'settings.auditFilter':['تصفية حسب المستخدم أو الإجراء...','Filter by user or action...'],'settings.auditEmpty':['لا توجد نتائج مطابقة.','No matching results.'],'settings.linkRep':['ربط بمندوب','Link collector'],'settings.noLink':['بدون ربط','Not linked'],'settings.repRequiredForCollector':['هذا المستخدم مندوب — اربطه بملف مندوب ليرى حالاته فقط','This user is a collector — link them to a collector profile so they only see their own cases'],
 });
 function t(key){ const value=translations[key]; return value ? value[currentLang==='en'?1:0] : key; }
@@ -165,9 +165,9 @@ async function saveUsers(){
   try{
     localStorage.setItem(USERS_KEY,JSON.stringify(users));
     // Sync to Supabase
-    if (supabase) {
+    if (supabaseClient) {
       for (const user of users) {
-        const { data: existingUser } = await supabase
+        const { data: existingUser } = await supabaseClient
           .from('users')
           .select('id')
           .eq('id', user.id)
@@ -182,9 +182,9 @@ async function saveUsers(){
         };
         
         if (existingUser) {
-          await supabase.from('users').update(userData).eq('id', user.id);
+          await supabaseClient.from('users').update(userData).eq('id', user.id);
         } else {
-          await supabase.from('users').insert(userData);
+          await supabaseClient.from('users').insert(userData);
         }
       }
     }
@@ -196,7 +196,7 @@ async function addAudit(action,details=''){
   try{
     localStorage.setItem(AUDIT_KEY,JSON.stringify(auditLog));
     // Sync to Supabase
-    if (supabase) {
+    if (supabaseClient) {
       const auditData = {
         id: auditLog[0].id,
         date: auditLog[0].date,
@@ -204,7 +204,7 @@ async function addAudit(action,details=''){
         action: auditLog[0].action,
         details: auditLog[0].details
       };
-      await supabase.from('audit_log').insert(auditData);
+      await supabaseClient.from('audit_log').insert(auditData);
     }
   }catch(e){}
   renderAudit();
@@ -359,12 +359,12 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 
 // Supabase sync functions
 async function syncToSupabase() {
-  if (!supabase) return false;
+  if (!supabaseClient) return false;
   
   try {
     // Sync debtors
     for (const debtor of debtors) {
-      const { data: existing } = await supabase
+      const { data: existing } = await supabaseClient
         .from('debtors')
         .select('id')
         .eq('id', debtor.id)
@@ -385,15 +385,15 @@ async function syncToSupabase() {
       };
       
       if (existing) {
-        await supabase.from('debtors').update(debtorData).eq('id', debtor.id);
+        await supabaseClient.from('debtors').update(debtorData).eq('id', debtor.id);
       } else {
-        await supabase.from('debtors').insert(debtorData);
+        await supabaseClient.from('debtors').insert(debtorData);
       }
       
       // Sync activity log for this debtor
       if (debtor.log && debtor.log.length > 0) {
         for (const activity of debtor.log) {
-          const { data: existingActivity } = await supabase
+          const { data: existingActivity } = await supabaseClient
             .from('debtors_activity')
             .select('id')
             .eq('id', activity.id)
@@ -410,9 +410,9 @@ async function syncToSupabase() {
           };
           
           if (existingActivity) {
-            await supabase.from('debtors_activity').update(activityData).eq('id', activity.id);
+            await supabaseClient.from('debtors_activity').update(activityData).eq('id', activity.id);
           } else {
-            await supabase.from('debtors_activity').insert(activityData);
+            await supabaseClient.from('debtors_activity').insert(activityData);
           }
         }
       }
@@ -420,7 +420,7 @@ async function syncToSupabase() {
     
     // Sync users
     for (const user of users) {
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = await supabaseClient
         .from('users')
         .select('id')
         .eq('id', user.id)
@@ -435,15 +435,15 @@ async function syncToSupabase() {
       };
       
       if (existingUser) {
-        await supabase.from('users').update(userData).eq('id', user.id);
+        await supabaseClient.from('users').update(userData).eq('id', user.id);
       } else {
-        await supabase.from('users').insert(userData);
+        await supabaseClient.from('users').insert(userData);
       }
     }
     
     // Sync audit log
     for (const audit of auditLog) {
-      const { data: existingAudit } = await supabase
+      const { data: existingAudit } = await supabaseClient
         .from('audit_log')
         .select('id')
         .eq('id', audit.id)
@@ -458,9 +458,9 @@ async function syncToSupabase() {
       };
       
       if (existingAudit) {
-        await supabase.from('audit_log').update(auditData).eq('id', audit.id);
+        await supabaseClient.from('audit_log').update(auditData).eq('id', audit.id);
       } else {
-        await supabase.from('audit_log').insert(auditData);
+        await supabaseClient.from('audit_log').insert(auditData);
       }
     }
     
@@ -472,32 +472,32 @@ async function syncToSupabase() {
 }
 
 async function loadFromSupabase() {
-  if (!supabase) return false;
+  if (!supabaseClient) return false;
   
   try {
     // Load debtors
-    const { data: debtorsData, error: debtorsError } = await supabase
+    const { data: debtorsData, error: debtorsError } = await supabaseClient
       .from('debtors')
       .select('*');
     
     if (debtorsError) throw debtorsError;
     
     // Load activities
-    const { data: activitiesData, error: activitiesError } = await supabase
+    const { data: activitiesData, error: activitiesError } = await supabaseClient
       .from('debtors_activity')
       .select('*');
     
     if (activitiesError) throw activitiesError;
     
     // Load users
-    const { data: usersData, error: usersError } = await supabase
+    const { data: usersData, error: usersError } = await supabaseClient
       .from('users')
       .select('*');
     
     if (usersError) throw usersError;
     
     // Load audit log
-    const { data: auditData, error: auditError } = await supabase
+    const { data: auditData, error: auditError } = await supabaseClient
       .from('audit_log')
       .select('*');
     
@@ -581,7 +581,7 @@ function saveState(){
 function loadState(){
   try{
     // Try loading from Supabase first
-    if (supabase && loadFromSupabase()) {
+    if (supabaseClient && loadFromSupabase()) {
       return true;
     }
     
