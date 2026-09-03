@@ -114,10 +114,10 @@ function applyLanguage(){
   document.getElementById('themeToggleBtn').setAttribute('aria-label',currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode'));
   renderNotifications();
 }
-document.getElementById('langArBtn').addEventListener('click',()=>{currentLang='ar';localStorage.setItem('daftar_language',currentLang);applyLanguage();renderAll();});
-document.getElementById('langEnBtn').addEventListener('click',()=>{currentLang='en';localStorage.setItem('daftar_language',currentLang);applyLanguage();renderAll();});
+document.getElementById('langArBtn').addEventListener('click',()=>{currentLang='ar';localStorage.setItem('daftar_language',currentLang);appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
+document.getElementById('langEnBtn').addEventListener('click',()=>{currentLang='en';localStorage.setItem('daftar_language',currentLang);appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
 document.querySelectorAll('[data-login-lang]').forEach(button=>button.addEventListener('click',()=>{
-  currentLang=button.dataset.loginLang; localStorage.setItem('daftar_language',currentLang); applyLanguage();
+  currentLang=button.dataset.loginLang; localStorage.setItem('daftar_language',currentLang); appSettings.language=currentLang; saveSettings(); applyLanguage();
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
 }));
 let currentMode=localStorage.getItem('daftar_mode')||'dark';
@@ -130,7 +130,7 @@ function renderNotifications(){
   count.textContent=list.length; count.style.display=list.length?'block':'none';
   panel.innerHTML=list.length?list.map(item=>`<div class="notification-item"><b>${esc(item.name)}</b> · ${t(`notifications.${item.type}`)}<small>${esc(item.date)}</small></div>`).join(''):`<div class="empty">${t('notifications.none')}</div>`;
 }
-function applyMode(){document.documentElement.dataset.mode=currentMode;document.getElementById('themeToggleBtn').textContent=currentMode==='dark'?'☼':'◐';document.getElementById('themeToggleBtn').title=currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode');localStorage.setItem('daftar_mode',currentMode);}
+function applyMode(){document.documentElement.dataset.mode=currentMode;document.getElementById('themeToggleBtn').textContent=currentMode==='dark'?'☼':'◐';document.getElementById('themeToggleBtn').title=currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode');localStorage.setItem('daftar_mode',currentMode);if(typeof appSettings!=='undefined'){appSettings.mode=currentMode;saveSettings();}}
 document.getElementById('themeToggleBtn').addEventListener('click',()=>{currentMode=currentMode==='dark'?'light':'dark';applyMode();});
 document.getElementById('notificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('show'));
 document.getElementById('clearNotificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.remove('show'));
@@ -188,6 +188,7 @@ async function saveUsers(){
         }
       }
     }
+    await syncToSupabase();
   }catch(e){}
 }
 async function addAudit(action,details=''){
@@ -358,117 +359,47 @@ debtors[3].repId = 2;
 const STORAGE_KEY = 'daftar_debt_system_v1';
 
 // Supabase sync functions
+let syncInProgress = null;
+let syncQueued = false;
+async function replaceTable(table, rows, key='id') {
+  const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
+  if(readError) throw readError;
+  const ids = new Set(rows.map(row=>String(row[key])));
+  for(const row of existing || []) {
+    if(!ids.has(String(row[key]))) {
+      const { error } = await supabaseClient.from(table).delete().eq(key, row[key]);
+      if(error) throw error;
+    }
+  }
+  if(rows.length) {
+    const { error } = await supabaseClient.from(table).upsert(rows, {onConflict:key});
+    if(error) throw error;
+  }
+}
 async function syncToSupabase() {
   if (!supabaseClient) return false;
-  
-  try {
-    // Sync debtors
-    for (const debtor of debtors) {
-      const { data: existing } = await supabaseClient
-        .from('debtors')
-        .select('id')
-        .eq('id', debtor.id)
-        .single();
-      
-      const debtorData = {
-        id: debtor.id,
-        name: debtor.name,
-        type: debtor.type,
-        company_number: debtor.companyNumber,
-        cr_number: debtor.crNumber,
-        phone: debtor.phone,
-        total: debtor.total,
-        paid: debtor.paid,
-        due: debtor.due,
-        notes: debtor.notes,
-        rep_id: debtor.repId
-      };
-      
-      if (existing) {
-        await supabaseClient.from('debtors').update(debtorData).eq('id', debtor.id);
-      } else {
-        await supabaseClient.from('debtors').insert(debtorData);
-      }
-      
-      // Sync activity log for this debtor
-      if (debtor.log && debtor.log.length > 0) {
-        for (const activity of debtor.log) {
-          const { data: existingActivity } = await supabaseClient
-            .from('debtors_activity')
-            .select('id')
-            .eq('id', activity.id)
-            .single();
-          
-          const activityData = {
-            id: activity.id,
-            debtor_id: debtor.id,
-            type: activity.type,
-            activity_date: activity.date,
-            amount: activity.amount,
-            method: activity.method,
-            note: activity.note
-          };
-          
-          if (existingActivity) {
-            await supabaseClient.from('debtors_activity').update(activityData).eq('id', activity.id);
-          } else {
-            await supabaseClient.from('debtors_activity').insert(activityData);
-          }
-        }
-      }
+  if (syncInProgress) { syncQueued = true; return syncInProgress; }
+  syncInProgress = (async()=>{
+    try {
+      const debtorRows = debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null}));
+      const activityRows = debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null})));
+      await replaceTable('debtors', debtorRows);
+      await replaceTable('debtors_activity', activityRows);
+      await replaceTable('reps', reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})));
+      await replaceTable('users', users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null})));
+      await replaceTable('audit_log', auditLog.map(audit=>({id:audit.id,date:audit.date,user:audit.user,action:audit.action,details:audit.details||''})));
+      const { error: settingsError } = await supabaseClient.from('app_settings').upsert({id:1,settings:appSettings,updated_at:new Date().toISOString()},{onConflict:'id'});
+      if(settingsError) throw settingsError;
+      return true;
+    } catch (e) {
+      console.warn('Supabase sync failed:', e);
+      return false;
+    } finally {
+      syncInProgress = null;
+      if(syncQueued){ syncQueued=false; syncToSupabase(); }
     }
-    
-    // Sync users
-    for (const user of users) {
-      const { data: existingUser } = await supabaseClient
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-      
-      const userData = {
-        id: user.id,
-        username: user.username,
-        password: user.password,
-        role: user.role,
-        rep_id: user.repId
-      };
-      
-      if (existingUser) {
-        await supabaseClient.from('users').update(userData).eq('id', user.id);
-      } else {
-        await supabaseClient.from('users').insert(userData);
-      }
-    }
-    
-    // Sync audit log
-    for (const audit of auditLog) {
-      const { data: existingAudit } = await supabaseClient
-        .from('audit_log')
-        .select('id')
-        .eq('id', audit.id)
-        .single();
-      
-      const auditData = {
-        id: audit.id,
-        date: audit.date,
-        user: audit.user,
-        action: audit.action,
-        details: audit.details
-      };
-      
-      if (existingAudit) {
-        await supabaseClient.from('audit_log').update(auditData).eq('id', audit.id);
-      } else {
-        await supabaseClient.from('audit_log').insert(auditData);
-      }
-    }
-    
-    return true;
-  } catch (e) {
-    console.warn('Supabase sync failed:', e);
-    return false;
-  }
+  })();
+  return syncInProgress;
 }
 
 async function loadFromSupabase() {
@@ -488,6 +419,11 @@ async function loadFromSupabase() {
       .select('*');
     
     if (activitiesError) throw activitiesError;
+
+    const { data: repsData, error: repsError } = await supabaseClient
+      .from('reps')
+      .select('*');
+    if (repsError) throw repsError;
     
     // Load users
     const { data: usersData, error: usersError } = await supabaseClient
@@ -504,8 +440,7 @@ async function loadFromSupabase() {
     if (auditError) throw auditError;
     
     // Map Supabase data to app structure
-    if (debtorsData && debtorsData.length > 0) {
-      debtors = debtorsData.map(d => ({
+    debtors = (debtorsData || []).map(d => ({
         id: d.id,
         name: d.name,
         type: d.type,
@@ -540,29 +475,31 @@ async function loadFromSupabase() {
       // Update IDs
       nextId = Math.max(0, ...debtors.map(d => d.id)) + 1;
       nextLogId = Math.max(0, ...debtors.flatMap(d => (d.log || []).map(l => l.id || 0))) + 1;
-    }
+    reps = (repsData || []).map(r => ({id:r.id,name:r.name,phone:r.phone||'',area:r.area||''}));
+    nextRepId = Math.max(0, ...reps.map(r => Number(r.id)||0)) + 1;
     
     // Map users
-    if (usersData && usersData.length > 0) {
-      users = usersData.map(u => ({
+    users = (usersData || []).map(u => ({
         id: u.id,
         username: u.username,
         password: u.password,
         role: u.role,
         repId: u.rep_id
       }));
-    }
     
     // Map audit log
-    if (auditData && auditData.length > 0) {
-      auditLog = auditData.map(a => ({
+    auditLog = (auditData || []).map(a => ({
         id: a.id,
         date: a.date,
         user: a.user,
         action: a.action,
         details: a.details
       }));
-    }
+
+    const { data: settingsData, error: settingsError } = await supabaseClient
+      .from('app_settings').select('settings').eq('id',1).maybeSingle();
+    if(settingsError) throw settingsError;
+    if(settingsData?.settings) appSettings = {...appSettings,...settingsData.settings};
     
     return true;
   } catch (e) {
@@ -574,14 +511,12 @@ async function loadFromSupabase() {
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({debtors, reps, nextId, nextRepId}));
-    // Also sync to Supabase if available
     syncToSupabase();
   }catch(e){ /* تجاهل أخطاء التخزين (مثل وضع التصفح الخاص) */ }
 }
-function loadState(){
+async function loadState(){
   try{
-    // Try loading from Supabase first
-    if (supabaseClient && loadFromSupabase()) {
+    if (supabaseClient && await loadFromSupabase()) {
       return true;
     }
     
@@ -597,8 +532,6 @@ function loadState(){
     return true;
   }catch(e){ return false; }
 }
-// load any previously saved data (overrides the sample data above)
-loadState();
 
 // ============== HELPERS ==============
 function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
@@ -2228,17 +2161,20 @@ function validatePassword(password) {
 
 // ============== REMINDER SETTINGS ==============
 const SETTINGS_KEY = 'daftar_settings_v1';
-let appSettings = {reminderDays:7, watermarkEnabled:true, soundAlerts:true, emailAlerts:false, notificationEmail:'', autoLogout:false, sessionTimeout:false, passwordMinLength:8, smsProvider:'none', emailProvider:'none', smsApiKey:'', emailApiKey:'', autoFollowups:false, autoReports:false, smartReminders:false, followupFrequency:7, dataRetention:false, gdprCompliance:false, auditTrail:true, companyName:'', companyTaxId:''};
+let appSettings = {language:'ar',mode:'dark',theme:'gold',themeCustom:'',palette:'navy',paletteCustom:'',reminderDays:7, watermarkEnabled:true, soundAlerts:true, emailAlerts:false, notificationEmail:'', autoLogout:false, sessionTimeout:false, passwordMinLength:8, smsProvider:'none', emailProvider:'none', smsApiKey:'', emailApiKey:'', autoFollowups:false, autoReports:false, smartReminders:false, followupFrequency:7, dataRetention:false, gdprCompliance:false, auditTrail:true, companyName:'', companyTaxId:''};
 let sessionTimer = null;
 let sessionWarningShown = false;
 function loadSettings(){
   try{
     const raw = localStorage.getItem(SETTINGS_KEY);
     if(raw) appSettings = {...appSettings, ...JSON.parse(raw)};
+    if(appSettings.language) currentLang=appSettings.language;
+    if(appSettings.mode) currentMode=appSettings.mode;
   }catch(e){}
 }
 function saveSettings(){
   try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){}
+  syncToSupabase();
 }
 // ---- color helpers (used by the custom theme picker and by print/PDF templates) ----
 function hexToRgbArr(hex){
@@ -2327,6 +2263,9 @@ function applyTheme(theme){
     applyCustomTheme(theme);
   }
   if(prev!==null && prev!==theme && typeof addAudit==='function' && currentUser){ addAudit('theme_change', THEME_PRESETS[theme]?t(`theme.${theme}`):theme); }
+  appSettings.theme=theme;
+  appSettings.themeCustom=theme==='custom' ? localStorage.getItem('daftar_theme_custom')||'' : '';
+  saveSettings();
   updateThemeSwatchesUI();
 }
 function applyCustomTheme(hex){
@@ -2339,6 +2278,9 @@ function applyCustomTheme(hex){
   document.documentElement.style.setProperty('--gold-ink',readableInk(rgb));
   localStorage.setItem('daftar_theme','custom');
   localStorage.setItem('daftar_theme_custom',hex);
+  appSettings.theme='custom';
+  appSettings.themeCustom=hex;
+  saveSettings();
 }
 function updateThemeSwatchesUI(){
   const theme=localStorage.getItem('daftar_theme')||'gold';
@@ -2376,6 +2318,9 @@ function applyPalette(palette){
     palette='custom';
   }
   if(prev!==null && prev!==palette && typeof addAudit==='function' && currentUser) addAudit('palette_change', palette==='custom' ? t('palette.currentCustom') : t(`palette.${palette}`));
+  appSettings.palette=palette;
+  appSettings.paletteCustom=palette==='custom' ? localStorage.getItem('daftar_palette_custom')||'' : '';
+  saveSettings();
   updateThemeSwatchesUI();
 }
 function applyCustomPalette(hex){
@@ -2390,18 +2335,23 @@ function applyCustomPalette(hex){
   document.documentElement.style.setProperty('--border',p.border);
   localStorage.setItem('daftar_palette','custom');
   localStorage.setItem('daftar_palette_custom',hex);
+  appSettings.palette='custom';
+  appSettings.paletteCustom=hex;
+  saveSettings();
 }
 document.querySelectorAll('[data-theme-preset]').forEach(btn=>btn.addEventListener('click',()=>applyTheme(btn.dataset.themePreset)));
 document.querySelectorAll('[data-palette-preset]').forEach(btn=>btn.addEventListener('click',()=>applyPalette(btn.dataset.palettePreset)));
 document.getElementById('s_customColor').addEventListener('input',e=>applyTheme(e.target.value));
 document.getElementById('s_customPalette').addEventListener('input',e=>applyPalette(e.target.value));
-function syncToSupabase(){
+async function syncConfiguredSupabase(){
   const url=document.getElementById('s_supabaseUrl').value.trim().replace(/\/$/,''); const key=document.getElementById('s_supabaseKey').value.trim(); const status=document.getElementById('syncStatus');
   if(!url||!key){status.textContent=currentLang==='en'?'Enter Supabase URL and anon key first.':'أدخل رابط Supabase ومفتاح anon أولًا.';return;}
   status.textContent=currentLang==='en'?'Syncing...':'جارٍ تنفيذ المزامنة...';
-  fetch(`${url}/rest/v1/debtors`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(debtors.map(d=>({id:d.id,name:d.name,type:d.type,company_number:d.companyNumber,cr_number:d.crNumber,phone:d.phone,total:d.total,paid:d.paid,due:d.due,notes:d.notes,rep_id:d.repId})))}).then(response=>{if(!response.ok)throw new Error('sync');status.textContent=currentLang==='en'?'Sync completed.':'اكتملت المزامنة.';addAudit('sync_supabase');}).catch(()=>{status.textContent=currentLang==='en'?'Sync failed. Check URL, key and RLS policies.':'فشلت المزامنة. تحقق من الرابط والمفتاح وسياسات RLS.';});
+  const ok=await syncToSupabase();
+  status.textContent=ok?(currentLang==='en'?'Sync completed.':'اكتملت المزامنة.'):(currentLang==='en'?'Sync failed. Check URL, key and RLS policies.':'فشلت المزامنة. تحقق من الرابط والمفتاح وسياسات RLS.');
+  if(ok) await addAudit('sync_supabase');
 }
-document.getElementById('syncNowBtn').addEventListener('click',syncToSupabase);
+document.getElementById('syncNowBtn').addEventListener('click',syncConfiguredSupabase);
 document.getElementById('auditFilter').addEventListener('input',renderAudit);
 function getUpcomingDue(days){
   return scopedDebtors().filter(d=>{
@@ -2687,8 +2637,9 @@ document.getElementById('importDataFile').addEventListener('change', async (e)=>
       }
       
       await addAudit('import_backup', `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`);
-      toast('تم استيراد النسخة الاحتياطية بنجاح');
-      saveState(); // Sync to Supabase
+      saveState();
+      const synced = await syncToSupabase();
+      toast(synced ? 'تم استيراد النسخة الاحتياطية بنجاح' : 'تم الاستيراد محليًا، وتعذرت المزامنة السحابية');
       renderAll();
     }catch(err){
       toast('تعذّرت قراءة الملف — تأكد أنه نسخة احتياطية صحيحة');
@@ -2698,7 +2649,7 @@ document.getElementById('importDataFile').addEventListener('change', async (e)=>
   e.target.value = '';
 });
 
-document.getElementById('clearAllDataBtn').addEventListener('click', ()=>{
+document.getElementById('clearAllDataBtn').addEventListener('click', async ()=>{
   if(!confirm('هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.')) return;
   if(!confirm('تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟')) return;
   const counts = `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`;
@@ -2710,8 +2661,10 @@ document.getElementById('clearAllDataBtn').addEventListener('click', ()=>{
   activeRepId = null;
   closeDrawer();
   closeRepDrawer();
-  addAudit('clear_all_data', counts);
-  toast('تم مسح جميع البيانات المسجلة');
+  await addAudit('clear_all_data', counts);
+  saveState();
+  const synced = await syncToSupabase();
+  toast(synced ? 'تم مسح جميع البيانات المسجلة' : 'تم المسح محليًا، وتعذرت المزامنة السحابية');
   renderAll();
 });
 
@@ -3013,8 +2966,10 @@ document.getElementById('s_autoFollowups').checked = appSettings.autoFollowups |
 document.getElementById('s_autoReports').checked = appSettings.autoReports || false;
 document.getElementById('s_smartReminders').checked = appSettings.smartReminders || false;
 // Initialize application
-function initializeApp() {
+async function initializeApp() {
   try {
+    await loadState();
+    loadSettings();
     // Initialize settings UI values
     if (document.getElementById('s_reminderDays')) {
       document.getElementById('s_reminderDays').value = appSettings.reminderDays;
