@@ -38,7 +38,7 @@ const translations = {
   'th.name':['الاسم','Name'],'th.type':['النوع','Type'],'th.phone':['الهاتف','Phone'],'th.total':['إجمالي الدين','Total debt'],'th.paid':['المسدد','Paid'],'th.remaining':['المتبقي','Remaining'],'th.status':['الحالة','Status'],'th.rep':['المندوب','Collector'],'th.lastContact':['آخر تواصل','Last contact'],'th.actions':['إجراءات','Actions'],'th.notes':['ملاحظات','Notes'],'th.date':['التاريخ','Date'],'th.debtor':['المدين','Debtor'],'th.amountPaid':['المبلغ المسدد','Amount paid'],'th.method':['طريقة الدفع','Method'],'th.area':['المنطقة','Area'],'th.assignedCases':['الحالات المسندة','Assigned cases'],'th.collected':['المحصّل','Collected'],'th.rate':['نسبة الإنجاز','Completion rate'],'th.contactMethod':['طريقة التواصل','Contact method'],'th.outcome':['النتيجة','Outcome'],'th.due':['تاريخ الاستحقاق','Due date'],
   'aging.title':['تقرير أعمار الديون التفصيلي','Detailed debt aging report'],'aging.print':['🖶 طباعة التقرير','🖶 Print report'],'aging.pdf':['⭳ تحميل PDF','⭳ Download PDF'],'aging.daysLate':['أيام التأخير','Days late'],'aging.bucket':['الفئة العمرية','Aging bucket'],'aging.b1':['1 – 30 يوم تأخير','1 - 30 days late'],'aging.b2':['31 – 60 يوم تأخير','31 - 60 days late'],'aging.b3':['61 – 90 يوم تأخير','61 - 90 days late'],'aging.b4':['أكثر من 90 يوم','Over 90 days'],'aging.empty':['لا توجد ديون متأخرة حاليًا — جميع الحالات ضمن موعدها.','No overdue debts currently.'],
   'action.view':['عرض التفاصيل','View details'],'action.edit':['تعديل','Edit'],'action.delete':['حذف','Delete'],'confirm.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'drawer.noRep':['بدون مندوب','Unassigned'],'drawer.amount':['المبلغ','Amount'],'drawer.outcomePh':['النتيجة / الملاحظة','Outcome / note'],'drawer.add':['إضافة','Add'],'drawer.printStatement':['🖶 طباعة كشف حساب','🖶 Print statement'],'drawer.downloadPdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'login.title':['دفتر — تسجيل الدخول','Daftar - Sign in'],'login.sub':['الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون','Sign in to access the debt collection system'],'login.user':['اسم المستخدم','Username'],'login.pass':['كلمة المرور','Password'],'login.btn':['دخول','Sign in'],'login.hint':['بيانات الدخول الافتراضية: admin / admin1234 — يمكن تغييرها لاحقًا من الإعدادات.','Default credentials: admin / admin1234 - change them later in Settings.'],
+  'login.title':['دفتر — تسجيل الدخول','Daftar - Sign in'],'login.sub':['الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون','Sign in to access the debt collection system'],'login.user':['اسم المستخدم','Username'],'login.pass':['كلمة المرور','Password'],'login.btn':['دخول','Sign in'],'login.hint':['بيانات الدخول السحابية: walid / Ksi@33774995','Cloud login: walid / Ksi@33774995'],
   'toast.updated':['تم تحديث بيانات المدين','Debtor updated'],'toast.deleted':['تم حذف المدين','Debtor deleted'],'toast.needName':['الرجاء إدخال الاسم والمبلغ','Enter a name and amount'],'toast.needCompanyName':['الرجاء إدخال اسم الشركة والمبلغ','Enter a company name and amount'],'toast.debtorAdded':['تمت إضافة المدين بنجاح','Debtor added'],'toast.companyAdded':['تمت إضافة الشركة بنجاح','Company added'],
   'method.cash':['نقدًا','Cash'],'method.cheque':['شيك','Cheque'],'method.transfer':['تحويل بنكي','Bank transfer'],'method.call':['اتصال هاتفي','Phone call'],'method.sms':['رسالة نصية','SMS'],'method.visit':['زيارة ميدانية','Field visit'],'method.email':['بريد إلكتروني','Email']
 };
@@ -226,136 +226,75 @@ document.getElementById('themeToggleBtn').addEventListener('click',()=>{currentM
 document.getElementById('notificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('show'));
 document.getElementById('clearNotificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.remove('show'));
 
-const AUTH_KEY = 'daftar_auth_v1';
 const USERS_KEY = 'daftar_users_v1';
 const AUDIT_KEY = 'daftar_audit_v1';
+const CLOUD_ADMIN = Object.freeze({username:'walid',password:'Ksi@33774995',role:'admin'});
 let users = loadUsers();
 let auditLog = loadAudit();
 let currentUser = null;
 function loadUsers(){
-  try{
-    // Try localStorage first
-    const localUsers = JSON.parse(localStorage.getItem(USERS_KEY));
-    if (localUsers && localUsers.length > 0) return localUsers;
-  }catch(e){}
-  
-  // Default users including walid
-  return [
-    {id:1,username:'admin',password:'admin1234',role:'admin'},
-    {id:2,username:'walid',password:'Ksi@33774995',role:'admin'}
-  ];
+  return [];
 }
 function loadAudit(){
-  try{
-    const localAudit = JSON.parse(localStorage.getItem(AUDIT_KEY));
-    if (localAudit && localAudit.length > 0) return localAudit;
-  }catch(e){}
   return [];
 }
 async function saveUsers(){
-  try{
-    localStorage.setItem(USERS_KEY,JSON.stringify(users));
-    // Sync to Supabase
-    if (supabaseClient) {
-      for (const user of users) {
-        const { data: existingUser } = await supabaseClient
-          .from('users')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-        
-        const userData = {
-          id: user.id,
-          username: user.username,
-          password: user.password,
-          role: user.role,
-          rep_id: user.repId
-        };
-        
-        if (existingUser) {
-          await supabaseClient.from('users').update(userData).eq('id', user.id);
-        } else {
-          await supabaseClient.from('users').insert(userData);
-        }
-      }
-    }
-    await syncToSupabase();
-  }catch(e){}
+  if (!supabaseClient) throw new Error('Supabase is not available');
+  const {error} = await supabaseClient.from('users').upsert(
+    users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null})),
+    {onConflict:'id'}
+  );
+  if(error) throw error;
 }
 async function addAudit(action,details=''){
   auditLog.unshift({id:Date.now(),date:new Date().toISOString(),user:currentUser?.username||'system',action,details});
   auditLog=auditLog.slice(0,500);
-  try{
-    localStorage.setItem(AUDIT_KEY,JSON.stringify(auditLog));
-    // Sync to Supabase
-    if (supabaseClient) {
-      const auditData = {
-        id: auditLog[0].id,
-        date: auditLog[0].date,
-        user: auditLog[0].user,
-        action: auditLog[0].action,
-        details: auditLog[0].details
-      };
-      await supabaseClient.from('audit_log').insert(auditData);
-    }
-  }catch(e){}
+  if (!supabaseClient) throw new Error('Supabase is not available');
+  const {error} = await supabaseClient.from('audit_log').insert({
+    id:auditLog[0].id,
+    date:auditLog[0].date,
+    user:auditLog[0].user,
+    action:auditLog[0].action,
+    details:auditLog[0].details
+  });
+  if(error) throw error;
   renderAudit();
 }
 function auditLabel(action){const key=`audit.${action}`;const value=translations[key];return value?value[currentLang==='en'?1:0]:action;}
 function can(permission){return currentUser?.role==='admin' || (currentUser?.role==='collector' && permission!=='manageUsers' && permission!=='delete') || (currentUser?.role==='viewer' && permission==='view');}
 function roleLabel(role){return {admin:currentLang==='en'?'Admin':'مدير',collector:currentLang==='en'?'Collector':'مندوب',viewer:currentLang==='en'?'Viewer':'مشاهد'}[role]||role;}
 function getAuth(){
-  try{return JSON.parse(localStorage.getItem(AUTH_KEY)) || {username:'admin',password:'admin1234'};}catch(e){return {username:'admin',password:'admin1234'};}
+  return CLOUD_ADMIN;
 }
 function updateAuthUI(){
   const auth=getAuth(); document.getElementById('s_authUser').value=auth.username;
   document.getElementById('loginScreen').style.display=sessionStorage.getItem('daftar_logged_in')==='1'?'none':'flex';
   document.getElementById('sidebarUserLine').textContent=sessionStorage.getItem('daftar_logged_in')==='1' ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
-  if(sessionStorage.getItem('daftar_logged_in')==='1' && !currentUser){currentUser=users.find(user=>user.id===1)||users[0]||null;}
-  
-  // Ensure admin user exists with correct credentials
-  const adminUser = users.find(u => u.username === 'admin');
-  if (!adminUser) {
-    users.push({id:1, username:'admin', password:'admin1234', role:'admin'});
-    saveUsers();
-  } else if (adminUser.password !== 'admin1234') {
-    // Reset to default if corrupted
-    adminUser.password = 'admin1234';
-    saveUsers();
-  }
+  if(sessionStorage.getItem('daftar_logged_in')==='1' && !currentUser){currentUser=users.find(user=>user.username===CLOUD_ADMIN.username)||null;}
 }
-document.getElementById('loginBtn').addEventListener('click',()=>{
+document.getElementById('loginBtn').addEventListener('click',async()=>{
   const user=document.getElementById('login_user').value.trim(); const pass=document.getElementById('login_pass').value; 
+  const {data:account,error} = supabaseClient ? await supabaseClient.from('users').select('id,username,password,role,rep_id').eq('username',user).eq('password',pass).maybeSingle() : {data:null,error:new Error('Supabase is not available')};
   
-  console.log('Login attempt:', {user, userLength: user.length, passLength: pass.length, usersCount: users.length});
-  
-  const account=users.find(item=>item.username===user && item.password===pass);
-  
-  console.log('Account found:', account ? 'yes' : 'no');
-  
-  if(account){
-    currentUser=account;
+  if(account && account.username===CLOUD_ADMIN.username){
+    currentUser={id:account.id,username:account.username,password:account.password,role:account.role,repId:account.rep_id};
     sessionStorage.setItem('daftar_logged_in','1');
-    sessionStorage.setItem('daftar_user_id',String(account.id));
+    sessionStorage.setItem('daftar_user_id',String(currentUser.id));
     document.getElementById('loginError').textContent='';
-    addAudit('login');
+    await addAudit('login');
     updateAuthUI();
     applyPermissions();
-    console.log('Login successful for:', account.username);
   } else {
-    document.getElementById('loginError').textContent=currentLang==='en'?'Invalid username or password':'اسم المستخدم أو كلمة المرور غير صحيحة';
-    console.log('Login failed. Available users:', users.map(u => u.username));
+    document.getElementById('loginError').textContent=error ? (currentLang==='en'?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة') : (currentLang==='en'?'Invalid username or password':'اسم المستخدم أو كلمة المرور غير صحيحة');
   }
 });
 document.getElementById('login_pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
 document.getElementById('logoutBtn').addEventListener('click',()=>{addAudit('logout');sessionStorage.removeItem('daftar_logged_in');sessionStorage.removeItem('daftar_user_id');currentUser=null;updateAuthUI();});
 document.getElementById('saveAuthBtn').addEventListener('click',()=>{
   const username=document.getElementById('s_authUser').value.trim(); const password=document.getElementById('s_authPass').value;
-    if(!username){toast(currentLang==='en'?'Username is required':'اسم المستخدم مطلوب');return;}
-    const old=getAuth(); const nextPassword=password||old.password; localStorage.setItem(AUTH_KEY,JSON.stringify({username,password:nextPassword})); const admin=users.find(user=>user.id===1); if(admin){admin.username=username;admin.password=nextPassword;saveUsers();}
-    addAudit('save_auth', username!==old.username ? `${old.username} → ${username}${password?' + كلمة مرور جديدة':''}` : (password?'تحديث كلمة المرور':'—'));
-    document.getElementById('s_authPass').value=''; updateAuthUI(); toast(currentLang==='en'?'Login details saved':'تم حفظ بيانات الدخول');
+    if(username!==CLOUD_ADMIN.username || (password && password!==CLOUD_ADMIN.password)){toast(currentLang==='en'?'The cloud login is fixed to walid':'بيانات الدخول السحابية ثابتة باسم walid');return;}
+    document.getElementById('s_authPass').value=''; updateAuthUI(); toast(currentLang==='en'?'Cloud login verified':'تم التحقق من بيانات الدخول السحابية');
 });
 function applyPermissions(){
   const locked=!can('write');
@@ -540,7 +479,25 @@ async function loadFromSupabase() {
       .select('*');
     if (quotationsActivityError) throw quotationsActivityError;
     
-    // Load users
+    const { data: walidUser, error: walidError } = await supabaseClient
+      .from('users')
+      .select('id')
+      .eq('username',CLOUD_ADMIN.username)
+      .maybeSingle();
+    if(walidError) throw walidError;
+    if(walidUser){
+      const {error} = await supabaseClient.from('users').update({password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role}).eq('id',walidUser.id);
+      if(error) throw error;
+    } else {
+      const {data: firstUser, error: firstUserError} = await supabaseClient.from('users').select('id').order('id',{ascending:true}).limit(1).maybeSingle();
+      if(firstUserError) throw firstUserError;
+      const {error} = firstUser
+        ? await supabaseClient.from('users').update({username:CLOUD_ADMIN.username,password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role}).eq('id',firstUser.id)
+        : await supabaseClient.from('users').insert({id:1,username:CLOUD_ADMIN.username,password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role});
+      if(error) throw error;
+    }
+
+    // Load users from the cloud
     const { data: usersData, error: usersError } = await supabaseClient
       .from('users')
       .select('*');
@@ -641,10 +598,7 @@ async function loadFromSupabase() {
 }
 
 function saveState(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({debtors, reps, nextId, nextRepId, quotations, nextQuotationId, nextQuotationLogId}));
-    syncToSupabase();
-  }catch(e){ /* تجاهل أخطاء التخزين (مثل وضع التصفح الخاص) */ }
+  syncToSupabase();
 }
 async function loadState(){
   try{
@@ -652,19 +606,7 @@ async function loadState(){
       return true;
     }
     
-    // Fallback to localStorage
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return false;
-    const data = JSON.parse(raw);
-    if(!data || !Array.isArray(data.debtors)) return false;
-    debtors = data.debtors.map(d=>({type:'individual', companyNumber:'', crNumber:'', ...d}));
-    reps = data.reps || [];
-    nextId = data.nextId || (Math.max(0, ...debtors.map(d=>d.id))+1);
-    nextRepId = data.nextRepId || (Math.max(0, ...reps.map(r=>r.id))+1);
-    quotations = Array.isArray(data.quotations) ? data.quotations.map(q=>({log:[], ...q})) : quotations;
-    nextQuotationId = data.nextQuotationId || (Math.max(0, ...quotations.map(q=>q.id))+1);
-    nextQuotationLogId = data.nextQuotationLogId || (Math.max(0, ...quotations.flatMap(q=>(q.log||[]).map(l=>l.id||0)))+1);
-    return true;
+    throw new Error('Cloud database is unavailable');
   }catch(e){ return false; }
 }
 
@@ -2565,14 +2507,11 @@ function debugAuthSystem() {
 function resetLoginSystem() {
   sessionStorage.removeItem('daftar_logged_in');
   sessionStorage.removeItem('daftar_user_id');
-  localStorage.removeItem(USERS_KEY);
-  localStorage.removeItem(AUTH_KEY);
-  users = [{id:1, username:'admin', password:'admin1234', role:'admin'}];
-  saveUsers();
+  users = [];
   currentUser = null;
   updateAuthUI();
-  console.log('Login system reset. Default credentials: admin / admin1234');
-  alert('تم إعادة تعيين نظام تسجيل الدخول. استخدم: admin / admin1234');
+  console.log('Login system uses the cloud account walid.');
+  alert('تسجيل الدخول السحابي: walid / Ksi@33774995');
 }
 
 // Add debug functions to window for manual testing
@@ -2823,15 +2762,10 @@ let appSettings = {language:'ar',mode:'dark',theme:'gold',themeCustom:'',palette
 let sessionTimer = null;
 let sessionWarningShown = false;
 function loadSettings(){
-  try{
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if(raw) appSettings = {...appSettings, ...JSON.parse(raw)};
-    if(appSettings.language) currentLang=appSettings.language;
-    if(appSettings.mode) currentMode=appSettings.mode;
-  }catch(e){}
+  if(appSettings.language) currentLang=appSettings.language;
+  if(appSettings.mode) currentMode=appSettings.mode;
 }
 function saveSettings(){
-  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){}
   syncToSupabase();
 }
 // ---- color helpers (used by the custom theme picker and by print/PDF templates) ----
