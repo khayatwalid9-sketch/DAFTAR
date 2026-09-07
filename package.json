@@ -1,0 +1,7 @@
+{
+  "name": "daftar-debt-collection",
+  "private": true,
+  "scripts": {
+    "test": "node tests/app.test.js"
+  }
+}
