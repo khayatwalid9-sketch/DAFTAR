@@ -283,7 +283,7 @@ h1,h2,h3,.brand{font-family:'Tajawal', sans-serif;}
 .activity-item .d{font-size:11px; color:var(--muted); margin-top:3px;}
 
 /* ===== Table ===== */
-.table-scroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
+.table-scroll{width:100%; overflow-x:auto;}
 table{width:100%; border-collapse:collapse;}
 table.table-wide{min-width:920px;}
 /* every list that isn't already a "wide" table still needs a minimum width so
@@ -344,6 +344,7 @@ tbody tr{transition:background 0.15s ease;}
   flex:1; text-align:center; padding:9px 10px; border-radius:7px; cursor:pointer;
   border:1px solid var(--border); background:var(--surface-2); color:var(--muted);
   font-size:13px; font-weight:600; transition:background .15s,color .15s,border-color .15s;
+  -webkit-user-select:none;
   user-select:none;
 }
 .toggle-opt.active{background:rgba(var(--gold-rgb),.14); color:var(--gold); border-color:var(--gold-dim);}

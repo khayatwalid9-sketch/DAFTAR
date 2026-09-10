@@ -941,9 +941,9 @@ function printSharedStyle(){
   .doc-code{font-size:11px; color:#6b7280; margin-top:2px; font-family:'Consolas','Courier New',monospace;}
   .doc-issue{font-size:11px; color:#6b7280; margin-top:2px;}
   h1{font-size:17px; font-weight:800; margin:0 0 4px;}
-  table{width:100%; border-collapse:collapse; margin-bottom:20px;}
-  th{background:${accent}; color:${ink}; font-size:11.5px; font-weight:700; padding:9px 10px; text-align:${currentLang==='en'?'left':'right'};}
-  td{padding:9px 10px; font-size:12px; border-bottom:1px solid #e7e9ee;}
+  table{width:100%; border-collapse:collapse; margin-bottom:20px; table-layout:fixed;}
+  th{background:${accent}; color:${ink}; font-size:11.5px; font-weight:700; padding:9px 10px; text-align:${currentLang==='en'?'left':'right'}; white-space:normal; overflow-wrap:anywhere;}
+  td{padding:9px 10px; font-size:12px; border-bottom:1px solid #e7e9ee; white-space:normal; overflow-wrap:anywhere; word-break:break-word;}
   tr:nth-child(even) td{background:rgba(0,0,0,.018);}
   tr.opening td{background:rgba(${hexToRgbArr(accent).join(',')},.08); font-weight:700;}
   .num{font-family:'Consolas','Courier New',monospace; direction:ltr; text-align:left;}
@@ -1157,12 +1157,26 @@ function quotSubjectLabel(subject){ return t('quot.subject.'+subject) || subject
 function quotStatusBadgeClass(status){
   return {open:'active', submitted:'paid', followup:'overdue', paymentPending:'overdue', closed:'type-individual'}[status] || 'type-individual';
 }
+function latestQuotationDate(){
+  const dates = [...new Set(quotations.filter(q=>q.date).map(q=>q.date))].sort((a,b)=>b.localeCompare(a));
+  return dates[0] || todayISO();
+}
+function ensureQuotationDateFilter(){
+  const el = document.getElementById('quotDateFilter');
+  if(!el) return;
+  if(!el.value){
+    const fallback = latestQuotationDate();
+    el.value = fallback;
+  }
+}
 function scopedQuotations(){
   const query = (document.getElementById('quotSearch')?.value || '').trim().toLowerCase();
   const statusF = document.getElementById('quotStatusFilter')?.value || 'all';
   const scopeF = document.getElementById('quotScopeFilter')?.value || 'all';
   const subjectF = document.getElementById('quotSubjectFilter')?.value || 'all';
+  const dateF = document.getElementById('quotDateFilter')?.value || latestQuotationDate();
   return quotations.filter(q=>{
+    if(dateF && q.date !== dateF) return false;
     if(statusF!=='all' && q.status!==statusF) return false;
     if(scopeF!=='all' && q.companyScope!==scopeF) return false;
     if(subjectF!=='all' && q.subject!==subjectF) return false;
@@ -1176,6 +1190,7 @@ function scopedQuotations(){
 function renderQuotationsTable(){
   const body = document.getElementById('quotationsTableBody');
   if(!body) return;
+  ensureQuotationDateFilter();
   const rows = scopedQuotations();
   document.getElementById('quotationsEmpty').style.display = rows.length ? 'none' : 'block';
   body.innerHTML = rows.map((q,i)=>`<tr data-id="${q.id}">
@@ -1187,6 +1202,7 @@ function renderQuotationsTable(){
   </tr>`).join('');
 }
 document.getElementById('quotSearch')?.addEventListener('input', renderQuotationsTable);
+document.getElementById('quotDateFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotScopeFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotSubjectFilter')?.addEventListener('change', renderQuotationsTable);
@@ -1457,13 +1473,13 @@ document.getElementById('quotPrintBtn')?.addEventListener('click', ()=>printDocu
 function quotationsListDocumentHtml(rows){
   const title = t('quot.title');
   const headers = currentLang==='en'
-    ? ['No.','Date','Time','Company','Scope','Contact','Mobile','Email','Subject','Quotation No.','Invoice No.','Project No.','Status','Next Follow-up']
-    : ['م.','التاريخ','الوقت','الشركة','النشاط','المسؤول','الجوال','البريد الإلكتروني','الموضوع','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الحالة','المتابعة القادمة'];
+    ? ['No.','Date','Time','Company','Scope','Contact','Mobile','Email','Amount','Subject','Quotation No.','Invoice No.','Project No.','Status','Next Follow-up','Follow-up Action','Requirement']
+    : ['م.','التاريخ','الوقت','الشركة','النشاط','المسؤول','الجوال','البريد الإلكتروني','القيمة','الموضوع','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الحالة','المتابعة القادمة','إجراء المتابعة','التفاصيل'];
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>${printSharedStyle()}</style></head><body>
 ${printBrandHeader(title)}
-<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(q.date)||'—'}</td><td>${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td><td>${esc(q.contactPerson)||'—'}</td><td>${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td><td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td><td>${quotStatusLabel(q.status)}</td><td>${esc(q.nextFollowup)||'—'}</td></tr>`).join('') || `<tr><td colspan="14" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
+<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(q.date)||'—'}</td><td>${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td><td>${esc(q.contactPerson)||'—'}</td><td>${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td><td>${q.amount?currency(q.amount):'—'}</td><td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td><td>${quotStatusLabel(q.status)}</td><td>${esc(q.nextFollowup)||'—'}</td><td>${esc(q.followupAction)||'—'}</td><td>${esc(q.requirement)||'—'}</td></tr>`).join('') || `<tr><td colspan="17" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
 <div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div>
 </body></html>`;
 }
