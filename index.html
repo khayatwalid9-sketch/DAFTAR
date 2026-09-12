@@ -33,11 +33,11 @@
     <p data-i18n="login.sub">الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون</p>
     <div class="field">
       <label data-i18n="login.user">اسم المستخدم</label>
-      <input id="login_user" autocomplete="username">
+      <input id="login_user" autocomplete="username" title="اسم المستخدم" placeholder="اسم المستخدم" aria-label="اسم المستخدم">
     </div>
     <div class="field">
       <label data-i18n="login.pass">كلمة المرور</label>
-      <input id="login_pass" type="password" autocomplete="current-password">
+      <input id="login_pass" type="password" autocomplete="current-password" title="كلمة المرور" placeholder="كلمة المرور" aria-label="كلمة المرور">
     </div>
     <button class="btn" id="loginBtn" data-i18n="login.btn">دخول</button>
     <div class="login-error" id="loginError"></div>
@@ -189,12 +189,12 @@
           <h3 data-i18n="debtors.title">قائمة المدينين</h3>
           <div>
             <button class="btn secondary small" id="advancedSearchBtn" data-i18n="filter.advancedSearch">🔍 بحث متقدم</button>
-            <select id="typeFilter" class="field">
+            <select id="typeFilter" class="field" title="فلترة حسب النوع" aria-label="فلترة حسب النوع">
               <option value="all" data-i18n="debtors.allTypes">كل الأنواع</option>
               <option value="individual" data-i18n="debtors.individuals">أفراد</option>
               <option value="company" data-i18n="debtors.companies">شركات</option>
             </select>
-            <select id="statusFilter" class="field">
+            <select id="statusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="active" data-i18n="status.active">نشط</option>
               <option value="overdue" data-i18n="status.overdue">متأخر</option>
@@ -202,7 +202,7 @@
             </select>
             <div class="file-btn-wrap">
               <button class="btn secondary small" type="button" data-i18n="debtors.importExcel">⭱ استيراد من إكسل</button>
-              <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv">
+              <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" title="استيراد ملف Excel" aria-label="استيراد ملف Excel">
             </div>
             <button class="btn secondary small" id="downloadExcelTemplateBtn" data-i18n="debtors.downloadTemplate">⭳ نموذج الاستيراد</button>
             <button class="btn secondary small" id="saveSearchBtn" data-i18n="filter.saveSearch">💾 حفظ البحث</button>
@@ -213,26 +213,26 @@
             <div class="field">
               <label data-i18n="filter.amountRange">نطاق المبلغ</label>
               <div>
-                <input type="number" id="minAmount" placeholder="من">
-                <input type="number" id="maxAmount" placeholder="إلى">
+                <input type="number" id="minAmount" placeholder="من" title="الحد الأدنى للمبلغ" aria-label="الحد الأدنى للمبلغ">
+                <input type="number" id="maxAmount" placeholder="إلى" title="الحد الأقصى للمبلغ" aria-label="الحد الأقصى للمبلغ">
               </div>
             </div>
             <div class="field">
               <label data-i18n="filter.dateRange">نطاق التاريخ</label>
               <div>
-                <input type="date" id="minDate">
-                <input type="date" id="maxDate">
+                <input type="date" id="minDate" title="تاريخ البداية" aria-label="تاريخ البداية">
+                <input type="date" id="maxDate" title="تاريخ النهاية" aria-label="تاريخ النهاية">
               </div>
             </div>
             <div class="field">
               <label data-i18n="filter.collector">المندوب</label>
-              <select id="collectorFilter">
+              <select id="collectorFilter" title="فلترة حسب المندوب" aria-label="فلترة حسب المندوب">
                 <option value="all" data-i18n="debtors.allStatuses">الكل</option>
               </select>
             </div>
             <div class="field">
               <label data-i18n="filter.riskLevel">مستوى الخطورة</label>
-              <select id="riskFilter">
+              <select id="riskFilter" title="فلترة حسب مستوى الخطورة" aria-label="فلترة حسب مستوى الخطورة">
                 <option value="all" data-i18n="debtors.allStatuses">الكل</option>
                 <option value="low" data-i18n="filter.lowRisk">منخفض</option>
                 <option value="medium" data-i18n="filter.mediumRisk">متوسط</option>
@@ -349,9 +349,9 @@
         <div class="panel-head">
           <h3 data-i18n="quot.title">قائمة عروض الأسعار</h3>
           <div>
-            <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول...">
-            <input type="date" id="quotDateFilter" class="field">
-            <select id="quotStatusFilter" class="field">
+            <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول..." title="بحث عروض الأسعار" aria-label="بحث عروض الأسعار">
+            <input type="date" id="quotDateFilter" class="field" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
+            <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="open" data-i18n="quot.status.open">مفتوح</option>
               <option value="followup" data-i18n="quot.status.followup">بانتظار المتابعة</option>
@@ -359,7 +359,7 @@
               <option value="paymentPending" data-i18n="quot.status.paymentPending">بانتظار الدفع</option>
               <option value="closed" data-i18n="quot.status.closed">مغلق</option>
             </select>
-            <select id="quotScopeFilter" class="field">
+            <select id="quotScopeFilter" class="field" title="فلترة حسب نشاط الشركة" aria-label="فلترة حسب نشاط الشركة">
               <option value="all" data-i18n="debtors.allStatuses">كل الأنشطة</option>
               <option value="mainContractor" data-i18n="quot.scope.mainContractor">مقاول رئيسي</option>
               <option value="subcontractor" data-i18n="quot.scope.subcontractor">مقاول من الباطن</option>
@@ -367,7 +367,7 @@
               <option value="developer" data-i18n="quot.scope.developer">مطوّر / عميل مباشر</option>
               <option value="supplier" data-i18n="quot.scope.supplier">مورّد / مصنّع</option>
             </select>
-            <select id="quotSubjectFilter" class="field">
+            <select id="quotSubjectFilter" class="field" title="فلترة حسب الموضوع" aria-label="فلترة حسب الموضوع">
               <option value="all" data-i18n="debtors.allStatuses">كل المواضيع</option>
               <option value="quoteFollowup" data-i18n="quot.subject.quoteFollowup">متابعة عرض سعر</option>
               <option value="newClient" data-i18n="quot.subject.newClient">عميل مستهدف جديد</option>
@@ -375,7 +375,7 @@
             </select>
             <div class="file-btn-wrap">
               <button class="btn secondary small" type="button" data-i18n="quot.importExcel">⭱ استيراد من إكسل</button>
-              <input type="file" id="importQuotationsFile" accept=".xlsx,.xls,.csv">
+              <input type="file" id="importQuotationsFile" accept=".xlsx,.xls,.csv" title="استيراد عروض الأسعار من Excel" aria-label="استيراد عروض الأسعار من Excel">
             </div>
             <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">⭳ نموذج الاستيراد</button>
             <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">🖶 طباعة القائمة</button>
@@ -409,9 +409,9 @@
         <div class="panel-body">
           <datalist id="quotRepsList"></datalist>
           <div class="field-row">
-            <div class="field"><label data-i18n="quot.visitReportDate">تاريخ التقرير</label><input type="date" id="quotVisitReportDate"></div>
-            <div class="field"><label data-i18n="quot.salesInCharge">مسؤول المبيعات</label><input type="text" list="quotRepsList" id="quotVisitReportRep" class="field" data-i18n-ph="quot.salesInChargePh" placeholder="اسم مسؤول المبيعات"></div>
-            <div class="field"><label data-i18n="quot.areaRoute">المنطقة / خط السير</label><input type="text" id="quotVisitReportArea" class="field" data-i18n-ph="quot.areaRoutePh" placeholder="مثال: الدوحة"></div>
+            <div class="field"><label data-i18n="quot.visitReportDate">تاريخ التقرير</label><input type="date" id="quotVisitReportDate" title="تاريخ التقرير" aria-label="تاريخ التقرير"></div>
+            <div class="field"><label data-i18n="quot.salesInCharge">مسؤول المبيعات</label><input type="text" list="quotRepsList" id="quotVisitReportRep" class="field" data-i18n-ph="quot.salesInChargePh" placeholder="اسم مسؤول المبيعات" title="مسؤول المبيعات" aria-label="مسؤول المبيعات"></div>
+            <div class="field"><label data-i18n="quot.areaRoute">المنطقة / خط السير</label><input type="text" id="quotVisitReportArea" class="field" data-i18n-ph="quot.areaRoutePh" placeholder="مثال: الدوحة" title="المنطقة / خط السير" aria-label="المنطقة / خط السير"></div>
             <div class="field">
               <button class="btn secondary small" id="quotVisitReportGenBtn" data-i18n="quot.generate">إنشاء التقرير</button>
             </div>
@@ -459,8 +459,8 @@
         </div>
         <div class="panel-body">
           <div class="field-row">
-            <div class="field"><label data-i18n="quot.fromDate">من تاريخ</label><input type="date" id="quotReportFrom"></div>
-            <div class="field"><label data-i18n="quot.toDate">إلى تاريخ</label><input type="date" id="quotReportTo"></div>
+            <div class="field"><label data-i18n="quot.fromDate">من تاريخ</label><input type="date" id="quotReportFrom" title="من تاريخ" aria-label="من تاريخ"></div>
+            <div class="field"><label data-i18n="quot.toDate">إلى تاريخ</label><input type="date" id="quotReportTo" title="إلى تاريخ" aria-label="إلى تاريخ"></div>
             <div class="field">
               <button class="btn secondary small" id="quotReportGenBtn" data-i18n="quot.generate">إنشاء التقرير</button>
             </div>
@@ -610,11 +610,11 @@
           <div class="field-row">
             <div class="field">
               <label data-i18n="settings.username">اسم المستخدم</label>
-              <input id="s_authUser">
+              <input id="s_authUser" title="اسم المستخدم" aria-label="اسم المستخدم" placeholder="اسم المستخدم">
             </div>
             <div class="field">
               <label data-i18n="settings.newPassword">كلمة مرور جديدة (اتركها فارغة لعدم التغيير)</label>
-              <input id="s_authPass" type="password">
+              <input id="s_authPass" type="password" title="كلمة المرور" aria-label="كلمة المرور" placeholder="كلمة المرور">
             </div>
           </div>
           <button class="btn secondary" id="saveAuthBtn" data-i18n="settings.saveAccount">حفظ بيانات الدخول</button>
@@ -625,8 +625,8 @@
         <div class="panel-head"><h3 data-i18n="settings.users">المستخدمون والصلاحيات</h3></div>
         <div class="panel-body">
           <div class="field-row">
-            <div class="field"><label data-i18n="settings.userName">اسم المستخدم</label><input id="u_name"></div>
-            <div class="field"><label data-i18n="settings.userPassword">كلمة المرور</label><input id="u_password" type="password"></div>
+            <div class="field"><label data-i18n="settings.userName">اسم المستخدم</label><input id="u_name" title="اسم المستخدم" aria-label="اسم المستخدم" placeholder="اسم المستخدم"></div>
+            <div class="field"><label data-i18n="settings.userPassword">كلمة المرور</label><input id="u_password" type="password" title="كلمة المرور" aria-label="كلمة المرور" placeholder="كلمة المرور"></div>
           </div>
           <div class="field-row">
             <div class="field"><label data-i18n="settings.userRole">الدور</label><select id="u_role"><option value="admin" data-i18n="role.admin">مدير</option><option value="collector" data-i18n="role.collector">مندوب</option><option value="viewer" data-i18n="role.viewer">مشاهد</option></select></div>
@@ -649,7 +649,7 @@
           </label>
           <div class="field">
             <label data-i18n="settings.passwordMinLength">الحد الأدنى لطول كلمة المرور</label>
-            <input type="number" id="s_passwordMinLength" min="6" max="20" value="8">
+            <input type="number" id="s_passwordMinLength" min="6" max="20" value="8" title="الحد الأدنى لطول كلمة المرور" aria-label="الحد الأدنى لطول كلمة المرور">
           </div>
           <button class="btn secondary small" id="changeAdminPasswordBtn" data-i18n="settings.changeAdminPassword">تغيير كلمة مرور المدير</button>
         </div>
@@ -721,7 +721,7 @@
           </div>
           <div class="field" id="smsConfigFields">
             <label data-i18n="integration.smsApiKey">مفتاح API</label>
-            <input type="text" id="s_smsApiKey" placeholder="Enter API key">
+            <input type="text" id="s_smsApiKey" placeholder="Enter API key" title="مفتاح API" aria-label="مفتاح API">
           </div>
           <div class="field">
             <label data-i18n="integration.emailProvider">مزود خدمة البريد الإلكتروني</label>
@@ -734,7 +734,7 @@
           </div>
           <div class="field" id="emailConfigFields">
             <label data-i18n="integration.emailApiKey">مفتاح API</label>
-            <input type="text" id="s_emailApiKey" placeholder="Enter API key">
+            <input type="text" id="s_emailApiKey" placeholder="Enter API key" title="مفتاح API" aria-label="مفتاح API">
           </div>
           <button class="btn secondary small" id="testIntegrationBtn" data-i18n="integration.testIntegration">اختبار التكامل</button>
         </div>
@@ -743,7 +743,7 @@
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="settings.audit">سجل التدقيق</h3></div>
         <div class="panel-body">
-          <div class="field"><input id="auditFilter" placeholder="تصفية حسب المستخدم أو الإجراء..." data-i18n-ph="settings.auditFilter"></div>
+          <div class="field"><input id="auditFilter" placeholder="تصفية حسب المستخدم أو الإجراء..." data-i18n-ph="settings.auditFilter" title="تصفية السجل" aria-label="تصفية السجل"></div>
           <div id="auditList" class="audit-list"></div>
         </div>
       </div>
@@ -767,7 +767,7 @@
           <div class="field-row">
             <div class="field">
               <label data-i18n="settings.reminderDays">تنبيه قبل تاريخ الاستحقاق بـ (أيام)</label>
-              <input type="number" id="s_reminderDays" min="1" max="60" value="7">
+              <input type="number" id="s_reminderDays" min="1" max="60" value="7" title="أيام التنبيه" aria-label="أيام التنبيه">
             </div>
             <div class="field">
               <button class="btn secondary" id="enableNotifBtn" data-i18n="settings.enableNotif">🔔 تفعيل تنبيهات المتصفح</button>
@@ -807,7 +807,7 @@
         <div class="panel-body">
           <button class="btn secondary" id="exportDataBtn" data-i18n="settings.exportBackup">⭳ تصدير نسخة احتياطية (JSON)</button>
           <button class="btn secondary" id="importDataBtn" data-i18n="settings.importBackup">⭱ استيراد نسخة احتياطية</button>
-          <input type="file" id="importDataFile" accept="application/json">
+          <input type="file" id="importDataFile" accept="application/json" title="استيراد ملف النسخة الاحتياطية" aria-label="استيراد ملف النسخة الاحتياطية">
         </div>
       </div>
 
@@ -838,7 +838,7 @@
           </label>
           <div class="field">
             <label data-i18n="automation.followupFrequency">تكرار المتابعة التلقائية (أيام)</label>
-            <input type="number" id="s_followupFrequency" min="1" max="30" value="7">
+            <input type="number" id="s_followupFrequency" min="1" max="30" value="7" title="تكرار المتابعة التلقائية" aria-label="تكرار المتابعة التلقائية">
           </div>
         </div>
       </div>
@@ -893,28 +893,28 @@
         <div class="field"><label data-i18n="modal.totalAmount">إجمالي مبلغ الدين</label><input id="f_amount" type="number" placeholder="0"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="modal.installments">عدد الأقساط</label><input id="f_installments" type="number" min="1" value="1"></div>
-        <div class="field"><label data-i18n="modal.frequency">دورية القسط</label><select id="f_frequency"><option value="monthly" data-i18n="frequency.monthly">شهري</option><option value="quarterly" data-i18n="frequency.quarterly">ربع سنوي</option><option value="weekly" data-i18n="frequency.weekly">أسبوعي</option></select></div>
+        <div class="field"><label data-i18n="modal.installments">عدد الأقساط</label><input id="f_installments" type="number" min="1" value="1" title="عدد الأقساط" aria-label="عدد الأقساط"></div>
+        <div class="field"><label data-i18n="modal.frequency">دورية القسط</label><select id="f_frequency" title="دورية القسط" aria-label="دورية القسط"><option value="monthly" data-i18n="frequency.monthly">شهري</option><option value="quarterly" data-i18n="frequency.quarterly">ربع سنوي</option><option value="weekly" data-i18n="frequency.weekly">أسبوعي</option></select></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="modal.dueDate">تاريخ الاستحقاق</label><input id="f_due" type="date"></div>
-        <div class="field"><label data-i18n="modal.expectedPaymentDate">تاريخ الدفع المتوقع</label><input id="f_expectedPaymentDate" type="date"></div>
+        <div class="field"><label data-i18n="modal.dueDate">تاريخ الاستحقاق</label><input id="f_due" type="date" title="تاريخ الاستحقاق" aria-label="تاريخ الاستحقاق"></div>
+        <div class="field"><label data-i18n="modal.expectedPaymentDate">تاريخ الدفع المتوقع</label><input id="f_expectedPaymentDate" type="date" title="تاريخ الدفع المتوقع" aria-label="تاريخ الدفع المتوقع"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="modal.paidUpfront">مبلغ مسدد مسبقًا (اختياري)</label><input id="f_paid" type="number" placeholder="0"></div>
+        <div class="field"><label data-i18n="modal.paidUpfront">مبلغ مسدد مسبقًا (اختياري)</label><input id="f_paid" type="number" placeholder="0" title="المبلغ المسدد مسبقًا" aria-label="المبلغ المسدد مسبقًا"></div>
       </div>
       <div class="field-row">
         <div class="field"><label data-i18n="modal.collectionMethod">طريقة التحصيل (إن وُجد مبلغ مسدد)</label>
-          <select id="f_paidMethod">
+          <select id="f_paidMethod" title="طريقة التحصيل" aria-label="طريقة التحصيل">
             <option value="نقدًا" data-i18n="method.cash">نقدًا</option>
             <option value="شيك" data-i18n="method.cheque">شيك</option>
             <option value="تحويل بنكي" data-i18n="method.transfer">تحويل بنكي</option>
           </select>
         </div>
-        <div class="field"><label data-i18n="modal.collectionDate">تاريخ التحصيل</label><input id="f_paidDate" type="date"></div>
+        <div class="field"><label data-i18n="modal.collectionDate">تاريخ التحصيل</label><input id="f_paidDate" type="date" title="تاريخ التحصيل" aria-label="تاريخ التحصيل"></div>
       </div>
       <div class="field"><label data-i18n="modal.assignedRep">المندوب المسؤول (اختياري)</label>
-        <select id="f_rep"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
+        <select id="f_rep" title="المندوب المسؤول" aria-label="المندوب المسؤول"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
       </div>
       <div class="field"><label data-i18n="th.notes">ملاحظات</label><textarea id="f_notes" data-i18n-ph="modal.notesPh" placeholder="تفاصيل إضافية عن الحالة..."></textarea></div>
     </div>
@@ -931,9 +931,9 @@
     <div class="modal-head"><h3 id="quotationModalTitle" data-i18n="quot.addTitle">إضافة عرض سعر جديد</h3><button class="modal-close" data-close="quotationModal">✕</button></div>
     <div class="modal-body">
       <div class="field-row">
-        <div class="field"><label data-i18n="quot.company">اسم الشركة (العميل)</label><input id="q_company" data-i18n-ph="quot.companyPh" placeholder="مثال: شركة الخليج للمقاولات"></div>
+        <div class="field"><label data-i18n="quot.company">اسم الشركة (العميل)</label><input id="q_company" data-i18n-ph="quot.companyPh" placeholder="مثال: شركة الخليج للمقاولات" title="اسم الشركة" aria-label="اسم الشركة"></div>
         <div class="field"><label data-i18n="quot.scope">نشاط الشركة</label>
-          <select id="q_scope">
+          <select id="q_scope" title="نشاط الشركة" aria-label="نشاط الشركة">
             <option value="mainContractor" data-i18n="quot.scope.mainContractor">مقاول رئيسي</option>
             <option value="subcontractor" data-i18n="quot.scope.subcontractor">مقاول من الباطن</option>
             <option value="consultant" data-i18n="quot.scope.consultant">استشاري</option>
@@ -943,33 +943,33 @@
         </div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="quot.contact">اسم المسؤول</label><input id="q_contact" placeholder="مثال: م. أحمد"></div>
-        <div class="field"><label data-i18n="quot.mobile">رقم الجوال</label><input id="q_mobile" placeholder="+974 5xxxxxxx"></div>
+        <div class="field"><label data-i18n="quot.contact">اسم المسؤول</label><input id="q_contact" placeholder="مثال: م. أحمد" title="اسم المسؤول" aria-label="اسم المسؤول"></div>
+        <div class="field"><label data-i18n="quot.mobile">رقم الجوال</label><input id="q_mobile" placeholder="+974 5xxxxxxx" title="رقم الجوال" aria-label="رقم الجوال"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="quot.email">البريد الإلكتروني</label><input id="q_email" type="email" placeholder="name@company.com"></div>
-        <div class="field"><label data-i18n="quot.amount">قيمة العرض (اختياري)</label><input id="q_amount" type="number" placeholder="0"></div>
+        <div class="field"><label data-i18n="quot.email">البريد الإلكتروني</label><input id="q_email" type="email" placeholder="name@company.com" title="البريد الإلكتروني" aria-label="البريد الإلكتروني"></div>
+        <div class="field"><label data-i18n="quot.amount">قيمة العرض (اختياري)</label><input id="q_amount" type="number" placeholder="0" title="قيمة العرض" aria-label="قيمة العرض"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="quot.quotationNo">رقم عرض السعر</label><input id="q_quotationNo" data-i18n-ph="quot.quotationNoPh" placeholder="مثال: QTN-2026-00123"></div>
-        <div class="field"><label data-i18n="quot.invoiceNo">رقم الفاتورة</label><input id="q_invoiceNo"></div>
-        <div class="field"><label data-i18n="quot.projectNo">رقم المشروع</label><input id="q_projectNo"></div>
+        <div class="field"><label data-i18n="quot.quotationNo">رقم عرض السعر</label><input id="q_quotationNo" data-i18n-ph="quot.quotationNoPh" placeholder="مثال: QTN-2026-00123" title="رقم عرض السعر" aria-label="رقم عرض السعر"></div>
+        <div class="field"><label data-i18n="quot.invoiceNo">رقم الفاتورة</label><input id="q_invoiceNo" title="رقم الفاتورة" aria-label="رقم الفاتورة"></div>
+        <div class="field"><label data-i18n="quot.projectNo">رقم المشروع</label><input id="q_projectNo" title="رقم المشروع" aria-label="رقم المشروع"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="th.date">تاريخ العرض</label><input id="q_date" type="date"></div>
-        <div class="field"><label data-i18n="quot.time">وقت الزيارة</label><input id="q_time" type="time"></div>
-        <div class="field"><label data-i18n="quot.nextFollowup">تاريخ المتابعة القادمة</label><input id="q_nextFollowup" type="date"></div>
+        <div class="field"><label data-i18n="th.date">تاريخ العرض</label><input id="q_date" type="date" title="تاريخ العرض" aria-label="تاريخ العرض"></div>
+        <div class="field"><label data-i18n="quot.time">وقت الزيارة</label><input id="q_time" type="time" title="وقت الزيارة" aria-label="وقت الزيارة"></div>
+        <div class="field"><label data-i18n="quot.nextFollowup">تاريخ المتابعة القادمة</label><input id="q_nextFollowup" type="date" title="تاريخ المتابعة القادمة" aria-label="تاريخ المتابعة القادمة"></div>
       </div>
       <div class="field-row">
         <div class="field"><label data-i18n="quot.subject">موضوع العرض / الزيارة</label>
-          <select id="q_subject">
+          <select id="q_subject" title="موضوع العرض / الزيارة" aria-label="موضوع العرض / الزيارة">
             <option value="quoteFollowup" data-i18n="quot.subject.quoteFollowup">متابعة عرض سعر</option>
             <option value="newClient" data-i18n="quot.subject.newClient">عميل مستهدف جديد</option>
             <option value="payment" data-i18n="quot.subject.payment">متابعة دفعة</option>
           </select>
         </div>
         <div class="field"><label data-i18n="th.status">الحالة</label>
-          <select id="q_status">
+          <select id="q_status" title="حالة العرض" aria-label="حالة العرض">
             <option value="open" data-i18n="quot.status.open">مفتوح</option>
             <option value="followup" data-i18n="quot.status.followup">بانتظار المتابعة</option>
             <option value="submitted" data-i18n="quot.status.submitted">تم تقديم العرض</option>
@@ -1065,32 +1065,32 @@
 
     <div class="dr-section-title" id="dr_assignRepTitle" data-i18n="drawer.assignRep">إسناد / تغيير المندوب</div>
     <div class="mini-form" id="dr_assignRepBox">
-      <select id="dr_repSelect"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
+      <select id="dr_repSelect" title="المندوب" aria-label="المندوب"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
       <button class="btn small" id="dr_assignRep" data-i18n="drawer.assign">تعيين</button>
     </div>
 
     <div class="dr-section-title" data-i18n="drawer.recordPayment">تسجيل دفعة سداد</div>
     <div class="mini-form">
-      <input type="number" id="dr_paymentAmount" data-i18n-ph="drawer.amount" placeholder="المبلغ">
-      <select id="dr_paymentMethod">
+      <input type="number" id="dr_paymentAmount" data-i18n-ph="drawer.amount" placeholder="المبلغ" title="مبلغ الدفعة" aria-label="مبلغ الدفعة">
+      <select id="dr_paymentMethod" title="طريقة الدفع" aria-label="طريقة الدفع">
         <option value="نقدًا" data-i18n="method.cash">نقدًا</option>
         <option value="شيك" data-i18n="method.cheque">شيك</option>
         <option value="تحويل بنكي" data-i18n="method.transfer">تحويل بنكي</option>
       </select>
-      <input type="date" id="dr_paymentDate">
+      <input type="date" id="dr_paymentDate" title="تاريخ الدفعة" aria-label="تاريخ الدفعة">
       <button class="btn small" id="dr_addPayment" data-i18n="drawer.add">إضافة</button>
     </div>
 
     <div class="dr-section-title" data-i18n="drawer.addFollow">إضافة متابعة</div>
     <div class="mini-form">
-      <select id="dr_followMethod">
+      <select id="dr_followMethod" title="طريقة المتابعة" aria-label="طريقة المتابعة">
         <option data-i18n="method.call">اتصال هاتفي</option>
         <option data-i18n="method.sms">رسالة نصية</option>
         <option data-i18n="method.visit">زيارة ميدانية</option>
         <option data-i18n="method.email">بريد إلكتروني</option>
       </select>
-      <input type="date" id="dr_followDate">
-      <input type="text" id="dr_followOutcome" data-i18n-ph="drawer.outcomePh" placeholder="النتيجة / الملاحظة">
+      <input type="date" id="dr_followDate" title="تاريخ المتابعة" aria-label="تاريخ المتابعة">
+      <input type="text" id="dr_followOutcome" data-i18n-ph="drawer.outcomePh" placeholder="النتيجة / الملاحظة" title="نتيجة المتابعة" aria-label="نتيجة المتابعة">
       <button class="btn small" id="dr_addFollow" data-i18n="drawer.add">إضافة</button>
     </div>
 
@@ -1137,15 +1137,15 @@
 
     <div class="dr-section-title" data-i18n="quot.addStatusUpdate">إضافة تحديث يومي للحالة</div>
     <div class="mini-form">
-      <input type="date" id="qd_updateDate">
-      <select id="qd_updateStatus">
+      <input type="date" id="qd_updateDate" title="تاريخ التحديث" aria-label="تاريخ التحديث">
+      <select id="qd_updateStatus" title="حالة التحديث" aria-label="حالة التحديث">
         <option value="open" data-i18n="quot.status.open">مفتوح</option>
         <option value="followup" data-i18n="quot.status.followup">بانتظار المتابعة</option>
         <option value="submitted" data-i18n="quot.status.submitted">تم تقديم العرض</option>
         <option value="paymentPending" data-i18n="quot.status.paymentPending">بانتظار الدفع</option>
         <option value="closed" data-i18n="quot.status.closed">مغلق</option>
       </select>
-      <input type="text" id="qd_updateNote" data-i18n-ph="quot.updateNotePh" placeholder="ملاحظة التحديث اليومي...">
+      <input type="text" id="qd_updateNote" data-i18n-ph="quot.updateNotePh" placeholder="ملاحظة التحديث اليومي..." title="ملاحظة التحديث" aria-label="ملاحظة التحديث">
       <button class="btn small" id="qd_addUpdate" data-i18n="drawer.add">إضافة</button>
     </div>
 
