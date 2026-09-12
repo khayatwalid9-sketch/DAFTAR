@@ -597,17 +597,26 @@ async function loadFromSupabase() {
   }
 }
 
+function clearLegacyBrowserState(){
+  try { localStorage.clear(); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+}
+
 function saveState(){
   syncToSupabase();
 }
 async function loadState(){
   try{
-    if (supabaseClient && await loadFromSupabase()) {
-      return true;
+    if (supabaseClient) {
+      const loaded = await loadFromSupabase();
+      if (loaded) {
+        return true;
+      }
     }
-    
     throw new Error('Cloud database is unavailable');
-  }catch(e){ return false; }
+  }catch(e){
+    return false;
+  }
 }
 
 // ============== HELPERS ==============
@@ -1283,6 +1292,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', ()=>{
     if(q) Object.assign(q, payload);
     document.getElementById('quotationModal').classList.remove('show');
     addAudit('update_quotation', companyName);
+    saveState();
     toast(t('quot.updated'));
     editingQuotationId = null;
     renderAll();
@@ -1291,6 +1301,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', ()=>{
   quotations.push({id:nextQuotationId++, ...payload, log:[]});
   document.getElementById('quotationModal').classList.remove('show');
   addAudit('add_quotation', companyName);
+  saveState();
   toast(t('quot.added'));
   renderAll();
 });
@@ -1302,6 +1313,7 @@ function deleteQuotation(id){
   quotations = quotations.filter(x=>x.id!==id);
   if(activeQuotationId===id) closeQuotationDrawer();
   addAudit('delete_quotation', q.companyName);
+  saveState();
   toast(t('quot.deleted'));
   renderAll();
 }
@@ -1364,6 +1376,7 @@ document.getElementById('qd_addUpdate')?.addEventListener('click', ()=>{
   q.status = status;
   document.getElementById('qd_updateNote').value = '';
   addAudit('quotation_status_update', `${q.companyName}: ${quotStatusLabel(status)}${note?' — '+note:''}`);
+  saveState();
   toast(t('quot.updateAdded'));
   openQuotationDrawer(q.id);
   renderAll();
@@ -1394,6 +1407,7 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', e=>{
       const wb = XLSX.read(reader.result, {type:'array'});
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
       const pick=(row,keys)=>{const key=Object.keys(row).find(k=>keys.includes(String(k).trim().toLowerCase()));return key===undefined?'':row[key];};
+      const selectedQuotationDate = document.getElementById('quotDateFilter')?.value || todayISO();
       const scopeMap = {'main contractor':'mainContractor','مقاول رئيسي':'mainContractor','subcontractor':'subcontractor','مقاول من الباطن':'subcontractor','consultant':'consultant','استشاري':'consultant','developer / client':'developer','مطور':'developer','مطور / عميل مباشر':'developer','supplier / manufacturer':'supplier','مورد':'supplier','مورد / مصنع':'supplier'};
       const statusMap = {'open':'open','مفتوح':'open','quotation submitted':'submitted','تم تقديم العرض':'submitted','follow-up required':'followup','بانتظار المتابعة':'followup','payment pending':'paymentPending','بانتظار الدفع':'paymentPending','closed':'closed','مغلق':'closed'};
       const subjectMap = {'follow up quote':'quoteFollowup','متابعة عرض سعر':'quoteFollowup','new target client':'newClient','عميل مستهدف جديد':'newClient','payment':'payment','متابعة دفعة':'payment'};
@@ -1408,9 +1422,10 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', e=>{
         const scopeRaw = String(pick(row,['company scope / main activity','company scope','نشاط الشركة'])).trim().toLowerCase();
         const statusRaw = String(pick(row,['status / remarks','status','الحالة'])).trim().toLowerCase();
         const subjectRaw = String(pick(row,['visit purpose','الموضوع','موضوع العرض / الزيارة'])).trim().toLowerCase();
+        const importedDate = String(pick(row,['date','التاريخ'])).trim();
         return {
           id: nextQuotationId++,
-          date: String(pick(row,['date','التاريخ'])) || todayISO(),
+          date: importedDate || selectedQuotationDate,
           visitTime: toTimeString(pick(row,['time','الوقت'])),
           companyName,
           companyScope: scopeMap[scopeRaw] || 'mainContractor',
@@ -1432,7 +1447,7 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', e=>{
       }).filter(Boolean);
       if(!imported.length) throw new Error('empty');
       const msg = t('quot.importConfirm') ? (currentLang==='en'?`Import ${imported.length} quotations?`:`استيراد ${imported.length} عرض سعر؟`) : '';
-      if(confirm(msg)){ quotations.push(...imported); renderAll(); toast(t('quot.imported')); }
+      if(confirm(msg)){ quotations.push(...imported); if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate; saveState(); renderAll(); toast(t('quot.imported')); }
       else { nextQuotationId -= imported.length; }
     }catch(err){ toast(t('quot.importFailed')); }
   };
@@ -3576,6 +3591,7 @@ document.getElementById('s_smartReminders').checked = appSettings.smartReminders
 // Initialize application
 async function initializeApp() {
   try {
+    clearLegacyBrowserState();
     await loadState();
     loadSettings();
     // Initialize settings UI values
