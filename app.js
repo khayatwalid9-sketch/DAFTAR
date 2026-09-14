@@ -417,10 +417,14 @@ async function replaceTable(table, rows, key='id') {
   }
 }
 async function syncToSupabase() {
-  if (!supabaseClient) return false;
+  if (!supabaseClient) {
+    console.warn('Supabase sync skipped: client not initialized');
+    return false;
+  }
   if (syncInProgress) { syncQueued = true; return syncInProgress; }
   syncInProgress = (async()=>{
     try {
+      console.info('Starting Supabase sync', { debtors: debtors.length, quotations: quotations.length, reps: reps.length });
       const debtorRows = debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null}));
       const activityRows = debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null})));
       await replaceTable('debtors', debtorRows);
@@ -434,6 +438,7 @@ async function syncToSupabase() {
       await replaceTable('audit_log', auditLog.map(audit=>({id:audit.id,date:audit.date,user:audit.user,action:audit.action,details:audit.details||''})));
       const { error: settingsError } = await supabaseClient.from('app_settings').upsert({id:1,settings:appSettings,updated_at:new Date().toISOString()},{onConflict:'id'});
       if(settingsError) throw settingsError;
+      console.info('Supabase sync succeeded');
       return true;
     } catch (e) {
       console.warn('Supabase sync failed:', e);
@@ -602,8 +607,8 @@ function clearLegacyBrowserState(){
   try { sessionStorage.clear(); } catch (e) {}
 }
 
-function saveState(){
-  syncToSupabase();
+async function saveState(){
+  return await syncToSupabase();
 }
 async function loadState(){
   try{
@@ -1264,7 +1269,7 @@ function openQuotationEditModal(id){
   document.getElementById('q_notes').value = q.notes||'';
   document.getElementById('quotationModal').classList.add('show');
 }
-document.getElementById('saveQuotationBtn')?.addEventListener('click', ()=>{
+document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   const companyName = document.getElementById('q_company').value.trim();
   if(!companyName){ toast(t('quot.needCompany')); return; }
@@ -1292,7 +1297,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', ()=>{
     if(q) Object.assign(q, payload);
     document.getElementById('quotationModal').classList.remove('show');
     addAudit('update_quotation', companyName);
-    saveState();
+    await saveState();
     toast(t('quot.updated'));
     editingQuotationId = null;
     renderAll();
@@ -1301,7 +1306,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', ()=>{
   quotations.push({id:nextQuotationId++, ...payload, log:[]});
   document.getElementById('quotationModal').classList.remove('show');
   addAudit('add_quotation', companyName);
-  saveState();
+  await saveState();
   toast(t('quot.added'));
   renderAll();
 });
@@ -1364,7 +1369,7 @@ document.getElementById('quotationDrawerClose')?.addEventListener('click', close
 document.getElementById('quotationDrawerOverlay')?.addEventListener('click', closeQuotationDrawer);
 document.getElementById('qd_edit')?.addEventListener('click', ()=>{ if(activeQuotationId) openQuotationEditModal(activeQuotationId); });
 document.getElementById('qd_delete')?.addEventListener('click', ()=>{ if(activeQuotationId) deleteQuotation(activeQuotationId); });
-document.getElementById('qd_addUpdate')?.addEventListener('click', ()=>{
+document.getElementById('qd_addUpdate')?.addEventListener('click', async ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   const q = quotations.find(x=>x.id===activeQuotationId);
   if(!q) return;
@@ -1376,7 +1381,7 @@ document.getElementById('qd_addUpdate')?.addEventListener('click', ()=>{
   q.status = status;
   document.getElementById('qd_updateNote').value = '';
   addAudit('quotation_status_update', `${q.companyName}: ${quotStatusLabel(status)}${note?' — '+note:''}`);
-  saveState();
+  await saveState();
   toast(t('quot.updateAdded'));
   openQuotationDrawer(q.id);
   renderAll();
@@ -1399,10 +1404,10 @@ document.getElementById('qd_print')?.addEventListener('click', ()=>{
 });
 
 // ---- Import / template / export ----
-document.getElementById('importQuotationsFile')?.addEventListener('change', e=>{
+document.getElementById('importQuotationsFile')?.addEventListener('change', async e=>{
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = ()=>{
+  reader.onload = async ()=>{
     try{
       const wb = XLSX.read(reader.result, {type:'array'});
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
@@ -1447,9 +1452,9 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', e=>{
       }).filter(Boolean);
       if(!imported.length) throw new Error('empty');
       const msg = t('quot.importConfirm') ? (currentLang==='en'?`Import ${imported.length} quotations?`:`استيراد ${imported.length} عرض سعر؟`) : '';
-      if(confirm(msg)){ quotations.push(...imported); if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate; saveState(); renderAll(); toast(t('quot.imported')); }
+      if(confirm(msg)){ quotations.push(...imported); if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate; const synced = await saveState(); if(!synced){ console.warn('Excel import wrote to browser state but cloud sync did not complete'); } renderAll(); toast(t('quot.imported')); }
       else { nextQuotationId -= imported.length; }
-    }catch(err){ toast(t('quot.importFailed')); }
+    }catch(err){ console.warn('Excel import failed:', err); toast(t('quot.importFailed')); }
   };
   reader.readAsArrayBuffer(file); e.target.value='';
 });

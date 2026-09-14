@@ -629,7 +629,14 @@
             <div class="field"><label data-i18n="settings.userPassword">كلمة المرور</label><input id="u_password" type="password" title="كلمة المرور" aria-label="كلمة المرور" placeholder="كلمة المرور"></div>
           </div>
           <div class="field-row">
-            <div class="field"><label data-i18n="settings.userRole">الدور</label><select id="u_role"><option value="admin" data-i18n="role.admin">مدير</option><option value="collector" data-i18n="role.collector">مندوب</option><option value="viewer" data-i18n="role.viewer">مشاهد</option></select></div>
+            <div class="field">
+              <label for="u_role" data-i18n="settings.userRole">الدور</label>
+              <select id="u_role" title="الدور" aria-label="الدور">
+                <option value="admin" data-i18n="role.admin">مدير</option>
+                <option value="collector" data-i18n="role.collector">مندوب</option>
+                <option value="viewer" data-i18n="role.viewer">مشاهد</option>
+              </select>
+            </div>
             <div class="field"><button class="btn" id="addUserBtn" data-i18n="settings.addUser">إضافة مستخدم</button></div>
           </div>
           <div id="usersList"></div>
@@ -703,7 +710,16 @@
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="settings.sync">مزامنة Supabase</h3></div>
         <div class="panel-body">
-          <div class="field-row"><div class="field"><label>Supabase URL</label><input id="s_supabaseUrl" placeholder="https://project.supabase.co"></div><div class="field"><label>Anon key</label><input id="s_supabaseKey" type="password"></div></div>
+          <div class="field-row">
+            <div class="field">
+              <label for="s_supabaseUrl">Supabase URL</label>
+              <input id="s_supabaseUrl" placeholder="https://project.supabase.co" title="Supabase URL" aria-label="Supabase URL">
+            </div>
+            <div class="field">
+              <label for="s_supabaseKey">Anon key</label>
+              <input id="s_supabaseKey" type="password" placeholder="Anon key" title="Anon key" aria-label="Anon key">
+            </div>
+          </div>
           <button class="btn secondary" id="syncNowBtn" data-i18n="settings.syncNow">مزامنة الآن</button><span id="syncStatus" class="wm-note"></span>
         </div>
       </div>
@@ -712,8 +728,8 @@
         <div class="panel-head"><h3 data-i18n="integration.title">التكامل الخارجي</h3></div>
         <div class="panel-body">
           <div class="field">
-            <label data-i18n="integration.smsProvider">مزود خدمة SMS</label>
-            <select id="s_smsProvider">
+            <label for="s_smsProvider" data-i18n="integration.smsProvider">مزود خدمة SMS</label>
+            <select id="s_smsProvider" title="مزود خدمة SMS" aria-label="مزود خدمة SMS">
               <option value="none" data-i18n="integration.none">بدون</option>
               <option value="twilio">Twilio</option>
               <option value="custom">مخصص</option>
@@ -724,8 +740,8 @@
             <input type="text" id="s_smsApiKey" placeholder="Enter API key" title="مفتاح API" aria-label="مفتاح API">
           </div>
           <div class="field">
-            <label data-i18n="integration.emailProvider">مزود خدمة البريد الإلكتروني</label>
-            <select id="s_emailProvider">
+            <label for="s_emailProvider" data-i18n="integration.emailProvider">مزود خدمة البريد الإلكتروني</label>
+            <select id="s_emailProvider" title="مزود خدمة البريد الإلكتروني" aria-label="مزود خدمة البريد الإلكتروني">
               <option value="none" data-i18n="integration.none">بدون</option>
               <option value="sendgrid">SendGrid</option>
               <option value="mailgun">Mailgun</option>
