@@ -596,3 +596,27 @@ html[data-mode="light"] .report-toolbar{background:rgba(255,255,255,.9)}
   .print-document{background-image:url('305922021_523349173131481_1401793005313797692_n.jpg'); background-size:cover; background-position:center;}
 }
 
+
+/* Banner shown in the quotation modal when fields were auto-extracted from a document */
+.extract-banner{
+  margin-bottom:14px;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:12.5px;
+  line-height:1.6;
+  background:rgba(37,99,235,.10);
+  border:1px solid rgba(37,99,235,.35);
+  color:var(--text);
+}
+#qd_files .log-entry .note .link-btn{margin-inline-end:2px;}
+
+/* Persistent (non-auto-dismissing) banner for cloud-sync errors, so the exact
+   database error text can be read and copied instead of vanishing with a toast. */
+.sync-error-banner{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  margin-bottom:14px; padding:12px 14px; border-radius:10px;
+  background:rgba(179,58,58,.10); border:1px solid rgba(179,58,58,.4);
+  color:var(--text); font-size:12.5px; line-height:1.7;
+}
+.sync-error-banner .sync-error-text{white-space:pre-wrap; word-break:break-word; flex:1; direction:ltr; text-align:left; font-family:ui-monospace, monospace;}
+.sync-error-banner .sync-error-actions{display:flex; gap:6px; flex-shrink:0;}

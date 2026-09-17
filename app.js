@@ -149,6 +149,20 @@ Object.assign(translations,{
   'quot.noLog':['لا توجد تحديثات مسجّلة بعد.','No updates recorded yet.'],
   'quot.imported':['تم استيراد بيانات عروض الأسعار','Quotation data imported'],
   'quot.importFailed':['تعذّرت قراءة ملف Excel','Could not read the Excel file'],
+  'quot.importDoc':['⭱ استيراد مستند (PDF / صورة / Word)','⭱ Import document (PDF / image / Word)'],
+  'quot.reading':['جارٍ قراءة المستند واستخراج البيانات…','Reading the document and extracting data…'],
+  'quot.extracted':['تم استخراج البيانات — راجعها ثم احفظ','Data extracted — review it and save'],
+  'quot.readFailed':['تعذّر استخراج البيانات من المستند','Could not extract data from the document'],
+  'quot.reviewTitle':['مراجعة البيانات المستخرجة من المستند','Review data extracted from the document'],
+  'quot.extractedFrom':['تم استخراج البيانات تلقائيًا من الملف:','Data extracted automatically from:'],
+  'quot.uploading':['جارٍ رفع الملف إلى التخزين السحابي…','Uploading the file to cloud storage…'],
+  'quot.fileSaved':['تم حفظ عرض السعر والملف سحابيًا','Quotation and file saved to the cloud'],
+  'quot.fileFailed':['تعذّر رفع الملف إلى التخزين السحابي','Could not upload the file to cloud storage'],
+  'quot.attachments':['الملفات المرفقة','Attached files'],
+  'quot.attachFile':['⭱ إرفاق ملف','⭱ Attach file'],
+  'quot.noFiles':['لا توجد ملفات مرفقة بهذا العرض.','No files attached to this quotation.'],
+  'quot.viewFile':['👁 عرض','👁 View'],
+  'quot.printFile':['🖶 طباعة','🖶 Print'],
   'quot.visitReportTitle':['تقرير الزيارات اليومي للعملاء','Daily client visit report'],
   'quot.visitReportDate':['تاريخ التقرير','Report date'],
   'quot.salesInCharge':['مسؤول المبيعات','Sales in-charge'],
@@ -401,19 +415,20 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 // Supabase sync functions
 let syncInProgress = null;
 let syncQueued = false;
+let lastSyncError = null;
 async function replaceTable(table, rows, key='id') {
   const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
-  if(readError) throw readError;
+  if(readError){ readError.message = `[${table}] ${readError.message||''}`; throw readError; }
   const ids = new Set(rows.map(row=>String(row[key])));
   for(const row of existing || []) {
     if(!ids.has(String(row[key]))) {
       const { error } = await supabaseClient.from(table).delete().eq(key, row[key]);
-      if(error) throw error;
+      if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
     }
   }
   if(rows.length) {
     const { error } = await supabaseClient.from(table).upsert(rows, {onConflict:key});
-    if(error) throw error;
+    if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
   }
 }
 async function syncToSupabase() {
@@ -439,8 +454,11 @@ async function syncToSupabase() {
       const { error: settingsError } = await supabaseClient.from('app_settings').upsert({id:1,settings:appSettings,updated_at:new Date().toISOString()},{onConflict:'id'});
       if(settingsError) throw settingsError;
       console.info('Supabase sync succeeded');
+      lastSyncError = null;
       return true;
     } catch (e) {
+      const parts = [e?.code, e?.message, e?.details, e?.hint].filter(Boolean);
+      lastSyncError = parts.length ? parts.join(' — ') : String(e);
       console.warn('Supabase sync failed:', e);
       return false;
     } finally {
@@ -590,6 +608,9 @@ async function loadFromSupabase() {
         details: a.details
       }));
 
+    // Attachments are loaded separately and never wiped by replaceTable().
+    await loadQuotationFiles();
+
     const { data: settingsData, error: settingsError } = await supabaseClient
       .from('app_settings').select('settings').eq('id',1).maybeSingle();
     if(settingsError) throw settingsError;
@@ -610,6 +631,45 @@ function clearLegacyBrowserState(){
 async function saveState(){
   return await syncToSupabase();
 }
+// A toast disappears in ~2 seconds, which is easy to miss, and it was hiding real
+// Supabase errors from the user. This banner stays on screen with the literal error
+// text until dismissed, so the exact cause (a rejected column, a bad value, an RLS
+// policy, etc.) can be read and copied rather than silently lost.
+function showSyncErrorBanner(context, detail){
+  const banner = document.getElementById('quotSyncErrorBanner');
+  if(!banner) return;
+  const label = currentLang==='en'
+    ? `Cloud save failed (${context}). The data below was NOT saved to Supabase:`
+    : `فشل الحفظ السحابي (${context}). البيانات التالية لم تُحفظ في Supabase:`;
+  banner.querySelector('.sync-error-text').textContent = `${label}\n${detail||''}`;
+  banner.style.display = 'flex';
+}
+document.getElementById('quotSyncErrorBanner')?.addEventListener('click', ev=>{
+  if(ev.target.closest('[data-dismiss-sync-error]')){
+    document.getElementById('quotSyncErrorBanner').style.display = 'none';
+  }
+  if(ev.target.closest('[data-copy-sync-error]')){
+    const text = document.querySelector('#quotSyncErrorBanner .sync-error-text')?.textContent || '';
+    navigator.clipboard?.writeText(text).then(
+      ()=>toast(currentLang==='en'?'Error text copied':'تم نسخ نص الخطأ'),
+      ()=>toast(currentLang==='en'?'Could not copy — select the text manually':'تعذّر النسخ — حدّد النص يدويًا')
+    );
+  }
+});
+// Use this whenever the user performs an explicit action that MUST reach the cloud.
+// Unlike saveState() it tells the user (and the console) when the write did not land,
+// instead of leaving rows that only live in this browser tab until the next reload.
+async function saveStateOrWarn(context=''){
+  const ok = await saveState();
+  if(!ok){
+    const detail = lastSyncError || (currentLang==='en'?'Unknown error':'خطأ غير معروف');
+    showSyncErrorBanner(context || (currentLang==='en'?'saving':'الحفظ'), detail);
+    toast((currentLang==='en'
+      ? 'Cloud save failed — see the red banner above the quotations list'
+      : 'فشل الحفظ السحابي — راجع الشريط الأحمر أعلى قائمة عروض الأسعار'));
+  }
+  return ok;
+}
 async function loadState(){
   try{
     if (supabaseClient) {
@@ -627,6 +687,52 @@ async function loadState(){
 // ============== HELPERS ==============
 function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 function todayISO(){ const t=new Date(); return t.toISOString().slice(0,10); }
+// Normalises any date value (Excel serial number, Date object, 01/09/2026, 2026-09-01,
+// 1-Sep-2026, Arabic-Indic digits...) into the ISO yyyy-mm-dd string Postgres expects.
+// Returning '' for unparsable values is important: sending a raw Excel serial such as
+// 46001 to a `date` column makes the whole Supabase upsert fail.
+function toISODate(value){
+  if(value===''||value===null||value===undefined) return '';
+  if(value instanceof Date && !isNaN(value.getTime())){
+    return new Date(value.getTime()-value.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  }
+  if(typeof value==='number' && isFinite(value)){
+    if(value>20000 && value<80000){
+      const d = new Date(Math.round((value-25569)*86400000));
+      return isNaN(d.getTime()) ? '' : d.toISOString().slice(0,10);
+    }
+    return '';
+  }
+  let s = String(value).trim();
+  if(!s) return '';
+  s = s.replace(/[\u0660-\u0669]/g, ch=>String(ch.charCodeAt(0)-0x0660))
+       .replace(/[\u06f0-\u06f9]/g, ch=>String(ch.charCodeAt(0)-0x06f0));
+  let m = s.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+  if(m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  m = s.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+  if(m){
+    let day = Number(m[1]), month = Number(m[2]);
+    if(month>12 && day<=12){ const tmp=day; day=month; month=tmp; }
+    if(day>31 || month>12) return '';
+    let year = Number(m[3]); if(year<100) year += year<70 ? 2000 : 1900;
+    return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  }
+  const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  m = s.match(/(\d{1,2})[-\s]([A-Za-z]{3,})[-\s,]*(\d{4})/);
+  if(m){ const mo = months[m[2].slice(0,3).toLowerCase()]; if(mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`; }
+  m = s.match(/([A-Za-z]{3,})\s+(\d{1,2})[-\s,]+(\d{4})/);
+  if(m){ const mo = months[m[1].slice(0,3).toLowerCase()]; if(mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  const parsed = new Date(s);
+  if(!isNaN(parsed.getTime())) return new Date(parsed.getTime()-parsed.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  return '';
+}
+function toTimeValue(val){
+  if(val===''||val===null||val===undefined) return '';
+  if(val instanceof Date && !isNaN(val.getTime())) return String(val.getHours()).padStart(2,'0')+':'+String(val.getMinutes()).padStart(2,'0');
+  if(typeof val==='number' && val<1 && val>=0){ const mins=Math.round(val*24*60); return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'); }
+  const m = String(val).match(/(\d{1,2}):(\d{2})/);
+  return m ? `${String(m[1]).padStart(2,'0')}:${m[2]}` : '';
+}
 let nextLogId = 1;
 function genLogId(){ return nextLogId++; }
 // backfill unique ids on any log entries saved before this feature existed
@@ -1234,6 +1340,9 @@ let editingQuotationId = null;
 document.getElementById('addQuotationBtn')?.addEventListener('click', ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   editingQuotationId = null;
+  pendingQuotationFile = null;
+  const addBanner = document.getElementById('quotExtractBanner');
+  if(addBanner) addBanner.style.display = 'none';
   document.getElementById('quotationModalTitle').textContent = t('quot.addTitle');
   document.getElementById('saveQuotationBtn').textContent = t('quot.save');
   ['q_company','q_contact','q_mobile','q_email','q_amount','q_time','q_nextFollowup','q_requirement','q_followupAction','q_notes','q_quotationNo','q_invoiceNo','q_projectNo'].forEach(id=>document.getElementById(id).value='');
@@ -1248,6 +1357,9 @@ function openQuotationEditModal(id){
   const q = quotations.find(x=>x.id===id);
   if(!q) return;
   editingQuotationId = id;
+  pendingQuotationFile = null;
+  const editBanner = document.getElementById('quotExtractBanner');
+  if(editBanner) editBanner.style.display = 'none';
   document.getElementById('quotationModalTitle').textContent = t('quot.editTitle');
   document.getElementById('saveQuotationBtn').textContent = t('modal.saveChanges');
   document.getElementById('q_company').value = q.companyName||'';
@@ -1303,11 +1415,28 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
     renderAll();
     return;
   }
-  quotations.push({id:nextQuotationId++, ...payload, log:[]});
+  const newQuotation = {id:nextQuotationId++, ...payload, log:[]};
+  quotations.push(newQuotation);
   document.getElementById('quotationModal').classList.remove('show');
+  const banner = document.getElementById('quotExtractBanner');
+  if(banner) banner.style.display = 'none';
   addAudit('add_quotation', companyName);
-  await saveState();
-  toast(t('quot.added'));
+  const synced = await saveStateOrWarn();
+  // The source document is uploaded only after the quotation row exists in the cloud,
+  // otherwise the foreign key on quotation_files would reject it.
+  if(synced && pendingQuotationFile){
+    try{
+      toast(t('quot.uploading'));
+      await uploadQuotationFile(pendingQuotationFile.file, newQuotation.id, pendingQuotationFile.extractedText||'');
+      toast(t('quot.fileSaved'));
+    }catch(err){
+      console.warn('Attachment upload failed:', err);
+      toast(`${t('quot.fileFailed')} — ${err?.message||err}`);
+    }
+  } else if(synced){
+    toast(t('quot.added'));
+  }
+  pendingQuotationFile = null;
   renderAll();
 });
 function deleteQuotation(id){
@@ -1315,6 +1444,12 @@ function deleteQuotation(id){
   const q = quotations.find(x=>x.id===id);
   if(!q) return;
   if(!confirm(t('quot.confirmDelete'))) return;
+  // Clean the bucket up too; the quotation_files rows disappear via ON DELETE CASCADE.
+  const attached = filesForQuotation(id);
+  if(attached.length && supabaseClient){
+    supabaseClient.storage.from(QUOT_BUCKET).remove(attached.map(f=>f.storagePath)).catch(err=>console.warn('Attachment cleanup failed:', err));
+    quotationFiles = quotationFiles.filter(f=>Number(f.quotationId)!==Number(id));
+  }
   quotations = quotations.filter(x=>x.id!==id);
   if(activeQuotationId===id) closeQuotationDrawer();
   addAudit('delete_quotation', q.companyName);
@@ -1357,6 +1492,7 @@ function openQuotationDrawer(id){
       return `<div class="log-entry"><div class="top"><b><span class="badge ${quotStatusBadgeClass(e.status)}">${quotStatusLabel(e.status)}</span></b>${actions}<span>${esc(e.date)}</span></div><div class="note">${esc(e.note)||'—'}</div></div>`;
     }).join('');
   }
+  renderQuotationAttachments(q.id);
   document.getElementById('quotationDrawer').classList.add('show');
   document.getElementById('quotationDrawerOverlay').classList.add('show');
 }
@@ -1403,31 +1539,484 @@ document.getElementById('qd_print')?.addEventListener('click', ()=>{
   printDocument(quotationDetailDocumentHtml(q));
 });
 
+// ============== QUOTATION ATTACHMENTS (الملفات المرفقة سحابيًا) ==============
+// Files (PDF / JPG / PNG / Word) are uploaded to the Supabase Storage bucket
+// `quotation-files`, and a row describing each upload is kept in public.quotation_files
+// so the attachment survives reloads and is visible from any device.
+const QUOT_BUCKET = 'quotation-files';
+let quotationFiles = [];
+let pendingQuotationFile = null; // file waiting to be attached to a not-yet-saved quotation
+
+function filesForQuotation(quotationId){
+  return quotationFiles.filter(f=>Number(f.quotationId)===Number(quotationId));
+}
+function humanFileSize(bytes){
+  const n = Number(bytes)||0;
+  if(n < 1024) return `${n} B`;
+  if(n < 1048576) return `${(n/1024).toFixed(1)} KB`;
+  return `${(n/1048576).toFixed(1)} MB`;
+}
+function fileKindIcon(type, name){
+  const ext = String(name||'').split('.').pop().toLowerCase();
+  if(String(type).includes('pdf') || ext==='pdf') return '📕';
+  if(String(type).startsWith('image/') || ['jpg','jpeg','png','webp'].includes(ext)) return '🖼️';
+  if(ext==='doc' || ext==='docx') return '📘';
+  return '📄';
+}
+function safeStorageName(name){
+  const ext = (String(name).split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+  return `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+}
+
+async function loadQuotationFiles(){
+  if(!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('quotation_files').select('*');
+  if(error){ console.warn('Loading quotation files failed:', error); quotationFiles = []; return; }
+  quotationFiles = (data||[]).map(row=>({
+    id: row.id,
+    quotationId: row.quotation_id,
+    fileName: row.file_name,
+    fileType: row.file_type,
+    fileSize: row.file_size,
+    storagePath: row.storage_path,
+    publicUrl: row.public_url,
+    extractedText: row.extracted_text || '',
+    uploadedAt: row.uploaded_at
+  }));
+}
+
+// Uploads the original document to cloud storage and records it against the quotation.
+async function uploadQuotationFile(file, quotationId, extractedText=''){
+  if(!supabaseClient) throw new Error(currentLang==='en'?'Cloud storage is not available':'التخزين السحابي غير متاح');
+  const storagePath = `${quotationId}/${safeStorageName(file.name)}`;
+  const { error: uploadError } = await supabaseClient.storage
+    .from(QUOT_BUCKET)
+    .upload(storagePath, file, { cacheControl:'3600', upsert:false, contentType:file.type || 'application/octet-stream' });
+  if(uploadError) throw uploadError;
+  const { data: urlData } = supabaseClient.storage.from(QUOT_BUCKET).getPublicUrl(storagePath);
+  const row = {
+    quotation_id: quotationId,
+    file_name: file.name,
+    file_type: file.type || '',
+    file_size: file.size || 0,
+    storage_path: storagePath,
+    public_url: urlData?.publicUrl || '',
+    extracted_text: (extractedText||'').slice(0, 20000)
+  };
+  const { data, error } = await supabaseClient.from('quotation_files').insert(row).select().single();
+  if(error){
+    // Do not leave an orphan object behind in the bucket.
+    await supabaseClient.storage.from(QUOT_BUCKET).remove([storagePath]).catch(()=>{});
+    throw error;
+  }
+  quotationFiles.push({
+    id: data.id, quotationId: data.quotation_id, fileName: data.file_name, fileType: data.file_type,
+    fileSize: data.file_size, storagePath: data.storage_path, publicUrl: data.public_url,
+    extractedText: data.extracted_text || '', uploadedAt: data.uploaded_at
+  });
+  return data;
+}
+
+async function deleteQuotationFile(fileId){
+  const entry = quotationFiles.find(f=>Number(f.id)===Number(fileId));
+  if(!entry) return;
+  if(!confirm(currentLang==='en'?'Delete this attachment permanently?':'هل تريد حذف هذا الملف المرفق نهائيًا؟')) return;
+  try{
+    await supabaseClient.storage.from(QUOT_BUCKET).remove([entry.storagePath]);
+    const { error } = await supabaseClient.from('quotation_files').delete().eq('id', entry.id);
+    if(error) throw error;
+    quotationFiles = quotationFiles.filter(f=>Number(f.id)!==Number(fileId));
+    toast(currentLang==='en'?'Attachment deleted':'تم حذف الملف المرفق');
+    if(activeQuotationId) renderQuotationAttachments(activeQuotationId);
+  }catch(err){
+    console.warn('Attachment delete failed:', err);
+    toast(currentLang==='en'?'Could not delete the attachment':'تعذر حذف الملف المرفق');
+  }
+}
+
+function renderQuotationAttachments(quotationId){
+  const box = document.getElementById('qd_files');
+  if(!box) return;
+  const list = filesForQuotation(quotationId);
+  if(!list.length){
+    box.innerHTML = `<div style="color:var(--muted); font-size:12.5px; padding:10px 0">${t('quot.noFiles')}</div>`;
+    return;
+  }
+  box.innerHTML = list.map(f=>`
+    <div class="log-entry">
+      <div class="top">
+        <b>${fileKindIcon(f.fileType, f.fileName)} ${esc(f.fileName)}</b>
+        <span>${humanFileSize(f.fileSize)}</span>
+      </div>
+      <div class="note">
+        <button type="button" class="link-btn" data-open-file="${f.id}">${t('quot.viewFile')}</button> ·
+        <button type="button" class="link-btn" data-print-file="${f.id}">${t('quot.printFile')}</button>
+        ${can('delete') ? ` · <button type="button" class="link-btn" data-delete-file="${f.id}">${t('action.delete')}</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// Fetching the object as a blob first gives us a same-origin blob: URL, which is the
+// only reliable way to drive window.print() on a file hosted on another domain.
+async function printQuotationFile(fileId){
+  const entry = quotationFiles.find(f=>Number(f.id)===Number(fileId));
+  if(!entry) return;
+  const ext = String(entry.fileName).split('.').pop().toLowerCase();
+  if(ext==='doc' || ext==='docx'){
+    toast(currentLang==='en'?'Word files open in Word for printing':'ملفات Word تُفتح في برنامج Word للطباعة');
+    window.open(entry.publicUrl, '_blank');
+    return;
+  }
+  try{
+    toast(currentLang==='en'?'Preparing the file for printing…':'جارٍ تجهيز الملف للطباعة…');
+    const res = await fetch(entry.publicUrl);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    if(String(entry.fileType).startsWith('image/') || ['jpg','jpeg','png','webp'].includes(ext)){
+      printDocument(`<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8">
+<title>${esc(entry.fileName)}</title><style>${printSharedStyle()}
+img{max-width:100%;height:auto;display:block;margin:12px auto}</style></head><body>
+${printBrandHeader(esc(entry.fileName))}
+<img src="${blobUrl}" alt="${esc(entry.fileName)}">
+<div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div></body></html>`);
+      setTimeout(()=>URL.revokeObjectURL(blobUrl), 60000);
+      return;
+    }
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    frame.src = blobUrl;
+    frame.onload = ()=>setTimeout(()=>{
+      try{ frame.contentWindow.focus(); frame.contentWindow.print(); }
+      catch(err){ window.open(blobUrl, '_blank'); }
+      setTimeout(()=>{ frame.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
+    }, 400);
+    document.body.appendChild(frame);
+  }catch(err){
+    console.warn('Printing attachment failed:', err);
+    window.open(entry.publicUrl, '_blank');
+  }
+}
+
+document.getElementById('qd_files')?.addEventListener('click', ev=>{
+  const openBtn = ev.target.closest('[data-open-file]');
+  const printBtn = ev.target.closest('[data-print-file]');
+  const delBtn = ev.target.closest('[data-delete-file]');
+  if(openBtn){
+    const entry = quotationFiles.find(f=>Number(f.id)===Number(openBtn.dataset.openFile));
+    if(entry) window.open(entry.publicUrl, '_blank');
+    return;
+  }
+  if(printBtn){ printQuotationFile(Number(printBtn.dataset.printFile)); return; }
+  if(delBtn){ deleteQuotationFile(Number(delBtn.dataset.deleteFile)); }
+});
+
+// Attach an extra file to a quotation that already exists.
+document.getElementById('qd_attachFile')?.addEventListener('change', async ev=>{
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if(!file || !activeQuotationId) return;
+  if(!can('write')){ toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات'); return; }
+  try{
+    toast(t('quot.uploading'));
+    await uploadQuotationFile(file, activeQuotationId);
+    renderQuotationAttachments(activeQuotationId);
+    toast(t('quot.fileSaved'));
+  }catch(err){
+    console.warn('Attachment upload failed:', err);
+    toast(`${t('quot.fileFailed')} — ${err?.message||err}`);
+  }
+});
+
+// ============== DOCUMENT IMPORT (PDF / JPG / WORD) ==============
+const loadedScripts = {};
+function loadScriptOnce(src){
+  if(loadedScripts[src]) return loadedScripts[src];
+  loadedScripts[src] = new Promise((resolve, reject)=>{
+    const el = document.createElement('script');
+    el.src = src; el.async = true;
+    el.onload = ()=>resolve();
+    el.onerror = ()=>reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(el);
+  });
+  return loadedScripts[src];
+}
+
+async function extractTextFromPdf(file){
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  const pdfjs = window.pdfjsLib;
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buffer = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({data:buffer}).promise;
+  let text = '';
+  const pages = Math.min(doc.numPages, 10);
+  for(let i=1; i<=pages; i++){
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    // Rebuild line breaks: pdf.js gives isolated items, so start a new line whenever
+    // the vertical position changes, otherwise every field runs into the next one.
+    let lastY = null, line = '';
+    content.items.forEach(item=>{
+      const y = item.transform?.[5];
+      if(lastY !== null && Math.abs(y - lastY) > 3){ text += line.trim() + '\n'; line = ''; }
+      line += item.str + ' ';
+      lastY = y;
+    });
+    text += line.trim() + '\n';
+  }
+  return text;
+}
+
+async function extractTextFromImage(file){
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+  const worker = await window.Tesseract.createWorker(['eng','ara']);
+  try{
+    const { data } = await worker.recognize(file);
+    return data?.text || '';
+  } finally {
+    await worker.terminate();
+  }
+}
+
+async function extractTextFromWord(file){
+  const ext = String(file.name).split('.').pop().toLowerCase();
+  if(ext === 'doc') throw new Error(currentLang==='en'
+    ? 'Legacy .doc files are not supported — save as .docx'
+    : 'صيغة .doc القديمة غير مدعومة — احفظ الملف بصيغة .docx');
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
+  const buffer = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({arrayBuffer:buffer});
+  return result?.value || '';
+}
+
+async function extractTextFromDocument(file){
+  const type = String(file.type||'').toLowerCase();
+  const ext = String(file.name).split('.').pop().toLowerCase();
+  if(type.includes('pdf') || ext==='pdf'){
+    let text = await extractTextFromPdf(file);
+    // Scanned PDFs carry no text layer; fall back to OCR on nothing is not possible here,
+    // so tell the user rather than silently importing an empty record.
+    if(text.replace(/\s/g,'').length < 20) throw new Error(currentLang==='en'
+      ? 'This PDF has no readable text layer (scanned). Export a JPG page and import that instead.'
+      : 'ملف PDF لا يحتوي نصًا قابلًا للقراءة (ممسوح ضوئيًا). صدّر الصفحة كصورة JPG واستوردها بدلًا منه.');
+    return text;
+  }
+  if(type.startsWith('image/') || ['jpg','jpeg','png','webp'].includes(ext)) return await extractTextFromImage(file);
+  if(['doc','docx'].includes(ext) || type.includes('word') || type.includes('officedocument.wordprocessing')) return await extractTextFromWord(file);
+  throw new Error(currentLang==='en' ? 'Unsupported file type' : 'نوع الملف غير مدعوم');
+}
+
+// Heuristic field extraction. Everything it finds is shown to the user for review
+// before it is written, because OCR and PDF layouts are never perfectly predictable.
+function parseQuotationFromText(rawText, fileName=''){
+  const text = String(rawText||'').replace(/\r/g,'').replace(/[ \t]+/g,' ');
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const flat = lines.join('\n');
+  const found = {};
+  const grab = (re, group=1)=>{ const m = flat.match(re); return m ? String(m[group]||'').trim() : ''; };
+
+  found.email = grab(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, 0);
+
+  const mobileLabelled = grab(/(?:mobile|mob|tel|phone|contact\s*no|جوال|موبايل|هاتف|تليفون)\s*(?:no\.?|#)?\s*[:\-]?\s*((?:\+?\d[\d\s\-()]{6,17}\d))/i);
+  found.mobile = (mobileLabelled || grab(/(\+974[\s-]?\d{4}[\s-]?\d{4})/) || grab(/(?:^|\s)([3567]\d{3}[\s-]?\d{4})(?:\s|$)/)).replace(/\s+/g,' ').trim();
+
+  // Reference numbers must sit on the SAME line as their label and must contain a
+  // digit — otherwise a bare "QUOTATION" heading swallows the next word as the number.
+  const grabRef = (labels)=>{
+    const re = new RegExp(`(?:${labels})[^\\S\\n]*(?:no\\.?|number|ref\\.?|code|#|رقم)?[^\\S\\n]*[:\\-.]?[^\\S\\n]*([A-Za-z0-9][A-Za-z0-9\\/\\-_]{2,25})`, 'i');
+    for(const line of lines){
+      const m = line.match(re);
+      if(m && /\d/.test(m[1])) return m[1].replace(/[.,;:]+$/,'');
+    }
+    return '';
+  };
+  found.quotationNo = grabRef('quotation|quote|quot|offer|عرض\\s*سعر|عرض\\s*الأسعار|رقم\\s*العرض');
+  found.invoiceNo = grabRef('tax\\s*invoice|invoice|inv|فاتورة|رقم\\s*الفاتورة');
+  found.projectNo = grabRef('project|job|مشروع|رقم\\s*المشروع');
+
+  // Prefer an explicit grand total; otherwise take the largest money-looking figure.
+  const amountLabelled = grab(/(?:grand\s*total|total\s*amount|net\s*total|total|الإجمالي|المجموع|الإجمالي\s*النهائي|القيمة\s*الإجمالية)\s*(?:\(?\s*(?:qar|qr|ر\.?ق)\s*\)?)?\s*[:\-]?\s*([\d][\d,\.\s]{0,18})/i);
+  let amount = Number(String(amountLabelled).replace(/[,\s]/g,'')) || 0;
+  if(!amount){
+    const candidates = (flat.match(/\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{4,}(?:\.\d{1,2})?/g)||[])
+      .map(v=>Number(v.replace(/,/g,''))).filter(v=>isFinite(v) && v>0 && v<1e12);
+    amount = candidates.length ? Math.max(...candidates) : 0;
+  }
+  found.amount = amount;
+
+  const dateLabelled = grab(/(?:date|dated|تاريخ|التاريخ)\s*[:\-]?\s*([0-9]{1,4}[-\/.][0-9]{1,2}[-\/.][0-9]{2,4}|[0-9]{1,2}[-\s][A-Za-z]{3,}[-\s,]*[0-9]{4})/i);
+  found.date = toISODate(dateLabelled) || toISODate(grab(/([0-9]{4}[-\/.][0-9]{1,2}[-\/.][0-9]{1,2})/)) || toISODate(grab(/([0-9]{1,2}[-\/.][0-9]{1,2}[-\/.][0-9]{4})/)) || '';
+
+  const validityDays = Number(grab(/(?:valid(?:ity)?|صالح)\s*(?:for)?\s*[:\-]?\s*(\d{1,3})\s*(?:days|يوم)/i));
+  if(found.date && validityDays){
+    const d = new Date(found.date); d.setDate(d.getDate() + validityDays);
+    found.nextFollowup = d.toISOString().slice(0,10);
+  }
+
+  found.contactPerson = grab(/(?:attn|attention|kind\s*attention|contact\s*person|عناية|السيد|المهندس)[^\S\n]*[:\-.]?[^\S\n]*((?:Mr\.?|Mrs\.?|Ms\.?|Eng\.?|م\.)?[^\S\n]*[A-Za-z\u0621-\u064A][A-Za-z\u0621-\u064A. \t]{2,40})/i)
+    .replace(/\s{2,}/g,' ').replace(/[.,;:]+$/,'').trim();
+
+  // Company name: an explicit "To / M/s / Client" label wins, otherwise the first
+  // line that looks like a company, otherwise the file name as a last resort.
+  let company = grab(/(?:^|\n)\s*(?:to|m\/?s\.?|messrs\.?|client|customer|bill\s*to|company\s*name|إلى|السادة|العميل|اسم\s*الشركة)\s*[:\-.]?\s*([^\n]{3,70})/i);
+  if(!company){
+    const companyLine = lines.find(l=>/(?:w\.?l\.?l|l\.?l\.?c|co\.|company|contracting|trading|establishment|est\.|group|est|شركة|مؤسسة|مقاولات|للتجارة)/i.test(l) && l.length<80);
+    company = companyLine || '';
+  }
+  company = company.replace(/^[\s:،,.-]+/,'').replace(/\s{2,}/g,' ').trim();
+  if(company.length > 70) company = company.slice(0,70).trim();
+  if(!company) company = String(fileName).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+  found.companyName = company;
+
+  const lower = flat.toLowerCase();
+  found.companyScope = /consultant|استشار/.test(lower) ? 'consultant'
+    : /sub[-\s]?contract|من الباطن/.test(lower) ? 'subcontractor'
+    : /developer|مطور/.test(lower) ? 'developer'
+    : /supplier|manufactur|مورد|مصنع/.test(lower) ? 'supplier'
+    : 'mainContractor';
+  found.subject = /invoice|payment|دفع|فاتورة/.test(lower) ? 'payment'
+    : /new\s*client|عميل\s*جديد/.test(lower) ? 'newClient'
+    : 'quoteFollowup';
+  found.status = found.invoiceNo ? 'paymentPending' : found.quotationNo ? 'submitted' : 'open';
+
+  // A short, readable excerpt of the source so the record is traceable later.
+  found.requirement = lines.slice(0, 12).join(' · ').slice(0, 500);
+  return found;
+}
+
+function fillQuotationModalFrom(fields){
+  const set = (id, value)=>{ const el = document.getElementById(id); if(el) el.value = value ?? ''; };
+  set('q_company', fields.companyName||'');
+  set('q_contact', fields.contactPerson||'');
+  set('q_mobile', fields.mobile||'');
+  set('q_email', fields.email||'');
+  set('q_amount', fields.amount||'');
+  set('q_quotationNo', fields.quotationNo||'');
+  set('q_invoiceNo', fields.invoiceNo||'');
+  set('q_projectNo', fields.projectNo||'');
+  set('q_date', fields.date || todayISO());
+  set('q_time', '');
+  set('q_nextFollowup', fields.nextFollowup||'');
+  set('q_requirement', fields.requirement||'');
+  set('q_followupAction', '');
+  set('q_notes', '');
+  const scope = document.getElementById('q_scope'); if(scope) scope.value = fields.companyScope || 'mainContractor';
+  const subject = document.getElementById('q_subject'); if(subject) subject.value = fields.subject || 'quoteFollowup';
+  const status = document.getElementById('q_status'); if(status) status.value = fields.status || 'open';
+}
+
+function buildQuotationFromFields(fields, fallbackDate){
+  return {
+    id: nextQuotationId++,
+    date: fields.date || fallbackDate,
+    visitTime: '',
+    companyName: fields.companyName || '',
+    companyScope: fields.companyScope || 'mainContractor',
+    contactPerson: fields.contactPerson || '',
+    mobile: fields.mobile || '',
+    email: fields.email || '',
+    amount: Number(fields.amount)||0,
+    quotationNo: fields.quotationNo || '',
+    invoiceNo: fields.invoiceNo || '',
+    projectNo: fields.projectNo || '',
+    subject: fields.subject || 'quoteFollowup',
+    nextFollowup: fields.nextFollowup || '',
+    status: fields.status || 'open',
+    requirement: fields.requirement || '',
+    followupAction: '',
+    notes: '',
+    log: []
+  };
+}
+
+document.getElementById('importQuotationDocFile')?.addEventListener('change', async ev=>{
+  const files = Array.from(ev.target.files||[]);
+  ev.target.value = '';
+  if(!files.length) return;
+  if(!can('write')){ toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات'); return; }
+  const fallbackDate = document.getElementById('quotDateFilter')?.value || todayISO();
+
+  // A single file goes through the review modal so OCR mistakes can be corrected.
+  if(files.length === 1){
+    const file = files[0];
+    try{
+      toast(t('quot.reading'));
+      const text = await extractTextFromDocument(file);
+      const fields = parseQuotationFromText(text, file.name);
+      editingQuotationId = null;
+      pendingQuotationFile = { file, extractedText: text };
+      document.getElementById('quotationModalTitle').textContent = t('quot.reviewTitle');
+      document.getElementById('saveQuotationBtn').textContent = t('quot.save');
+      const banner = document.getElementById('quotExtractBanner');
+      if(banner){ banner.style.display = 'block'; banner.textContent = `${t('quot.extractedFrom')} ${file.name}`; }
+      fillQuotationModalFrom({...fields, date: fields.date || fallbackDate});
+      document.getElementById('quotationModal').classList.add('show');
+      toast(t('quot.extracted'));
+    }catch(err){
+      console.warn('Document extraction failed:', err);
+      pendingQuotationFile = null;
+      toast(`${t('quot.readFailed')} — ${err?.message||err}`);
+    }
+    return;
+  }
+
+  // Several files at once: import them all automatically, then report the result.
+  let added = 0, failed = 0;
+  toast(t('quot.reading'));
+  for(const file of files){
+    try{
+      const text = await extractTextFromDocument(file);
+      const fields = parseQuotationFromText(text, file.name);
+      const record = buildQuotationFromFields(fields, fallbackDate);
+      if(!record.companyName) record.companyName = file.name.replace(/\.[^.]+$/,'');
+      quotations.push(record);
+      const synced = await saveState();
+      if(!synced) throw new Error(lastSyncError || 'cloud sync failed');
+      await uploadQuotationFile(file, record.id, text);
+      added++;
+    }catch(err){
+      console.warn('Document import failed for', file.name, err);
+      failed++;
+    }
+  }
+  renderAll();
+  if(activeQuotationId) renderQuotationAttachments(activeQuotationId);
+  toast(currentLang==='en'
+    ? `Imported ${added} file(s)${failed?`, ${failed} failed`:''}`
+    : `تم استيراد ${added} ملف${failed?`، وفشل ${failed}`:''}`);
+});
+
 // ---- Import / template / export ----
 document.getElementById('importQuotationsFile')?.addEventListener('change', async e=>{
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = async ()=>{
     try{
-      const wb = XLSX.read(reader.result, {type:'array'});
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+      // cellDates:true makes XLSX hand us real Date objects instead of serial numbers.
+      const wb = XLSX.read(reader.result, {type:'array', cellDates:true});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:'', raw:false, dateNF:'yyyy-mm-dd'});
       const pick=(row,keys)=>{const key=Object.keys(row).find(k=>keys.includes(String(k).trim().toLowerCase()));return key===undefined?'':row[key];};
       const selectedQuotationDate = document.getElementById('quotDateFilter')?.value || todayISO();
       const scopeMap = {'main contractor':'mainContractor','مقاول رئيسي':'mainContractor','subcontractor':'subcontractor','مقاول من الباطن':'subcontractor','consultant':'consultant','استشاري':'consultant','developer / client':'developer','مطور':'developer','مطور / عميل مباشر':'developer','supplier / manufacturer':'supplier','مورد':'supplier','مورد / مصنع':'supplier'};
       const statusMap = {'open':'open','مفتوح':'open','quotation submitted':'submitted','تم تقديم العرض':'submitted','follow-up required':'followup','بانتظار المتابعة':'followup','payment pending':'paymentPending','بانتظار الدفع':'paymentPending','closed':'closed','مغلق':'closed'};
       const subjectMap = {'follow up quote':'quoteFollowup','متابعة عرض سعر':'quoteFollowup','new target client':'newClient','عميل مستهدف جديد':'newClient','payment':'payment','متابعة دفعة':'payment'};
-      const toTimeString = (val)=>{
-        if(val===''||val===null||val===undefined) return '';
-        if(typeof val==='number' && val<1){ const mins=Math.round(val*24*60); return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'); }
-        return String(val);
-      };
+      const toTimeString = toTimeValue;
       const imported = rows.map(row=>{
         const companyName = String(pick(row,['company name','اسم الشركة','company']));
         if(!companyName) return null;
         const scopeRaw = String(pick(row,['company scope / main activity','company scope','نشاط الشركة'])).trim().toLowerCase();
         const statusRaw = String(pick(row,['status / remarks','status','الحالة'])).trim().toLowerCase();
         const subjectRaw = String(pick(row,['visit purpose','الموضوع','موضوع العرض / الزيارة'])).trim().toLowerCase();
-        const importedDate = String(pick(row,['date','التاريخ'])).trim();
+        const importedDate = toISODate(pick(row,['date','التاريخ']));
+        // "Next Follow-up" is often filled with free text ("next week", "They will send
+        // email", "ـــــــ") rather than a date. A `date` column rejects those outright and
+        // that single bad value fails the whole upload, so anything unparsable is kept as a
+        // note instead of being sent to Postgres.
+        const followupRaw = String(pick(row,['next follow-up','next followup','المتابعة القادمة'])).trim();
+        const followupDate = toISODate(followupRaw);
+        const followupNote = (!followupDate && followupRaw && !/^[ـ\-_—–\s.]+$/.test(followupRaw))
+          ? `${currentLang==='en'?'Next follow-up':'المتابعة القادمة'}: ${followupRaw}`
+          : '';
         return {
           id: nextQuotationId++,
           date: importedDate || selectedQuotationDate,
@@ -1437,22 +2026,28 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', asyn
           contactPerson: String(pick(row,['contact person','المسؤول'])),
           mobile: String(pick(row,['mobile no.','mobile','الجوال'])),
           email: String(pick(row,['email address','email','البريد الإلكتروني'])),
-          amount: Number(pick(row,['amount','quotation value','قيمة العرض']))||0,
+          amount: Number(String(pick(row,['amount','quotation value','قيمة العرض'])).replace(/[^\d.-]/g,''))||0,
           quotationNo: String(pick(row,['quotation no.','quotation no','رقم عرض السعر'])),
           invoiceNo: String(pick(row,['invoice no.','invoice no','رقم الفاتورة'])),
           projectNo: String(pick(row,['project no.','project no','رقم المشروع'])),
           subject: subjectMap[subjectRaw] || 'quoteFollowup',
-          nextFollowup: String(pick(row,['next follow-up','next followup','المتابعة القادمة'])),
+          nextFollowup: followupDate,
           status: statusMap[statusRaw] || 'open',
           requirement: String(pick(row,['discussion / client requirement','discussion','requirement','تفاصيل / متطلبات العميل'])),
-          followupAction: String(pick(row,['follow-up action','followup action','إجراء المتابعة'])),
-          notes: '',
+          followupAction: String(pick(row,['follow-up action / next step','follow-up action','followup action','إجراء المتابعة'])),
+          notes: followupNote,
           log: []
         };
       }).filter(Boolean);
       if(!imported.length) throw new Error('empty');
       const msg = t('quot.importConfirm') ? (currentLang==='en'?`Import ${imported.length} quotations?`:`استيراد ${imported.length} عرض سعر؟`) : '';
-      if(confirm(msg)){ quotations.push(...imported); if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate; const synced = await saveState(); if(!synced){ console.warn('Excel import wrote to browser state but cloud sync did not complete'); } renderAll(); toast(t('quot.imported')); }
+      if(confirm(msg)){
+        quotations.push(...imported);
+        if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate;
+        const synced = await saveStateOrWarn(currentLang==='en'?`importing ${imported.length} rows from Excel`:`استيراد ${imported.length} صف من Excel`);
+        renderAll();
+        if(synced) toast(t('quot.imported'));
+      }
       else { nextQuotationId -= imported.length; }
     }catch(err){ console.warn('Excel import failed:', err); toast(t('quot.importFailed')); }
   };

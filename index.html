@@ -345,6 +345,13 @@
 
     <!-- ================= QUOTATIONS ================= -->
     <section class="page" id="page-quotations">
+      <div id="quotSyncErrorBanner" class="sync-error-banner" style="display:none">
+        <div class="sync-error-text"></div>
+        <div class="sync-error-actions">
+          <button type="button" class="btn secondary small" data-copy-sync-error>نسخ نص الخطأ</button>
+          <button type="button" class="btn secondary small" data-dismiss-sync-error>إغلاق</button>
+        </div>
+      </div>
       <div class="panel">
         <div class="panel-head">
           <h3 data-i18n="quot.title">قائمة عروض الأسعار</h3>
@@ -376,6 +383,10 @@
             <div class="file-btn-wrap">
               <button class="btn secondary small" type="button" data-i18n="quot.importExcel">⭱ استيراد من إكسل</button>
               <input type="file" id="importQuotationsFile" accept=".xlsx,.xls,.csv" title="استيراد عروض الأسعار من Excel" aria-label="استيراد عروض الأسعار من Excel">
+            </div>
+            <div class="file-btn-wrap">
+              <button class="btn secondary small" type="button" data-i18n="quot.importDoc">⭱ استيراد مستند (PDF / صورة / Word)</button>
+              <input type="file" id="importQuotationDocFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" multiple title="استيراد عرض سعر من ملف PDF أو صورة أو Word" aria-label="استيراد عرض سعر من ملف PDF أو صورة أو Word">
             </div>
             <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">⭳ نموذج الاستيراد</button>
             <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">🖶 طباعة القائمة</button>
@@ -946,6 +957,7 @@
   <div class="modal">
     <div class="modal-head"><h3 id="quotationModalTitle" data-i18n="quot.addTitle">إضافة عرض سعر جديد</h3><button class="modal-close" data-close="quotationModal">✕</button></div>
     <div class="modal-body">
+      <div id="quotExtractBanner" class="extract-banner" style="display:none"></div>
       <div class="field-row">
         <div class="field"><label data-i18n="quot.company">اسم الشركة (العميل)</label><input id="q_company" data-i18n-ph="quot.companyPh" placeholder="مثال: شركة الخليج للمقاولات" title="اسم الشركة" aria-label="اسم الشركة"></div>
         <div class="field"><label data-i18n="quot.scope">نشاط الشركة</label>
@@ -1163,6 +1175,13 @@
       </select>
       <input type="text" id="qd_updateNote" data-i18n-ph="quot.updateNotePh" placeholder="ملاحظة التحديث اليومي..." title="ملاحظة التحديث" aria-label="ملاحظة التحديث">
       <button class="btn small" id="qd_addUpdate" data-i18n="drawer.add">إضافة</button>
+    </div>
+
+    <div class="dr-section-title" data-i18n="quot.attachments">الملفات المرفقة</div>
+    <div id="qd_files"></div>
+    <div class="file-btn-wrap" style="margin:8px 0 4px">
+      <button class="btn secondary small" type="button" data-i18n="quot.attachFile">⭱ إرفاق ملف</button>
+      <input type="file" id="qd_attachFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" title="إرفاق ملف بعرض السعر" aria-label="إرفاق ملف بعرض السعر">
     </div>
 
     <div class="dr-section-title" data-i18n="quot.statusLog">سجل تحديثات الحالة</div>
