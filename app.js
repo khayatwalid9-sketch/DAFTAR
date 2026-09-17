@@ -1421,7 +1421,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
   const banner = document.getElementById('quotExtractBanner');
   if(banner) banner.style.display = 'none';
   addAudit('add_quotation', companyName);
-  const synced = await saveStateOrWarn();
+  const synced = await saveStateOrWarn(currentLang==='en'?'saving the quotation':'حفظ عرض السعر');
   // The source document is uploaded only after the quotation row exists in the cloud,
   // otherwise the foreign key on quotation_files would reject it.
   if(synced && pendingQuotationFile){
@@ -1430,8 +1430,10 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
       await uploadQuotationFile(pendingQuotationFile.file, newQuotation.id, pendingQuotationFile.extractedText||'');
       toast(t('quot.fileSaved'));
     }catch(err){
+      const parts = [err?.code, err?.statusCode, err?.message, err?.error, err?.details, err?.hint].filter(Boolean);
+      const detail = parts.length ? parts.join(' — ') : String(err);
       console.warn('Attachment upload failed:', err);
-      toast(`${t('quot.fileFailed')} — ${err?.message||err}`);
+      showSyncErrorBanner(currentLang==='en'?`uploading "${pendingQuotationFile.file.name}"`:`رفع الملف "${pendingQuotationFile.file.name}"`, detail);
     }
   } else if(synced){
     toast(t('quot.added'));
@@ -1571,7 +1573,14 @@ function safeStorageName(name){
 async function loadQuotationFiles(){
   if(!supabaseClient) return;
   const { data, error } = await supabaseClient.from('quotation_files').select('*');
-  if(error){ console.warn('Loading quotation files failed:', error); quotationFiles = []; return; }
+  if(error){
+    const parts = [error?.code, error?.message, error?.details, error?.hint].filter(Boolean);
+    const detail = parts.length ? parts.join(' — ') : String(error);
+    console.warn('Loading quotation files failed:', error);
+    showSyncErrorBanner(currentLang==='en'?'loading attached files list':'تحميل قائمة الملفات المرفقة', detail);
+    quotationFiles = [];
+    return;
+  }
   quotationFiles = (data||[]).map(row=>({
     id: row.id,
     quotationId: row.quotation_id,
@@ -1723,8 +1732,13 @@ document.getElementById('qd_attachFile')?.addEventListener('change', async ev=>{
     renderQuotationAttachments(activeQuotationId);
     toast(t('quot.fileSaved'));
   }catch(err){
+    const parts = [err?.code, err?.statusCode, err?.message, err?.error, err?.details, err?.hint].filter(Boolean);
+    const detail = parts.length ? parts.join(' — ') : String(err);
     console.warn('Attachment upload failed:', err);
-    toast(`${t('quot.fileFailed')} — ${err?.message||err}`);
+    showSyncErrorBanner(currentLang==='en'?`uploading "${file.name}"`:`رفع الملف "${file.name}"`, detail);
+    toast(currentLang==='en'
+      ? 'File upload failed — see the red banner above the quotations list'
+      : 'فشل رفع الملف — راجع الشريط الأحمر أعلى قائمة عروض الأسعار');
   }
 });
 
@@ -1961,7 +1975,7 @@ document.getElementById('importQuotationDocFile')?.addEventListener('change', as
   }
 
   // Several files at once: import them all automatically, then report the result.
-  let added = 0, failed = 0;
+  let added = 0, failed = 0, firstError = '';
   toast(t('quot.reading'));
   for(const file of files){
     try{
@@ -1975,12 +1989,16 @@ document.getElementById('importQuotationDocFile')?.addEventListener('change', as
       await uploadQuotationFile(file, record.id, text);
       added++;
     }catch(err){
+      const parts = [err?.code, err?.message, err?.details, err?.hint].filter(Boolean);
+      const detail = parts.length ? parts.join(' — ') : String(err?.message||err);
       console.warn('Document import failed for', file.name, err);
+      if(!firstError) firstError = `${file.name}: ${detail}`;
       failed++;
     }
   }
   renderAll();
   if(activeQuotationId) renderQuotationAttachments(activeQuotationId);
+  if(failed) showSyncErrorBanner(currentLang==='en'?`importing ${failed} document(s)`:`استيراد ${failed} مستند`, firstError);
   toast(currentLang==='en'
     ? `Imported ${added} file(s)${failed?`, ${failed} failed`:''}`
     : `تم استيراد ${added} ملف${failed?`، وفشل ${failed}`:''}`);

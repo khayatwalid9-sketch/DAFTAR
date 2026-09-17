@@ -615,8 +615,10 @@ html[data-mode="light"] .report-toolbar{background:rgba(255,255,255,.9)}
 .sync-error-banner{
   display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
   margin-bottom:14px; padding:12px 14px; border-radius:10px;
-  background:rgba(179,58,58,.10); border:1px solid rgba(179,58,58,.4);
+  background:color-mix(in srgb, var(--surface) 92%, #B33A3A 18%);
+  border:1px solid rgba(179,58,58,.5);
   color:var(--text); font-size:12.5px; line-height:1.7;
+  position:sticky; top:0; z-index:50; box-shadow:0 4px 14px rgba(0,0,0,.25);
 }
 .sync-error-banner .sync-error-text{white-space:pre-wrap; word-break:break-word; flex:1; direction:ltr; text-align:left; font-family:ui-monospace, monospace;}
 .sync-error-banner .sync-error-actions{display:flex; gap:6px; flex-shrink:0;}
