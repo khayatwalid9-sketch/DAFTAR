@@ -416,14 +416,26 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 let syncInProgress = null;
 let syncQueued = false;
 let lastSyncError = null;
-async function replaceTable(table, rows, key='id') {
-  const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
-  if(readError){ readError.message = `[${table}] ${readError.message||''}`; throw readError; }
-  const ids = new Set(rows.map(row=>String(row[key])));
-  for(const row of existing || []) {
-    if(!ids.has(String(row[key]))) {
-      const { error } = await supabaseClient.from(table).delete().eq(key, row[key]);
-      if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
+// pruneOrphans=true deletes any server row whose id is absent from the given `rows`
+// snapshot — safe for tables with no other deletion path. It is UNSAFE for a table
+// with its own child rows (like quotation_files, linked to quotations via
+// ON DELETE CASCADE): if this function ever runs with a snapshot that is momentarily
+// missing a row that legitimately still exists (a stale read, an overlapping queued
+// sync — see `syncQueued` above), it would delete-then-reinsert that row, and the
+// cascade would silently wipe its attachments even though the quotation itself looks
+// unchanged afterwards. Callers that already delete explicitly (see deleteQuotation)
+// should pass pruneOrphans=false.
+async function replaceTable(table, rows, key='id', pruneOrphans=true) {
+  if(pruneOrphans){
+    const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
+    if(readError){ readError.message = `[${table}] ${readError.message||''}`; throw readError; }
+    const ids = new Set(rows.map(row=>String(row[key])));
+    for(const row of existing || []) {
+      if(!ids.has(String(row[key]))) {
+        console.info(`replaceTable: pruning ${table} id=${row[key]} (not present in the current local list)`);
+        const { error } = await supabaseClient.from(table).delete().eq(key, row[key]);
+        if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
+      }
     }
   }
   if(rows.length) {
@@ -447,8 +459,8 @@ async function syncToSupabase() {
       await replaceTable('reps', reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})));
       const quotationRows = quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''}));
       const quotationLogRows = quotations.flatMap(q=>(q.log||[]).map(entry=>({id:entry.id,quotation_id:q.id,log_date:entry.date,status:entry.status||'',note:entry.note||''})));
-      await replaceTable('quotations', quotationRows);
-      await replaceTable('quotations_activity', quotationLogRows);
+      await replaceTable('quotations', quotationRows, 'id', false);
+      await replaceTable('quotations_activity', quotationLogRows, 'id', false);
       await replaceTable('users', users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null})));
       await replaceTable('audit_log', auditLog.map(audit=>({id:audit.id,date:audit.date,user:audit.user,action:audit.action,details:audit.details||''})));
       const { error: settingsError } = await supabaseClient.from('app_settings').upsert({id:1,settings:appSettings,updated_at:new Date().toISOString()},{onConflict:'id'});
@@ -1045,10 +1057,11 @@ function printBrandHeader(docLabel, docCode){
     </div>
   </div>`;
 }
-function printSharedStyle(){
+function printSharedStyle(opts={}){
+  const {orientation='portrait', dense=false} = opts;
   const {accent, accentDim, ink}=printThemeVars();
   return `
-  @page{ size:A4; margin:16mm; }
+  @page{ size:A4 ${orientation}; margin:${orientation==='landscape'?'10mm':'16mm'}; }
   *{box-sizing:border-box;}
   body{font-family:'Tajawal','IBM Plex Sans Arabic','Tahoma','Arial',sans-serif; color:#20242c; direction:${currentLang==='en'?'ltr':'rtl'}; margin:0; padding:0; ${printBackgroundCss()} print-color-adjust:exact; -webkit-print-color-adjust:exact; font-size:13px;}
   .doc-brand{display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; margin-bottom:22px; border-bottom:3px solid ${accent};}
@@ -1062,10 +1075,13 @@ function printSharedStyle(){
   .doc-issue{font-size:11px; color:#6b7280; margin-top:2px;}
   h1{font-size:17px; font-weight:800; margin:0 0 4px;}
   table{width:100%; border-collapse:collapse; margin-bottom:20px; table-layout:fixed;}
-  th{background:${accent}; color:${ink}; font-size:11.5px; font-weight:700; padding:9px 10px; text-align:${currentLang==='en'?'left':'right'}; white-space:normal; overflow-wrap:anywhere;}
-  td{padding:9px 10px; font-size:12px; border-bottom:1px solid #e7e9ee; white-space:normal; overflow-wrap:anywhere; word-break:break-word;}
+  table.wide{table-layout:auto;}
+  th{background:${accent}; color:${ink}; font-size:${dense?'9px':'11.5px'}; font-weight:700; padding:${dense?'5px 4px':'9px 10px'}; text-align:${currentLang==='en'?'left':'right'}; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;}
+  td{padding:${dense?'5px 4px':'9px 10px'}; font-size:${dense?'8.5px':'12px'}; border-bottom:1px solid #e7e9ee; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.4; vertical-align:top;}
   tr:nth-child(even) td{background:rgba(0,0,0,.018);}
   tr.opening td{background:rgba(${hexToRgbArr(accent).join(',')},.08); font-weight:700;}
+  tr{break-inside:avoid; page-break-inside:avoid;}
+  thead{display:table-header-group;}
   .num{font-family:'Consolas','Courier New',monospace; direction:ltr; text-align:left;}
   .panel,.stat-card,.party .box{background:rgba(255,255,255,.92); border:1px solid #e2e5ec; border-radius:10px; padding:14px 16px; margin:0 0 10px;}
   .stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
@@ -1455,6 +1471,12 @@ function deleteQuotation(id){
   quotations = quotations.filter(x=>x.id!==id);
   if(activeQuotationId===id) closeQuotationDrawer();
   addAudit('delete_quotation', q.companyName);
+  // Deleted explicitly and immediately, rather than relying on the general save's
+  // "prune what's missing locally" pass — see the note on replaceTable's pruneOrphans.
+  if(supabaseClient){
+    supabaseClient.from('quotations').delete().eq('id', id)
+      .then(({error})=>{ if(error) console.warn('Explicit quotation delete failed:', error); });
+  }
   saveState();
   toast(t('quot.deleted'));
   renderAll();
@@ -2092,9 +2114,9 @@ document.getElementById('downloadQuotTemplateBtn')?.addEventListener('click', ()
 document.getElementById('quotExcelBtn')?.addEventListener('click', ()=>{
   const rows = scopedQuotations();
   const headers = currentLang==='en'
-    ? ['No.','Date','Time','Company Name','Company Scope','Contact Person','Mobile','Email','Amount','Quotation No.','Invoice No.','Project No.','Visit Purpose','Status','Next Follow-up','Requirement','Follow-up Action']
-    : ['م.','التاريخ','الوقت','اسم الشركة','نشاط الشركة','المسؤول','الجوال','البريد الإلكتروني','قيمة العرض','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الموضوع','الحالة','المتابعة القادمة','التفاصيل','إجراء المتابعة'];
-  const data = [headers, ...rows.map((q,i)=>[i+1, q.date||'', q.visitTime||'', q.companyName||'', quotScopeLabel(q.companyScope), q.contactPerson||'', q.mobile||'', q.email||'', q.amount||0, q.quotationNo||'', q.invoiceNo||'', q.projectNo||'', quotSubjectLabel(q.subject), quotStatusLabel(q.status), q.nextFollowup||'', q.requirement||'', q.followupAction||''])];
+    ? ['No.','Date','Time','Company Name','Company Scope','Contact Person','Mobile','Email','Amount','Quotation No.','Invoice No.','Project No.','Visit Purpose','Status','Next Follow-up','Requirement','Follow-up Action','Notes']
+    : ['م.','التاريخ','الوقت','اسم الشركة','نشاط الشركة','المسؤول','الجوال','البريد الإلكتروني','قيمة العرض','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الموضوع','الحالة','المتابعة القادمة','التفاصيل','إجراء المتابعة','ملاحظات'];
+  const data = [headers, ...rows.map((q,i)=>[i+1, q.date||'', q.visitTime||'', q.companyName||'', quotScopeLabel(q.companyScope), q.contactPerson||'', q.mobile||'', q.email||'', q.amount||0, q.quotationNo||'', q.invoiceNo||'', q.projectNo||'', quotSubjectLabel(q.subject), quotStatusLabel(q.status), q.nextFollowup||'', q.requirement||'', q.followupAction||'', q.notes||''])];
   const sheet = XLSX.utils.aoa_to_sheet(data);
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, currentLang==='en'?'Quotations':'عروض الأسعار');
@@ -2105,14 +2127,18 @@ document.getElementById('quotPrintBtn')?.addEventListener('click', ()=>printDocu
 
 function quotationsListDocumentHtml(rows){
   const title = t('quot.title');
+  // 18 columns is a lot for one printed page, so this report prints in landscape with a
+  // denser font (see printSharedStyle's dense/landscape options) and an auto-sized
+  // ("wide") table instead of forcing all columns to the same width — that equal-width
+  // forcing is what previously squeezed every field down to one letter per line.
   const headers = currentLang==='en'
-    ? ['No.','Date','Time','Company','Scope','Contact','Mobile','Email','Amount','Subject','Quotation No.','Invoice No.','Project No.','Status','Next Follow-up','Follow-up Action','Requirement']
-    : ['م.','التاريخ','الوقت','الشركة','النشاط','المسؤول','الجوال','البريد الإلكتروني','القيمة','الموضوع','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الحالة','المتابعة القادمة','إجراء المتابعة','التفاصيل'];
+    ? ['No.','Date','Time','Company','Scope','Contact','Mobile','Email','Amount','Subject','Quotation No.','Invoice No.','Project No.','Status','Next Follow-up','Follow-up Action','Notes','Details']
+    : ['م.','التاريخ','الوقت','الشركة','النشاط','المسؤول','الجوال','البريد الإلكتروني','القيمة','الموضوع','رقم العرض','رقم الفاتورة','رقم المشروع','الحالة','المتابعة القادمة','إجراء المتابعة','ملاحظات','التفاصيل'];
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<style>${printSharedStyle()}</style></head><body>
+<style>${printSharedStyle({orientation:'landscape', dense:true})}</style></head><body>
 ${printBrandHeader(title)}
-<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(q.date)||'—'}</td><td>${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td><td>${esc(q.contactPerson)||'—'}</td><td>${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td><td>${q.amount?currency(q.amount):'—'}</td><td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td><td>${quotStatusLabel(q.status)}</td><td>${esc(q.nextFollowup)||'—'}</td><td>${esc(q.followupAction)||'—'}</td><td>${esc(q.requirement)||'—'}</td></tr>`).join('') || `<tr><td colspan="17" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
+<table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(q.date)||'—'}</td><td>${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td><td>${esc(q.contactPerson)||'—'}</td><td class="num">${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td><td class="num">${q.amount?currency(q.amount):'—'}</td><td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td><td>${quotStatusLabel(q.status)}</td><td>${esc(q.nextFollowup)||'—'}</td><td>${esc(q.followupAction)||'—'}</td><td>${esc(q.notes)||'—'}</td><td>${esc(q.requirement)||'—'}</td></tr>`).join('') || `<tr><td colspan="18" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
 <div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div>
 </body></html>`;
 }
@@ -2137,6 +2163,8 @@ ${printBrandHeader(title)}
   <tr><td>${t('quot.subject')}</td><td class="num">${quotSubjectLabel(q.subject)}</td></tr>
   <tr><td>${t('th.status')}</td><td class="num">${quotStatusLabel(q.status)}</td></tr>
   <tr><td>${t('quot.nextFollowup')}</td><td class="num">${esc(q.nextFollowup)||'—'}</td></tr>
+  <tr><td>${t('quot.followupAction')}</td><td class="num">${esc(q.followupAction)||'—'}</td></tr>
+  <tr><td>${t('th.notes')}</td><td class="num">${esc(q.notes)||'—'}</td></tr>
 </table>
 <h1>${t('quot.requirement')}</h1>
 <p>${esc(q.requirement)||'—'}</p>
