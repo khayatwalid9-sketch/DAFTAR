@@ -67,7 +67,7 @@ Object.assign(translations,{
   'compliance.generateReport':['إنشاء تقرير الامتثال','Generate Compliance Report'],
   'compliance.reportGenerated':['تم إنشاء تقرير الامتثال','Compliance report generated'],
   'nav.footnote':['يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.','This system runs in your browser - data is saved on this device only.'],
-  'dash.totalDebts':['إجمالي الديون المسجلة','Total registered debts'],'dash.via':['عبر','Across'],'dash.file':['ملف تحصيل','collection files'],'dash.collected':['المبلغ المحصَّل','Collected amount'],'dash.ofTotal':['من الإجمالي','of total'],'dash.overdueTotal':['متأخرات قائمة','Outstanding overdue'],'dash.overdueCase':['حالة متأخرة','overdue cases'],'dash.activeCases':['حالات نشطة قيد المتابعة','Active cases'],'dash.needsFollow':['تحتاج متابعة مستمرة','Need ongoing follow-up'],'dash.companyDebts':['ديون الشركات','Company debts'],'dash.companyUnit':['شركة مدينة','companies'],'dash.individualDebts':['ديون الأفراد','Individual debts'],'dash.individualUnit':['فرد مدين','individuals'],'dash.topOverdue':['أعلى المدينين تأخرًا','Most overdue debtors'],'dash.recentActivity':['آخر المتابعات','Recent activity'],'dash.upcomingDue':['تنبيهات الاستحقاق القادمة','Upcoming due alerts'],
+  'dash.totalDebts':['إجمالي الديون المسجلة','Total registered debts'],'dash.via':['عبر','Across'],'dash.file':['ملف تحصيل','collection files'],'dash.collected':['المبلغ المحصَّل','Collected amount'],'dash.ofTotal':['من الإجمالي','of total'],'dash.overdueTotal':['متأخرات قائمة','Outstanding overdue'],'dash.overdueCase':['حالة متأخرة','overdue cases'],'dash.activeCases':['حالات نشطة قيد المتابعة','Active cases'],'dash.needsFollow':['تحتاج متابعة مستمرة','Need ongoing follow-up'],'dash.companyDebts':['ديون الشركات','Company debts'],'dash.companyUnit':['شركة مدينة','companies'],'dash.individualDebts':['ديون الأفراد','Individual debts'],'dash.individualUnit':['فرد مدين','individuals'],'dash.topOverdue':['أعلى المدينين تأخرًا','Most overdue debtors'],'dash.recentActivity':['آخر المتابعات','Recent activity'],'dash.upcomingDue':['تنبيهات الاستحقاق القادمة','Upcoming due alerts'],'dash.quotFollowups':['متابعات عروض الأسعار (اليوم والمتأخرة)','Quotation follow-ups (today & overdue)'],
   'debtors.allStatuses':['كل الحالات','All statuses'],'reps.count':['عدد المندوبين','Collectors'],'reps.workOn':['يعملون على ملفات التحصيل','Working on collection files'],'reps.collectedBy':['المحصَّل بواسطة المندوبين','Collected by collectors'],'reps.ofAssigned':['من إجمالي الحالات المسندة','of assigned cases'],'reps.unassigned':['حالات غير مسندة','Unassigned cases'],'reps.noRep':['مدينون بلا مندوب مسؤول','Debtors without a collector'],'reps.team':['فريق المندوبين','Collection team'],'reps.addRep':['+ إضافة مندوب','+ Add collector'],'reps.empty':['لا يوجد مندوبون مسجّلون بعد.','No collectors registered yet.'],'reps.rating':['التقييم','Rating'],'reps.monthlyReport':['التقرير الشهري للمندوبين','Monthly Collector Report'],'reps.excellent':['ممتاز','Excellent'],'reps.good':['جيد','Good'],'reps.average':['متوسط','Average'],'reps.poor':['ضعيف','Poor'],'payments.title':['سجل كل عمليات السداد','All payments'],'payments.empty':['لم يتم تسجيل أي عملية سداد بعد.','No payments recorded yet.'],'followups.title':['سجل المتابعات والاتصالات','Follow-up and contact log'],'followups.empty':['لم يتم تسجيل أي متابعة بعد.','No follow-ups recorded yet.'],
   'reports.statusDist':['توزيع حالات المدينين','Debtor status distribution'],'reports.financialSummary':['ملخص مالي','Financial summary'],'reports.totalDebts':['إجمالي الديون','Total debts'],'reports.totalCollected':['إجمالي المحصَّل','Total collected'],'reports.totalRemaining':['إجمالي المتبقي','Total remaining'],'reports.collectionRate':['نسبة التحصيل','Collection rate'],'reports.paymentsCount':['عدد عمليات السداد','Payments count'],'reports.followupsCount':['عدد المتابعات المسجّلة','Follow-ups count'],
   'reports.advanced':['التحليل المالي المتقدم','Advanced financial analysis'],'reports.averageDebt':['متوسط الدين','Average debt'],'reports.overdueRate':['نسبة المتأخرات','Overdue rate'],'reports.expectedMonthly':['المتوقع شهريًا','Expected monthly'],'reports.month':['الشهر','Month'],'reports.dueAmount':['مستحق','Due'],'reports.paidAmount':['محصل','Collected'],
@@ -163,6 +163,12 @@ Object.assign(translations,{
   'quot.noFiles':['لا توجد ملفات مرفقة بهذا العرض.','No files attached to this quotation.'],
   'quot.viewFile':['👁 عرض','👁 View'],
   'quot.printFile':['🖶 طباعة','🖶 Print'],
+  'quot.printOptions':['⚙ خيارات الطباعة','⚙ Print options'],
+  'quot.printOptionsTitle':['خيارات طباعة قائمة عروض الأسعار','Quotation list print options'],
+  'quot.printOptionsHint':['اختر الأعمدة التي تريد ظهورها في النسخة المطبوعة أو PDF. عمود "م." يظهر دائمًا.','Choose which columns appear in the printed/PDF version. The "No." column always shows.'],
+  'quot.selectAll':['تحديد الكل','Select all'],
+  'quot.selectNone':['إلغاء الكل','Select none'],
+  'quot.printNow':['🖶 طباعة الآن','🖶 Print now'],
   'quot.visitReportTitle':['تقرير الزيارات اليومي للعملاء','Daily client visit report'],
   'quot.visitReportDate':['تاريخ التقرير','Report date'],
   'quot.salesInCharge':['مسؤول المبيعات','Sales in-charge'],
@@ -1443,7 +1449,8 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
   if(synced && pendingQuotationFile){
     try{
       toast(t('quot.uploading'));
-      await uploadQuotationFile(pendingQuotationFile.file, newQuotation.id, pendingQuotationFile.extractedText||'');
+      const uploadFile = await compressImageFile(pendingQuotationFile.file);
+      await uploadQuotationFile(uploadFile, newQuotation.id, pendingQuotationFile.extractedText||'');
       toast(t('quot.fileSaved'));
     }catch(err){
       const parts = [err?.code, err?.statusCode, err?.message, err?.error, err?.details, err?.hint].filter(Boolean);
@@ -1616,6 +1623,53 @@ async function loadQuotationFiles(){
   }));
 }
 
+// Client-side image compression before upload: camera photos in particular can be
+// several MB, which is slow to upload and eats into the Supabase Storage quota for no
+// visible gain at normal screen/print size. Only JPG/PNG/WEBP images above a worthwhile
+// size are resized+re-encoded; PDFs and Word files pass through untouched. On ANY
+// failure this returns the original file unchanged, so compression can never be the
+// reason an upload breaks — text extraction always runs on the original, uncompressed
+// file beforehand, so OCR accuracy is unaffected.
+async function compressImageFile(file, opts={}){
+  const {maxDimension=1600, quality=0.78, skipBelowBytes=350*1024} = opts;
+  const type = String(file.type||'').toLowerCase();
+  if(!type.startsWith('image/') || type.includes('svg')) return file;
+  if(file.size <= skipBelowBytes) return file;
+  try{
+    let width, height, drawSource, revoke=null;
+    if(window.createImageBitmap){
+      const bitmap = await createImageBitmap(file).catch(()=>null);
+      if(bitmap){ width=bitmap.width; height=bitmap.height; drawSource=bitmap; }
+    }
+    if(!drawSource){
+      const url = URL.createObjectURL(file);
+      revoke = url;
+      const img = await new Promise((resolve, reject)=>{
+        const el = new Image();
+        el.onload = ()=>resolve(el);
+        el.onerror = reject;
+        el.src = url;
+      });
+      width = img.naturalWidth; height = img.naturalHeight; drawSource = img;
+    }
+    if(!width || !height){ if(revoke) URL.revokeObjectURL(revoke); return file; }
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    const targetW = Math.max(1, Math.round(width * scale));
+    const targetH = Math.max(1, Math.round(height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW; canvas.height = targetH;
+    canvas.getContext('2d').drawImage(drawSource, 0, 0, targetW, targetH);
+    if(revoke) URL.revokeObjectURL(revoke);
+    const blob = await new Promise(resolve=>canvas.toBlob(resolve, 'image/jpeg', quality));
+    if(!blob || blob.size >= file.size) return file; // compression didn't actually help — keep the original
+    const newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], newName, {type:'image/jpeg', lastModified: Date.now()});
+  }catch(err){
+    console.warn('Image compression skipped, uploading original file:', err);
+    return file;
+  }
+}
+
 // Uploads the original document to cloud storage and records it against the quotation.
 async function uploadQuotationFile(file, quotationId, extractedText=''){
   if(!supabaseClient) throw new Error(currentLang==='en'?'Cloud storage is not available':'التخزين السحابي غير متاح');
@@ -1750,7 +1804,7 @@ document.getElementById('qd_attachFile')?.addEventListener('change', async ev=>{
   if(!can('write')){ toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات'); return; }
   try{
     toast(t('quot.uploading'));
-    await uploadQuotationFile(file, activeQuotationId);
+    await uploadQuotationFile(await compressImageFile(file), activeQuotationId);
     renderQuotationAttachments(activeQuotationId);
     toast(t('quot.fileSaved'));
   }catch(err){
@@ -2008,7 +2062,7 @@ document.getElementById('importQuotationDocFile')?.addEventListener('change', as
       quotations.push(record);
       const synced = await saveState();
       if(!synced) throw new Error(lastSyncError || 'cloud sync failed');
-      await uploadQuotationFile(file, record.id, text);
+      await uploadQuotationFile(await compressImageFile(file), record.id, text);
       added++;
     }catch(err){
       const parts = [err?.code, err?.message, err?.details, err?.hint].filter(Boolean);
@@ -2125,20 +2179,77 @@ document.getElementById('quotExcelBtn')?.addEventListener('click', ()=>{
 });
 document.getElementById('quotPrintBtn')?.addEventListener('click', ()=>printDocument(quotationsListDocumentHtml(scopedQuotations())));
 
-function quotationsListDocumentHtml(rows){
+// ---- Quotation print column picker ----
+function getQuotPrintColumnKeys(){
+  const saved = appSettings.quotPrintColumns;
+  return Array.isArray(saved) && saved.length ? saved : QUOT_PRINT_COLUMNS.map(c=>c.key);
+}
+function renderQuotPrintColsList(){
+  const box = document.getElementById('quotPrintColsList');
+  if(!box) return;
+  const enabled = new Set(getQuotPrintColumnKeys());
+  box.innerHTML = QUOT_PRINT_COLUMNS.map(c=>`
+    <label><input type="checkbox" value="${c.key}" ${enabled.has(c.key)?'checked':''}> ${esc(currentLang==='en'?c.en:c.ar)}</label>
+  `).join('');
+}
+document.getElementById('quotPrintOptionsBtn')?.addEventListener('click', ()=>{
+  renderQuotPrintColsList();
+  document.getElementById('quotPrintOptionsModal').classList.add('show');
+});
+document.getElementById('quotPrintColsAll')?.addEventListener('click', ()=>{
+  document.querySelectorAll('#quotPrintColsList input[type=checkbox]').forEach(cb=>cb.checked=true);
+});
+document.getElementById('quotPrintColsNone')?.addEventListener('click', ()=>{
+  document.querySelectorAll('#quotPrintColsList input[type=checkbox]').forEach(cb=>cb.checked=false);
+});
+document.getElementById('quotPrintConfirmBtn')?.addEventListener('click', ()=>{
+  const selected = Array.from(document.querySelectorAll('#quotPrintColsList input[type=checkbox]:checked')).map(cb=>cb.value);
+  if(!selected.length){
+    toast(currentLang==='en'?'Choose at least one column':'اختر عمودًا واحدًا على الأقل');
+    return;
+  }
+  appSettings.quotPrintColumns = selected;
+  saveState(); // remembered for next time, same as any other setting
+  document.getElementById('quotPrintOptionsModal').classList.remove('show');
+  printDocument(quotationsListDocumentHtml(scopedQuotations(), selected));
+});
+
+// Single source of truth for the quotations-list print/PDF columns, shared by the
+// column-picker modal and the HTML builder below, so the two can never drift apart.
+// 'no' (the row number) is not in this list — it is always shown, unconditionally.
+const QUOT_PRINT_COLUMNS = [
+  {key:'date', ar:'التاريخ', en:'Date', get:q=>esc(q.date)||'—'},
+  {key:'visitTime', ar:'الوقت', en:'Time', get:q=>esc(q.visitTime)||'—'},
+  {key:'companyName', ar:'الشركة', en:'Company', get:q=>esc(q.companyName)},
+  {key:'companyScope', ar:'النشاط', en:'Scope', get:q=>quotScopeLabel(q.companyScope)},
+  {key:'contactPerson', ar:'المسؤول', en:'Contact', get:q=>esc(q.contactPerson)||'—'},
+  {key:'mobile', ar:'الجوال', en:'Mobile', get:q=>esc(q.mobile)||'—', cls:'num'},
+  {key:'email', ar:'البريد الإلكتروني', en:'Email', get:q=>esc(q.email)||'—'},
+  {key:'amount', ar:'القيمة', en:'Amount', get:q=>q.amount?currency(q.amount):'—', cls:'num'},
+  {key:'subject', ar:'الموضوع', en:'Subject', get:q=>quotSubjectLabel(q.subject)},
+  {key:'quotationNo', ar:'رقم العرض', en:'Quotation No.', get:q=>esc(q.quotationNo)||'—'},
+  {key:'invoiceNo', ar:'رقم الفاتورة', en:'Invoice No.', get:q=>esc(q.invoiceNo)||'—'},
+  {key:'projectNo', ar:'رقم المشروع', en:'Project No.', get:q=>esc(q.projectNo)||'—'},
+  {key:'status', ar:'الحالة', en:'Status', get:q=>quotStatusLabel(q.status)},
+  {key:'nextFollowup', ar:'المتابعة القادمة', en:'Next Follow-up', get:q=>esc(q.nextFollowup)||'—'},
+  {key:'followupAction', ar:'إجراء المتابعة', en:'Follow-up Action', get:q=>esc(q.followupAction)||'—'},
+  {key:'notes', ar:'ملاحظات', en:'Notes', get:q=>esc(q.notes)||'—'},
+  {key:'requirement', ar:'التفاصيل', en:'Details', get:q=>esc(q.requirement)||'—'},
+];
+function quotationsListDocumentHtml(rows, selectedKeys){
   const title = t('quot.title');
+  const cols = selectedKeys ? QUOT_PRINT_COLUMNS.filter(c=>selectedKeys.includes(c.key)) : QUOT_PRINT_COLUMNS;
+  const noHeader = currentLang==='en' ? 'No.' : 'م.';
+  const headers = [noHeader, ...cols.map(c=>currentLang==='en'?c.en:c.ar)];
   // 18 columns is a lot for one printed page, so this report prints in landscape with a
   // denser font (see printSharedStyle's dense/landscape options) and an auto-sized
   // ("wide") table instead of forcing all columns to the same width — that equal-width
   // forcing is what previously squeezed every field down to one letter per line.
-  const headers = currentLang==='en'
-    ? ['No.','Date','Time','Company','Scope','Contact','Mobile','Email','Amount','Subject','Quotation No.','Invoice No.','Project No.','Status','Next Follow-up','Follow-up Action','Notes','Details']
-    : ['م.','التاريخ','الوقت','الشركة','النشاط','المسؤول','الجوال','البريد الإلكتروني','القيمة','الموضوع','رقم العرض','رقم الفاتورة','رقم المشروع','الحالة','المتابعة القادمة','إجراء المتابعة','ملاحظات','التفاصيل'];
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>${printSharedStyle({orientation:'landscape', dense:true})}</style></head><body>
 ${printBrandHeader(title)}
-<table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(q.date)||'—'}</td><td>${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td><td>${esc(q.contactPerson)||'—'}</td><td class="num">${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td><td class="num">${q.amount?currency(q.amount):'—'}</td><td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td><td>${quotStatusLabel(q.status)}</td><td>${esc(q.nextFollowup)||'—'}</td><td>${esc(q.followupAction)||'—'}</td><td>${esc(q.notes)||'—'}</td><td>${esc(q.requirement)||'—'}</td></tr>`).join('') || `<tr><td colspan="18" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
+<table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td>${cols.map(c=>`<td${c.cls?` class="${c.cls}"`:''}>${c.get(q)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length+1}" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
 <div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div>
 </body></html>`;
 }
@@ -2544,6 +2655,7 @@ function renderAll(){
   renderReports();
   renderDashboardExtras();
   renderDueReminders();
+  renderQuotFollowupReminders();
   renderCharts();
 }
 
@@ -3645,6 +3757,40 @@ function renderDueReminders(){
       <div class="d">${currentLang==='en'?'Remaining':'المتبقي'}: <span class="figures">${fmt(remaining(d))}</span> ${currentLang==='en'?'QAR':'ر.ق'}</div></div></div>`;
   }).join('');
 }
+// Quotations whose "next follow-up" date has arrived or already passed, closed ones
+// excluded since there is nothing left to follow up on for those.
+function getDueQuotationFollowups(){
+  const today = todayISO();
+  return scopedQuotations()
+    .filter(q=>q.nextFollowup && q.status!=='closed' && q.nextFollowup<=today)
+    .sort((a,b)=> a.nextFollowup.localeCompare(b.nextFollowup));
+}
+function renderQuotFollowupReminders(){
+  const el = document.getElementById('quotFollowupReminders');
+  if(!el) return;
+  const list = getDueQuotationFollowups();
+  if(!list.length){
+    el.innerHTML = `<div style="color:var(--muted); font-size:13px">${currentLang==='en'?'No quotation follow-ups due right now.':'لا توجد متابعات مستحقة لعروض الأسعار حاليًا.'}</div>`;
+    return;
+  }
+  const today = todayISO();
+  el.innerHTML = list.map(q=>{
+    const overdueDays = daysBetween(q.nextFollowup, today);
+    const label = q.nextFollowup===today
+      ? (currentLang==='en'?'Due today':'مستحقة اليوم')
+      : (currentLang==='en'?`Overdue by ${overdueDays} day(s)`:`متأخرة ${overdueDays} يوم`);
+    return `<div class="activity-item" style="cursor:pointer" data-open-quot="${q.id}">
+      <div class="activity-dot" style="background:${q.nextFollowup===today?'var(--gold)':'var(--red)'}"></div>
+      <div><div class="t"><b>${esc(q.companyName)}</b> — ${label} (${esc(q.nextFollowup)})</div>
+      <div class="d">${quotSubjectLabel(q.subject)} · ${quotStatusLabel(q.status)}${q.contactPerson?` · ${esc(q.contactPerson)}`:''}</div></div></div>`;
+  }).join('');
+}
+document.getElementById('quotFollowupReminders')?.addEventListener('click', ev=>{
+  const item = ev.target.closest('[data-open-quot]');
+  if(!item) return;
+  document.querySelector('[data-page="quotations"]')?.click();
+  openQuotationDrawer(Number(item.dataset.openQuot));
+});
 function maybeSendDueNotifications(){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   const list = getUpcomingDue(appSettings.reminderDays);

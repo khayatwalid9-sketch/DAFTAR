@@ -187,6 +187,12 @@
         </div>
         <div class="panel-body" id="dueReminders"></div>
       </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="dash.quotFollowups">📋 متابعات عروض الأسعار (اليوم والمتأخرة)</h3>
+        </div>
+        <div class="panel-body" id="quotFollowupReminders"></div>
+      </div>
     </section>
 
     <!-- ================= DEBTORS ================= -->
@@ -390,6 +396,7 @@
             </div>
             <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">⭳ نموذج الاستيراد</button>
             <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">🖶 طباعة القائمة</button>
+            <button class="btn secondary small" id="quotPrintOptionsBtn" data-i18n="quot.printOptions">⚙ خيارات الطباعة</button>
             <button class="btn secondary small" id="quotExcelBtn" data-i18n="quot.exportExcel">⭳ تصدير إكسل</button>
             <button class="btn small" id="addQuotationBtn" data-i18n="quot.add">+ إضافة عرض سعر</button>
           </div>
@@ -1201,7 +1208,27 @@
   <div class="panel-body" id="notificationsList"></div>
 </div>
 
+<!-- ===== Quotation Print Options Modal ===== -->
+<div class="overlay" id="quotPrintOptionsModal">
+  <div class="modal">
+    <div class="modal-head"><h3 data-i18n="quot.printOptionsTitle">خيارات طباعة قائمة عروض الأسعار</h3><button class="modal-close" data-close="quotPrintOptionsModal">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--muted); font-size:12.5px; margin:0 0 12px" data-i18n="quot.printOptionsHint">اختر الأعمدة التي تريد ظهورها في النسخة المطبوعة أو PDF. عمود "م." يظهر دائمًا.</p>
+      <div style="margin-bottom:10px; display:flex; gap:8px;">
+        <button type="button" class="btn secondary small" id="quotPrintColsAll" data-i18n="quot.selectAll">تحديد الكل</button>
+        <button type="button" class="btn secondary small" id="quotPrintColsNone" data-i18n="quot.selectNone">إلغاء الكل</button>
+      </div>
+      <div id="quotPrintColsList" class="print-cols-grid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="quotPrintConfirmBtn" data-i18n="quot.printNow">🖶 طباعة الآن</button>
+      <button class="btn secondary" data-close="quotPrintOptionsModal" data-i18n="modal.cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
+
 </body>
 </html>
 
