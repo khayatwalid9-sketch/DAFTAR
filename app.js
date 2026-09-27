@@ -595,6 +595,33 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 let syncInProgress = null;
 let syncQueued = false;
 let lastSyncError = null;
+
+// ---- Debounced persistence -------------------------------------------------
+// renderAll() runs on EVERY re-render, including on every keystroke in the
+// search boxes (see the 'input' listeners on #globalSearch / #quotSearch).
+// It used to call saveState() -> syncToSupabase() directly, which re-uploads
+// every debtor, activity, rep, quotation, quotation log, user and audit row
+// on every single keystroke. scheduleSave() coalesces any burst of calls
+// within `delay` ms into a single sync, while a real data mutation still
+// ends up persisted a moment later exactly as before. A pending save is
+// flushed immediately if the tab is hidden/closed so nothing is lost.
+let _saveDebounceTimer = null;
+function scheduleSave(delay = 600){
+  clearTimeout(_saveDebounceTimer);
+  _saveDebounceTimer = setTimeout(()=>{ _saveDebounceTimer = null; saveState(); }, delay);
+}
+function flushPendingSave(){
+  if(_saveDebounceTimer){ clearTimeout(_saveDebounceTimer); _saveDebounceTimer = null; saveState(); }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') flushPendingSave(); });
+window.addEventListener('pagehide', flushPendingSave);
+
+// Small generic debounce used for expensive re-renders triggered by typing
+// (search boxes), so every keystroke doesn't force a full table/chart rebuild.
+function debounce(fn, delay = 200){
+  let timer = null;
+  return (...args)=>{ clearTimeout(timer); timer = setTimeout(()=>fn(...args), delay); };
+}
 // pruneOrphans=true deletes any server row whose id is absent from the given `rows`
 // snapshot — safe for tables with no other deletion path. It is UNSAFE for a table
 // with its own child rows (like quotation_files, linked to quotations via
@@ -609,12 +636,16 @@ async function replaceTable(table, rows, key='id', pruneOrphans=true) {
     const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
     if(readError){ readError.message = `[${table}] ${readError.message||''}`; throw readError; }
     const ids = new Set(rows.map(row=>String(row[key])));
-    for(const row of existing || []) {
-      if(!ids.has(String(row[key]))) {
-        console.info(`replaceTable: pruning ${table} id=${row[key]} (not present in the current local list)`);
-        const { error } = await supabaseClient.from(table).delete().eq(key, row[key]);
-        if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
-      }
+    // Bulk-delete every orphan in ONE request instead of one DELETE per row.
+    // The previous per-row loop meant a sync with, say, 40 removed debtors fired
+    // 40 sequential network round-trips just for pruning — this does it in one.
+    const orphanIds = (existing || [])
+      .filter(row=>!ids.has(String(row[key])))
+      .map(row=>row[key]);
+    if(orphanIds.length){
+      console.info(`replaceTable: pruning ${orphanIds.length} row(s) from ${table} (not present in the current local list)`);
+      const { error } = await supabaseClient.from(table).delete().in(key, orphanIds);
+      if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
     }
   }
   if(rows.length) {
@@ -1138,7 +1169,7 @@ document.getElementById('saveDebtorBtn').addEventListener('click', ()=>{
 });
 
 // ============== SEARCH & FILTER ==============
-document.getElementById('globalSearch').addEventListener('input', renderAll);
+document.getElementById('globalSearch').addEventListener('input', debounce(renderAll, 200));
 document.getElementById('statusFilter').addEventListener('change', renderAll);
 document.getElementById('typeFilter').addEventListener('change', renderAll);
 
@@ -1523,7 +1554,7 @@ function renderQuotationsTable(){
     <td><button type="button" class="link-btn" data-quot-edit="${q.id}">${t('action.edit')}</button> · <button type="button" class="link-btn" data-quot-delete="${q.id}">${t('action.delete')}</button></td>
   </tr>`).join('');
 }
-document.getElementById('quotSearch')?.addEventListener('input', renderQuotationsTable);
+document.getElementById('quotSearch')?.addEventListener('input', debounce(renderQuotationsTable, 200));
 document.getElementById('quotDateFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotScopeFilter')?.addEventListener('change', renderQuotationsTable);
@@ -2851,7 +2882,7 @@ function renderReps(){
 
 // ============== RENDER ==============
 function renderAll(){
-  saveState();
+  scheduleSave();
   renderStats();
   renderDebtorsTable();
   renderReps();
