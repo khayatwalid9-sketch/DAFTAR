@@ -41,7 +41,6 @@
     </div>
     <button class="btn" id="loginBtn" data-i18n="login.btn">دخول</button>
     <div class="login-error" id="loginError"></div>
-    <div class="login-hint" data-i18n="login.hint">بيانات الدخول السحابية: walid / Ksi@33774995</div>
   </div>
 </div>
 
@@ -657,6 +656,10 @@
             </div>
             <div class="field"><button class="btn" id="addUserBtn" data-i18n="settings.addUser">إضافة مستخدم</button></div>
           </div>
+          <div class="field">
+            <label data-i18n="settings.userPermsHint">الصفحات والصلاحيات المتاحة لهذا المستخدم (معبّأة تلقائيًا حسب الدور، ويمكن تعديلها)</label>
+            <div id="newUserPermsBox" class="print-cols-grid"></div>
+          </div>
           <div id="usersList"></div>
         </div>
       </div>
@@ -1197,6 +1200,7 @@
     <div>
       <button class="btn secondary small" id="qd_edit" data-i18n="quot.editBtn">✎ تعديل بيانات العرض</button>
       <button class="btn secondary small" id="qd_print" data-i18n="quot.printOne">🖶 طباعة تفاصيل العرض</button>
+      <button class="btn secondary small" id="qd_convertToDebtor" data-i18n="quot.convertToDebtor">➜ تحويل إلى ملف تحصيل</button>
       <button class="btn danger small" id="qd_delete" data-i18n="quot.deleteBtn">حذف عرض السعر نهائيًا</button>
     </div>
   </div>
@@ -1223,6 +1227,20 @@
     <div class="modal-foot">
       <button class="btn" id="quotPrintConfirmBtn" data-i18n="quot.printNow">🖶 طباعة الآن</button>
       <button class="btn secondary" data-close="quotPrintOptionsModal" data-i18n="modal.cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Edit User Permissions Modal ===== -->
+<div class="overlay" id="editUserPermsModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="editUserPermsTitle" data-i18n="settings.editPermsTitle">صلاحيات المستخدم</h3><button class="modal-close" data-close="editUserPermsModal">✕</button></div>
+    <div class="modal-body">
+      <div id="editUserPermsBox" class="print-cols-grid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="editUserPermsSaveBtn" data-i18n="modal.save">حفظ</button>
+      <button class="btn secondary" data-close="editUserPermsModal" data-i18n="modal.cancel">إلغاء</button>
     </div>
   </div>
 </div>

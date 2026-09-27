@@ -32,13 +32,13 @@ const translations = {
   'nav.dashboard':['لوحة التحكم','Dashboard'],'nav.debtors':['المدينون','Debtors'],'nav.reps':['المندوبون','Collectors'],'nav.payments':['سجل السداد','Payments'],'nav.followups':['المتابعات','Follow-ups'],'nav.aging':['أعمار الديون','Debt aging'],'nav.reports':['التقارير','Reports'],'nav.settings':['الإعدادات','Settings'],'nav.logout':['تسجيل الخروج','Log out'],
   'topbar.addDebtor':['+ إضافة مدين','+ Add debtor'],'topbar.search':['بحث عن مدين، هاتف...','Search debtor or phone...'],
   'topbar.printPage':['🖶 طباعة الصفحة','🖶 Print page'],'topbar.downloadPagePdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'modal.addDebtor':['إضافة مدين جديد','Add debtor'],'modal.editDebtor':['تعديل بيانات المدين','Edit debtor'],'modal.saveDebtor':['حفظ المدين','Save debtor'],'modal.saveChanges':['حفظ التعديلات','Save changes'],'modal.cancel':['إلغاء','Cancel'],'modal.fullName':['الاسم الكامل','Full name'],'modal.fullNamePh':['مثال: محمد عبدالله السويدي','e.g. John Smith'],'modal.companyName':['اسم الشركة','Company name'],'modal.companyNamePh':['مثال: شركة الخليج','e.g. Gulf Trading'],'modal.debtorType':['نوع المدين','Debtor type'],'modal.phone':['رقم الهاتف','Phone'],'modal.totalAmount':['إجمالي مبلغ الدين','Total debt'],'modal.dueDate':['تاريخ الاستحقاق','Due date'],'modal.expectedPaymentDate':['تاريخ الدفع المتوقع','Expected payment date'],'modal.paidUpfront':['مبلغ مسدد مسبقًا (اختياري)','Upfront payment (optional)'],'modal.assignedRep':['المندوب المسؤول (اختياري)','Assigned collector (optional)'],'modal.notesPh':['تفاصيل إضافية عن الحالة...','Additional case details...'],'modal.collectionMethod':['طريقة التحصيل','Payment method'],'modal.collectionDate':['تاريخ التحصيل','Payment date'],
+  'modal.addDebtor':['إضافة مدين جديد','Add debtor'],'modal.editDebtor':['تعديل بيانات المدين','Edit debtor'],'modal.saveDebtor':['حفظ المدين','Save debtor'],'modal.saveChanges':['حفظ التعديلات','Save changes'],'modal.cancel':['إلغاء','Cancel'],'modal.save':['حفظ','Save'],'modal.fullName':['الاسم الكامل','Full name'],'modal.fullNamePh':['مثال: محمد عبدالله السويدي','e.g. John Smith'],'modal.companyName':['اسم الشركة','Company name'],'modal.companyNamePh':['مثال: شركة الخليج','e.g. Gulf Trading'],'modal.debtorType':['نوع المدين','Debtor type'],'modal.phone':['رقم الهاتف','Phone'],'modal.totalAmount':['إجمالي مبلغ الدين','Total debt'],'modal.dueDate':['تاريخ الاستحقاق','Due date'],'modal.expectedPaymentDate':['تاريخ الدفع المتوقع','Expected payment date'],'modal.paidUpfront':['مبلغ مسدد مسبقًا (اختياري)','Upfront payment (optional)'],'modal.assignedRep':['المندوب المسؤول (اختياري)','Assigned collector (optional)'],'modal.notesPh':['تفاصيل إضافية عن الحالة...','Additional case details...'],'modal.collectionMethod':['طريقة التحصيل','Payment method'],'modal.collectionDate':['تاريخ التحصيل','Payment date'],
   'debtors.title':['قائمة المدينين','Debtors list'],'debtors.allTypes':['كل الأنواع','All types'],'debtors.individuals':['أفراد','Individuals'],'debtors.companies':['شركات','Companies'],'debtors.importExcel':['⭱ استيراد من إكسل','⭱ Import Excel'],'debtors.downloadTemplate':['⭳ نموذج الاستيراد','⭳ Import template'],'debtors.individual':['فرد','Individual'],'debtors.company':['شركة','Company'],'debtors.empty':['لا يوجد مدينون مطابقون لبحثك.','No matching debtors.'],
   'status.active':['نشط','Active'],'status.overdue':['متأخر','Overdue'],'status.paid':['مسدد بالكامل','Paid'],
   'th.name':['الاسم','Name'],'th.type':['النوع','Type'],'th.phone':['الهاتف','Phone'],'th.total':['إجمالي الدين','Total debt'],'th.paid':['المسدد','Paid'],'th.remaining':['المتبقي','Remaining'],'th.status':['الحالة','Status'],'th.rep':['المندوب','Collector'],'th.lastContact':['آخر تواصل','Last contact'],'th.actions':['إجراءات','Actions'],'th.notes':['ملاحظات','Notes'],'th.date':['التاريخ','Date'],'th.debtor':['المدين','Debtor'],'th.amountPaid':['المبلغ المسدد','Amount paid'],'th.method':['طريقة الدفع','Method'],'th.area':['المنطقة','Area'],'th.assignedCases':['الحالات المسندة','Assigned cases'],'th.collected':['المحصّل','Collected'],'th.rate':['نسبة الإنجاز','Completion rate'],'th.contactMethod':['طريقة التواصل','Contact method'],'th.outcome':['النتيجة','Outcome'],'th.due':['تاريخ الاستحقاق','Due date'],
   'aging.title':['تقرير أعمار الديون التفصيلي','Detailed debt aging report'],'aging.print':['🖶 طباعة التقرير','🖶 Print report'],'aging.pdf':['⭳ تحميل PDF','⭳ Download PDF'],'aging.daysLate':['أيام التأخير','Days late'],'aging.bucket':['الفئة العمرية','Aging bucket'],'aging.b1':['1 – 30 يوم تأخير','1 - 30 days late'],'aging.b2':['31 – 60 يوم تأخير','31 - 60 days late'],'aging.b3':['61 – 90 يوم تأخير','61 - 90 days late'],'aging.b4':['أكثر من 90 يوم','Over 90 days'],'aging.empty':['لا توجد ديون متأخرة حاليًا — جميع الحالات ضمن موعدها.','No overdue debts currently.'],
   'action.view':['عرض التفاصيل','View details'],'action.edit':['تعديل','Edit'],'action.delete':['حذف','Delete'],'confirm.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'drawer.noRep':['بدون مندوب','Unassigned'],'drawer.amount':['المبلغ','Amount'],'drawer.outcomePh':['النتيجة / الملاحظة','Outcome / note'],'drawer.add':['إضافة','Add'],'drawer.printStatement':['🖶 طباعة كشف حساب','🖶 Print statement'],'drawer.downloadPdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'login.title':['دفتر — تسجيل الدخول','Daftar - Sign in'],'login.sub':['الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون','Sign in to access the debt collection system'],'login.user':['اسم المستخدم','Username'],'login.pass':['كلمة المرور','Password'],'login.btn':['دخول','Sign in'],'login.hint':['بيانات الدخول السحابية: walid / Ksi@33774995','Cloud login: walid / Ksi@33774995'],
+  'login.title':['دفتر — تسجيل الدخول','Daftar - Sign in'],'login.sub':['الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون','Sign in to access the debt collection system'],'login.user':['اسم المستخدم','Username'],'login.pass':['كلمة المرور','Password'],'login.btn':['دخول','Sign in'],
   'toast.updated':['تم تحديث بيانات المدين','Debtor updated'],'toast.deleted':['تم حذف المدين','Debtor deleted'],'toast.needName':['الرجاء إدخال الاسم والمبلغ','Enter a name and amount'],'toast.needCompanyName':['الرجاء إدخال اسم الشركة والمبلغ','Enter a company name and amount'],'toast.debtorAdded':['تمت إضافة المدين بنجاح','Debtor added'],'toast.companyAdded':['تمت إضافة الشركة بنجاح','Company added'],
   'method.cash':['نقدًا','Cash'],'method.cheque':['شيك','Cheque'],'method.transfer':['تحويل بنكي','Bank transfer'],'method.call':['اتصال هاتفي','Phone call'],'method.sms':['رسالة نصية','SMS'],'method.visit':['زيارة ميدانية','Field visit'],'method.email':['بريد إلكتروني','Email']
 };
@@ -74,12 +74,12 @@ Object.assign(translations,{
   'reports.title':['التقارير المالية','Financial reports'],'reports.print':['🖶 طباعة التقرير','🖶 Print report'],'reports.pdf':['⭳ تحميل PDF','⭳ Download PDF'],'reports.debtorsNotes':['المدينون والملاحظات','Debtors and notes'],
   'settings.account':['بيانات تسجيل الدخول','Login details'],'settings.username':['اسم المستخدم','Username'],'settings.newPassword':['كلمة مرور جديدة (اتركها فارغة لعدم التغيير)','New password (leave blank to keep current)'],'settings.saveAccount':['حفظ بيانات الدخول','Save login details'],'settings.printWatermark':['شعار الطباعة','Print watermark'],'settings.printWatermarkDesc':['يظهر شعار الشركة تلقائيًا كخلفية شفافة في كل كشوفات الحساب والتقارير المطبوعة أو التي يتم تحميلها كملف PDF.','The company image appears as a transparent background on printed and PDF statements and reports.'],'settings.enableWatermark':['تفعيل شعار الخلفية عند الطباعة/التصدير','Enable watermark for printing/export'],'settings.dueAlerts':['تنبيهات الاستحقاق','Due alerts'],'settings.reminderDays':['تنبيه قبل تاريخ الاستحقاق بـ (أيام)','Alert before due date (days)'],'settings.enableNotif':['🔔 تفعيل تنبيهات المتصفح','🔔 Enable browser alerts'],'settings.notifOff':['تنبيهات المتصفح غير مفعّلة حاليًا.','Browser alerts are currently disabled.'],'settings.dataStorage':['حفظ البيانات','Data storage'],'settings.backup':['نسخ احتياطي','Backup'],'settings.exportBackup':['⭳ تصدير نسخة احتياطية (JSON)','⭳ Export backup (JSON)'],'settings.importBackup':['⭱ استيراد نسخة احتياطية','⭱ Import backup'],'settings.dangerZone':['منطقة الخطر','Danger zone'],'settings.clearAll':['مسح جميع البيانات المسجلة','Clear all data'],
   'drawer.totalAssigned':['إجمالي المسند','Total assigned'],'drawer.repCases':['الحالات المسندة لهذا المندوب','Cases assigned to this collector'],'drawer.deleteRep':['حذف هذا المندوب','Delete collector'],'drawer.assignedRep':['المندوب المسؤول','Assigned collector'],'drawer.assignRep':['إسناد / تغيير المندوب','Assign / change collector'],'drawer.assign':['تعيين','Assign'],'drawer.recordPayment':['تسجيل دفعة سداد','Record payment'],'drawer.addFollow':['إضافة متابعة','Add follow-up'],'drawer.activityLog':['سجل النشاط','Activity log'],'drawer.deleteDebtor':['حذف هذا المدين نهائيًا','Delete debtor permanently'],'drawer.installmentPlan':['خطة الأقساط','Installment plan'],'drawer.editPaidTitle':['تعديل المبلغ المسدد','Edit total paid'],'drawer.editPaidPrompt':['أدخل إجمالي المبلغ المسدد الصحيح:','Enter the correct total paid amount:'],'drawer.editPaymentPrompt':['أدخل المبلغ الصحيح لهذه الدفعة:','Enter the correct amount for this payment:'],'drawer.deletePaymentConfirm':['هل أنت متأكد من حذف هذه الدفعة؟ سيتم خصم مبلغها من إجمالي المسدد.','Delete this payment? Its amount will be removed from the total paid.'],'msg.paidAdjusted':['تم تعديل المبلغ المسدد','Total paid updated'],'msg.paymentUpdated':['تم تعديل الدفعة','Payment updated'],'msg.paymentDeleted':['تم حذف الدفعة','Payment deleted'],'drawer.editDebtor':['✎ تعديل بيانات المدين','✎ Edit debtor info'],'drawer.editRep':['✎ تعديل بيانات المندوب','✎ Edit collector info'],'drawer.editFollowPrompt':['أدخل النص الصحيح للملاحظة:','Enter the correct note text:'],'drawer.deleteFollowConfirm':['هل أنت متأكد من حذف هذه المتابعة؟','Delete this follow-up?'],'msg.followUpdated':['تم تعديل المتابعة','Follow-up updated'],'msg.followDeleted':['تم حذف المتابعة','Follow-up deleted'],'modal.editRep':['تعديل بيانات المندوب','Edit collector'],'modal.companyNumber':['رقم الشركة','Company number'],'modal.crNumber':['رقم السجل التجاري','Commercial registration'],'modal.addRep':['إضافة مندوب جديد','Add collector'],'modal.repName':['اسم المندوب','Collector name'],'modal.repArea':['المنطقة المسؤول عنها','Assigned area'],'modal.saveRep':['حفظ المندوب','Save collector'],
-  'settings.users':['المستخدمون والصلاحيات','Users and permissions'],'settings.userName':['اسم المستخدم','Username'],'settings.userPassword':['كلمة المرور','Password'],'settings.userRole':['الدور','Role'],'settings.addUser':['إضافة مستخدم','Add user'],'settings.security':['إعدادات الأمان','Security Settings'],'settings.autoLogout':['تسجيل خروج تلقائي بعد 30 دقيقة من عدم النشاط','Auto logout after 30 minutes of inactivity'],'settings.sessionTimeout':['تنبيه قبل انتهاء الجلسة بـ 5 دقائق','Alert 5 minutes before session timeout'],'settings.passwordMinLength':['الحد الأدنى لطول كلمة المرور','Minimum password length'],'settings.changeAdminPassword':['تغيير كلمة مرور المدير','Change admin password'],'settings.appearance':['المظهر','Appearance'],'settings.palette':['لون الواجهة','Interface color'],'settings.theme':['لون التمييز','Accent color'],'settings.sync':['مزامنة Supabase','Supabase sync'],'settings.syncNow':['مزامنة الآن','Sync now'],'settings.audit':['سجل التدقيق','Audit log'],
+  'settings.users':['المستخدمون والصلاحيات','Users and permissions'],'settings.userName':['اسم المستخدم','Username'],'settings.userPassword':['كلمة المرور','Password'],'settings.userRole':['الدور','Role'],'settings.addUser':['إضافة مستخدم','Add user'],'settings.editPermsTitle':['صلاحيات المستخدم','User permissions'],'settings.userPermsHint':['الصفحات والصلاحيات المتاحة لهذا المستخدم (معبأة تلقائيا حسب الدور، ويمكن تعديلها)','Pages and capabilities available to this user (pre-filled from the role, and editable)'],'settings.security':['إعدادات الأمان','Security Settings'],'settings.autoLogout':['تسجيل خروج تلقائي بعد 30 دقيقة من عدم النشاط','Auto logout after 30 minutes of inactivity'],'settings.sessionTimeout':['تنبيه قبل انتهاء الجلسة بـ 5 دقائق','Alert 5 minutes before session timeout'],'settings.passwordMinLength':['الحد الأدنى لطول كلمة المرور','Minimum password length'],'settings.changeAdminPassword':['إعادة تعيين كلمة مرور مستخدم آخر','Reset a user password'],'settings.appearance':['المظهر','Appearance'],'settings.palette':['لون الواجهة','Interface color'],'settings.theme':['لون التمييز','Accent color'],'settings.sync':['مزامنة Supabase','Supabase sync'],'settings.syncNow':['مزامنة الآن','Sync now'],'settings.audit':['سجل التدقيق','Audit log'],
   'role.admin':['مدير','Admin'],'role.collector':['مندوب','Collector'],'role.viewer':['مشاهد','Viewer'],'theme.gold':['ذهبي','Gold'],'theme.teal':['فيروزي','Teal'],'theme.blue':['أزرق','Blue'],'theme.rose':['وردي','Rose'],'theme.orange':['برتقالي','Orange'],'theme.purple':['بنفسجي','Purple'],'theme.green':['أخضر','Green'],'theme.custom':['لون مخصص...','Custom color...'],'theme.currentCustom':['لون مخصص','Custom color'],
   'palette.navy':['أزرق بحري','Navy'],'palette.forest':['أخضر غامق','Forest'],'palette.burgundy':['عنابي','Burgundy'],'palette.charcoal':['رمادي فحمي','Charcoal'],'palette.purple':['بنفسجي','Purple'],'palette.teal':['زيتي','Teal'],'palette.midnight':['منتصف الليل','Midnight'],'palette.sunset':['غروب','Sunset'],'palette.lightNavy':['أزرق فاتح','Light Navy'],'palette.lightForest':['أخضر فاتح','Light Forest'],'palette.lightRose':['وردي فاتح','Light Rose'],'palette.lightLavender':['بنفسجي فاتح','Light Lavender'],'palette.lightPeach':['خوخي فاتح','Light Peach'],'palette.custom':['لون مخصص...','Custom color...'],'palette.currentCustom':['لون مخصص','Custom color'],
   'modal.installments':['عدد الأقساط','Number of installments'],'modal.frequency':['دورية القسط','Installment frequency'],'frequency.monthly':['شهري','Monthly'],'frequency.quarterly':['ربع سنوي','Quarterly'],'frequency.weekly':['أسبوعي','Weekly'],
   'msg.assign':['تم إسناد الحالة للمندوب','Case assigned to collector'],'msg.unassign':['تم إلغاء إسناد الحالة','Case unassigned'],'msg.paymentAdded':['تم تسجيل الدفعة وخصمها من إجمالي الدين','Payment recorded and deducted from total debt'],'msg.followAdded':['تم تسجيل المتابعة','Follow-up recorded'],'msg.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'msg.debtorDeleted':['تم حذف المدين','Debtor deleted'],'msg.repRequired':['الرجاء إدخال اسم المندوب','Enter the collector name'],'msg.repDeleted':['تم حذف المندوب','Collector deleted'],'msg.invalidAmount':['أدخل مبلغًا صحيحًا','Enter a valid amount'],'msg.noCases':['لا توجد حالات مسندة لهذا المندوب.','No cases assigned to this collector.'],'msg.exported':['تم تصدير النسخة الاحتياطية','Backup exported'],'msg.imported':['تم استيراد النسخة الاحتياطية بنجاح','Backup imported'],'msg.clearConfirm':['هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.','Clear all saved data permanently? This cannot be undone.'],'msg.clearConfirm2':['تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟','Final confirmation: delete all debtors, collectors, payments and follow-ups?'],'msg.cleared':['تم مسح جميع البيانات المسجلة','All saved data cleared'],'msg.noUpcoming':['لا توجد ديون مستحقة خلال هذه الفترة.','No debts are due in this period.'],'msg.todayDue':['مستحق اليوم','Due today'],'msg.daysLeft':['متبقي','remaining'],'msg.days':['يوم','days'],'msg.printedOn':['تم إصدار هذا الكشف إلكترونيًا من نظام دفتر لإدارة تحصيل الديون بتاريخ','This statement was generated electronically by Daftar on'],'msg.debtorSignature':['توقيع المدين','Debtor signature'],'msg.collectorSignature':['توقيع المسؤول عن التحصيل','Collector signature'],'msg.originalBalance':['رصيد الدين الأصلي','Original debt balance'],'msg.payment':['دفعة سداد','Payment'],'msg.statement':['كشف حساب مدين','Debtor statement'],'msg.statementSystem':['دفتر — نظام إدارة تحصيل الديون','Daftar - Debt collection system'],'msg.issued':['تاريخ الإصدار','Issued'],'msg.statusLabel':['الحالة','Status'],'msg.debtorData':['بيانات المدين','Debtor details'],'msg.companyData':['بيانات الشركة','Company details'],'msg.accountSummary':['ملخص الحساب','Account summary'],'msg.name':['الاسم','Name'],'msg.phone':['الهاتف','Phone'],'msg.companyNumber':['رقم الشركة','Company number'],'msg.crNumber':['السجل التجاري','Commercial registration'],'msg.dueDate':['تاريخ الاستحقاق','Due date'],'msg.collector':['المندوب المسؤول','Assigned collector'],'msg.notes':['ملاحظات','Notes'],'msg.date':['التاريخ','Date'],'msg.description':['البيان','Description'],'msg.debit':['مدين (سداد)','Debit (payment)'],'msg.credit':['دائن (دين)','Credit (debt)'],'msg.balance':['الرصيد المتبقي','Remaining balance'],'msg.totalDebt':['إجمالي الدين','Total debt'],'msg.totalPaid':['إجمالي المسدد','Total paid'],'msg.remainingBalance':['الرصيد المتبقي','Remaining balance'],'msg.followups':['سجل المتابعات','Follow-ups'],'msg.notAssigned':['غير مسند','Unassigned'],
-  'audit.login':['تسجيل دخول','Login'],'audit.logout':['تسجيل خروج','Logout'],'audit.add_debtor':['إضافة مدين','Add debtor'],'audit.update_debtor':['تعديل مدين','Update debtor'],'audit.delete_debtor':['حذف مدين','Delete debtor'],'audit.add_payment':['تسجيل دفعة','Record payment'],'audit.add_followup':['إضافة متابعة','Add follow-up'],'audit.assign_rep':['إسناد مندوب','Assign collector'],'audit.unassign_rep':['إلغاء إسناد مندوب','Unassign collector'],'audit.add_rep':['إضافة مندوب','Add collector'],'audit.delete_rep':['حذف مندوب','Delete collector'],'audit.add_user':['إضافة مستخدم','Add user'],'audit.delete_user':['حذف مستخدم','Delete user'],'audit.link_user_rep':['ربط مستخدم بمندوب','Link user to collector'],'audit.save_auth':['تحديث بيانات الدخول','Update login details'],'audit.sync_supabaseClient':['مزامنة Supabase','Supabase sync'],'audit.theme_change':['تغيير لون النظام','Change system color'],'audit.palette_change':['تغيير لون الواجهة','Change interface color'],'audit.export_excel':['تصدير إكسل','Export Excel'],'audit.settings_change':['تغيير إعداد','Settings change'],'audit.export_backup':['تصدير نسخة احتياطية','Export backup'],'audit.import_backup':['استيراد نسخة احتياطية','Import backup'],'audit.clear_all_data':['مسح جميع البيانات','Clear all data'],
+  'audit.login':['تسجيل دخول','Login'],'audit.logout':['تسجيل خروج','Logout'],'audit.add_debtor':['إضافة مدين','Add debtor'],'audit.update_debtor':['تعديل مدين','Update debtor'],'audit.delete_debtor':['حذف مدين','Delete debtor'],'audit.add_payment':['تسجيل دفعة','Record payment'],'audit.add_followup':['إضافة متابعة','Add follow-up'],'audit.assign_rep':['إسناد مندوب','Assign collector'],'audit.unassign_rep':['إلغاء إسناد مندوب','Unassign collector'],'audit.add_rep':['إضافة مندوب','Add collector'],'audit.delete_rep':['حذف مندوب','Delete collector'],'audit.add_user':['إضافة مستخدم','Add user'],'audit.edit_user_perms':['تعديل صلاحيات مستخدم','Edit user permissions'],'audit.delete_user':['حذف مستخدم','Delete user'],'audit.link_user_rep':['ربط مستخدم بمندوب','Link user to collector'],'audit.save_auth':['تحديث بيانات الدخول','Update login details'],'audit.sync_supabaseClient':['مزامنة Supabase','Supabase sync'],'audit.theme_change':['تغيير لون النظام','Change system color'],'audit.palette_change':['تغيير لون الواجهة','Change interface color'],'audit.export_excel':['تصدير إكسل','Export Excel'],'audit.settings_change':['تغيير إعداد','Settings change'],'audit.export_backup':['تصدير نسخة احتياطية','Export backup'],'audit.import_backup':['استيراد نسخة احتياطية','Import backup'],'audit.clear_all_data':['مسح جميع البيانات','Clear all data'],
   'settings.auditFilter':['تصفية حسب المستخدم أو الإجراء...','Filter by user or action...'],'settings.auditEmpty':['لا توجد نتائج مطابقة.','No matching results.'],'settings.linkRep':['ربط بمندوب','Link collector'],'settings.noLink':['بدون ربط','Not linked'],'settings.repRequiredForCollector':['هذا المستخدم مندوب — اربطه بملف مندوب ليرى حالاته فقط','This user is a collector — link them to a collector profile so they only see their own cases'],
 });
 Object.assign(translations,{
@@ -131,6 +131,7 @@ Object.assign(translations,{
   'quot.editBtn':['✎ تعديل بيانات العرض','✎ Edit quotation'],
   'quot.printOne':['🖶 طباعة تفاصيل العرض','🖶 Print quotation details'],
   'quot.deleteBtn':['حذف عرض السعر نهائيًا','Delete quotation permanently'],
+  'quot.convertToDebtor':['➜ تحويل إلى ملف تحصيل','➜ Convert to collection file'],
   'quot.addStatusUpdate':['إضافة تحديث يومي للحالة','Add daily status update'],
   'quot.updateNotePh':['ملاحظة التحديث اليومي...','Daily update note...'],
   'quot.statusLog':['سجل تحديثات الحالة','Status update log'],
@@ -248,7 +249,37 @@ document.getElementById('clearNotificationsBtn').addEventListener('click',()=>do
 
 const USERS_KEY = 'daftar_users_v1';
 const AUDIT_KEY = 'daftar_audit_v1';
-const CLOUD_ADMIN = Object.freeze({username:'walid',password:'Ksi@33774995',role:'admin'});
+// Every page the sidebar can navigate to, used to build the per-user permission
+// checklist and to decide which nav links a signed-in user actually sees.
+const PERMISSION_PAGES = [
+  {key:'dashboard', ar:'لوحة التحكم', en:'Dashboard'},
+  {key:'debtors', ar:'المدينون', en:'Debtors'},
+  {key:'reps', ar:'المندوبون', en:'Reps'},
+  {key:'payments', ar:'سجل السداد', en:'Payments'},
+  {key:'followups', ar:'المتابعات', en:'Follow-ups'},
+  {key:'quotations', ar:'عروض الأسعار', en:'Quotations'},
+  {key:'aging', ar:'أعمار الديون', en:'Aging'},
+  {key:'reports', ar:'التقارير', en:'Reports'},
+  {key:'settings', ar:'الإعدادات', en:'Settings'},
+];
+const PERMISSION_CAPABILITIES = [
+  {key:'write', ar:'إضافة/تعديل البيانات', en:'Add / edit data'},
+  {key:'delete', ar:'حذف البيانات', en:'Delete data'},
+  {key:'manageUsers', ar:'إدارة المستخدمين والصلاحيات', en:'Manage users & permissions'},
+];
+// Defaults used only for accounts that predate this permission system (no
+// `permissions` value saved yet) — chosen to match this app's previous fixed-role
+// behavior exactly, so no existing account's access silently changes.
+const ROLE_DEFAULT_PERMISSIONS = {
+  admin: {pages:Object.fromEntries(PERMISSION_PAGES.map(p=>[p.key,true])), write:true, delete:true, manageUsers:true},
+  collector: {pages:Object.fromEntries(PERMISSION_PAGES.map(p=>[p.key, p.key!=='reps' && p.key!=='settings'])), write:true, delete:false, manageUsers:false},
+  viewer: {pages:Object.fromEntries(PERMISSION_PAGES.map(p=>[p.key, p.key!=='reps' && p.key!=='settings'])), write:false, delete:false, manageUsers:false},
+};
+function effectivePermissions(user){
+  if(!user) return {pages:{}, write:false, delete:false, manageUsers:false};
+  if(user.permissions && typeof user.permissions==='object' && user.permissions.pages) return user.permissions;
+  return ROLE_DEFAULT_PERMISSIONS[user.role] || ROLE_DEFAULT_PERMISSIONS.viewer;
+}
 let users = loadUsers();
 let auditLog = loadAudit();
 let currentUser = null;
@@ -261,7 +292,7 @@ function loadAudit(){
 async function saveUsers(){
   if (!supabaseClient) throw new Error('Supabase is not available');
   const {error} = await supabaseClient.from('users').upsert(
-    users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null})),
+    users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null,permissions:user.permissions||null})),
     {onConflict:'id'}
   );
   if(error) throw error;
@@ -281,40 +312,82 @@ async function addAudit(action,details=''){
   renderAudit();
 }
 function auditLabel(action){const key=`audit.${action}`;const value=translations[key];return value?value[currentLang==='en'?1:0]:action;}
-function can(permission){return currentUser?.role==='admin' || (currentUser?.role==='collector' && permission!=='manageUsers' && permission!=='delete') || (currentUser?.role==='viewer' && permission==='view');}
+function can(permission){
+  if(!currentUser) return false;
+  const perm = effectivePermissions(currentUser);
+  if(permission==='view') return true;
+  return !!perm[permission];
+}
+function canSeePage(pageKey){
+  if(!currentUser) return false;
+  const perm = effectivePermissions(currentUser);
+  return !!(perm.pages && perm.pages[pageKey]);
+}
 function roleLabel(role){return {admin:currentLang==='en'?'Admin':'مدير',collector:currentLang==='en'?'Collector':'مندوب',viewer:currentLang==='en'?'Viewer':'مشاهد'}[role]||role;}
 function getAuth(){
-  return CLOUD_ADMIN;
+  return currentUser || {username:'', role:''};
 }
 function updateAuthUI(){
   const auth=getAuth(); document.getElementById('s_authUser').value=auth.username;
   document.getElementById('loginScreen').style.display=sessionStorage.getItem('daftar_logged_in')==='1'?'none':'flex';
   document.getElementById('sidebarUserLine').textContent=sessionStorage.getItem('daftar_logged_in')==='1' ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
-  if(sessionStorage.getItem('daftar_logged_in')==='1' && !currentUser){currentUser=users.find(user=>user.username===CLOUD_ADMIN.username)||null;}
+  // Restore the session by the SPECIFIC account id that logged in — not a fixed
+  // account name. Restoring "whoever is named X" regardless of who actually signed
+  // in is exactly what let every account collapse into one shared login before.
+  if(sessionStorage.getItem('daftar_logged_in')==='1' && !currentUser){
+    const savedId = sessionStorage.getItem('daftar_user_id');
+    currentUser = savedId ? (users.find(user=>String(user.id)===savedId) || null) : null;
+    if(!currentUser){ sessionStorage.removeItem('daftar_logged_in'); sessionStorage.removeItem('daftar_user_id'); }
+  }
 }
 document.getElementById('loginBtn').addEventListener('click',async()=>{
   const user=document.getElementById('login_user').value.trim(); const pass=document.getElementById('login_pass').value; 
-  const {data:account,error} = supabaseClient ? await supabaseClient.from('users').select('id,username,password,role,rep_id').eq('username',user).eq('password',pass).maybeSingle() : {data:null,error:new Error('Supabase is not available')};
-  
-  if(account && account.username===CLOUD_ADMIN.username){
-    currentUser={id:account.id,username:account.username,password:account.password,role:account.role,repId:account.rep_id};
+  const {data:account,error} = supabaseClient ? await supabaseClient.from('users').select('id,username,password,role,rep_id,permissions').eq('username',user).eq('password',pass).maybeSingle() : {data:null,error:new Error('Supabase is not available')};
+  // Any matched account may sign in — not only one specific hardcoded username.
+  if(account){
+    currentUser={id:account.id,username:account.username,password:account.password,role:account.role,repId:account.rep_id,permissions:account.permissions||null};
     sessionStorage.setItem('daftar_logged_in','1');
     sessionStorage.setItem('daftar_user_id',String(currentUser.id));
     document.getElementById('loginError').textContent='';
     await addAudit('login');
     updateAuthUI();
     applyPermissions();
+    renderAll();
   } else {
     document.getElementById('loginError').textContent=error ? (currentLang==='en'?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة') : (currentLang==='en'?'Invalid username or password':'اسم المستخدم أو كلمة المرور غير صحيحة');
   }
 });
 document.getElementById('login_pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
 document.getElementById('logoutBtn').addEventListener('click',()=>{addAudit('logout');sessionStorage.removeItem('daftar_logged_in');sessionStorage.removeItem('daftar_user_id');currentUser=null;updateAuthUI();});
-document.getElementById('saveAuthBtn').addEventListener('click',()=>{
-  const username=document.getElementById('s_authUser').value.trim(); const password=document.getElementById('s_authPass').value;
-    if(username!==CLOUD_ADMIN.username || (password && password!==CLOUD_ADMIN.password)){toast(currentLang==='en'?'The cloud login is fixed to walid':'بيانات الدخول السحابية ثابتة باسم walid');return;}
-    document.getElementById('s_authPass').value=''; updateAuthUI(); toast(currentLang==='en'?'Cloud login verified':'تم التحقق من بيانات الدخول السحابية');
+// Self-service: change MY OWN username/password — works for any signed-in account,
+// admin included. (Previously this silently refused any value that didn't match one
+// hardcoded account, so nobody — not even the admin — could actually change it here.)
+document.getElementById('saveAuthBtn').addEventListener('click', async ()=>{
+  if(!currentUser){ toast(currentLang==='en'?'You are not signed in':'لست مسجلًا للدخول'); return; }
+  const username = document.getElementById('s_authUser').value.trim();
+  const password = document.getElementById('s_authPass').value;
+  if(!username){ toast(currentLang==='en'?'Username is required':'اسم المستخدم مطلوب'); return; }
+  if(password && password.length < (appSettings.passwordMinLength||6)){
+    toast(currentLang==='en'?`Password must be at least ${appSettings.passwordMinLength} characters`:`يجب ألا تقل كلمة المرور عن ${appSettings.passwordMinLength} أحرف`);
+    return;
+  }
+  const usernameTaken = users.some(u=>u.id!==currentUser.id && u.username.toLowerCase()===username.toLowerCase());
+  if(usernameTaken){ toast(currentLang==='en'?'That username is already used by another account':'اسم المستخدم مستخدم بالفعل لحساب آخر'); return; }
+  const user = users.find(u=>u.id===currentUser.id);
+  if(!user){ toast(currentLang==='en'?'Account not found':'الحساب غير موجود'); return; }
+  user.username = username; if(password) user.password = password;
+  currentUser.username = username; if(password) currentUser.password = password;
+  try{
+    await saveUsers();
+    document.getElementById('s_authPass').value='';
+    updateAuthUI();
+    addAudit('save_auth', currentLang==='en'?'Own login credentials updated':'تحديث بيانات الدخول الخاصة');
+    toast(currentLang==='en'?'Login details updated':'تم تحديث بيانات تسجيل الدخول');
+  }catch(err){
+    console.warn('Saving own credentials failed:', err);
+    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+  }
 });
 function applyPermissions(){
   const locked=!can('write');
@@ -323,10 +396,11 @@ function applyPermissions(){
   document.getElementById('addRepBtn').disabled=locked;
   document.querySelectorAll('[data-write]').forEach(el=>el.disabled=locked);
   document.querySelectorAll('[data-delete]').forEach(el=>el.disabled=lockedDelete);
-  document.querySelector('[data-page="settings"]').style.display=can('manageUsers')?'flex':'none';
-  // collectors manage their own cases only — hiding the collector-management page keeps
-  // them from browsing (or reassigning cases away from) other collectors
-  document.querySelector('[data-page="reps"]').style.display=(currentUser?.role==='admin')?'flex':'none';
+  // Every nav page now follows this user's own permission checklist, not just a
+  // hardcoded "hide settings/reps for non-admins" special case.
+  document.querySelectorAll('.nav-item[data-page]').forEach(item=>{
+    item.style.display = canSeePage(item.dataset.page) ? 'flex' : 'none';
+  });
   const assignBox=document.getElementById('dr_assignRepBox');
   if(assignBox) assignBox.style.display=(currentUser?.role==='admin')?'':'none';
   const assignTitle=document.getElementById('dr_assignRepTitle');
@@ -345,23 +419,123 @@ function scopedDebtors(){
   }
   return debtors;
 }
+// ---- Per-user permissions checklist (shared markup builder for add + edit) ----
+function permsChecklistHtml(perm, prefix){
+  const pageRows = PERMISSION_PAGES.map(p=>`<label><input type="checkbox" data-perm-page="${p.key}" ${perm.pages?.[p.key]?'checked':''}> ${esc(currentLang==='en'?p.en:p.ar)}</label>`).join('');
+  const capRows = PERMISSION_CAPABILITIES.map(c=>`<label><input type="checkbox" data-perm-cap="${c.key}" ${perm[c.key]?'checked':''}> ${esc(currentLang==='en'?c.en:c.ar)}</label>`).join('');
+  return pageRows + capRows;
+}
+function readPermsFromBox(box){
+  const pages = {};
+  box.querySelectorAll('[data-perm-page]').forEach(cb=>{ pages[cb.dataset.permPage] = cb.checked; });
+  const perm = {pages};
+  box.querySelectorAll('[data-perm-cap]').forEach(cb=>{ perm[cb.dataset.permCap] = cb.checked; });
+  return perm;
+}
+function renderNewUserPermsBox(){
+  const box = document.getElementById('newUserPermsBox');
+  if(!box) return;
+  const role = document.getElementById('u_role').value;
+  box.innerHTML = permsChecklistHtml(ROLE_DEFAULT_PERMISSIONS[role] || ROLE_DEFAULT_PERMISSIONS.viewer);
+}
+document.getElementById('u_role')?.addEventListener('change', renderNewUserPermsBox);
+
+document.getElementById('addUserBtn').addEventListener('click',async()=>{
+  if(!can('manageUsers'))return;
+  const username=document.getElementById('u_name').value.trim();
+  const password=document.getElementById('u_password').value;
+  const role=document.getElementById('u_role').value;
+  if(!username||!password){toast(currentLang==='en'?'Username and password are required':'اسم المستخدم وكلمة المرور مطلوبان');return;}
+  if(password.length < (appSettings.passwordMinLength||6)){
+    toast(currentLang==='en'?`Password must be at least ${appSettings.passwordMinLength} characters`:`يجب ألا تقل كلمة المرور عن ${appSettings.passwordMinLength} أحرف`);
+    return;
+  }
+  if(users.some(u=>u.username.toLowerCase()===username.toLowerCase())){
+    toast(currentLang==='en'?'That username is already taken':'اسم المستخدم مستخدم بالفعل');
+    return;
+  }
+  const permsBox = document.getElementById('newUserPermsBox');
+  const permissions = permsBox ? readPermsFromBox(permsBox) : ROLE_DEFAULT_PERMISSIONS[role];
+  users.push({id:Date.now(),username,password,role,permissions});
+  try{
+    await saveUsers();
+    addAudit('add_user',`${username} (${roleLabel(role)})`);
+    renderUsers();
+    document.getElementById('u_name').value='';
+    document.getElementById('u_password').value='';
+    toast(currentLang==='en'?'User added':'تمت إضافة المستخدم');
+  }catch(err){
+    users.pop();
+    console.warn('Adding user failed:', err);
+    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+  }
+});
+renderNewUserPermsBox();
+
+// ---- Edit permissions for an existing user ----
+let editingUserPermsId = null;
+function openEditUserPerms(userId){
+  const user = users.find(u=>u.id===userId);
+  if(!user) return;
+  editingUserPermsId = userId;
+  document.getElementById('editUserPermsTitle').textContent = `${t('settings.editPermsTitle')} — ${user.username}`;
+  document.getElementById('editUserPermsBox').innerHTML = permsChecklistHtml(effectivePermissions(user));
+  document.getElementById('editUserPermsModal').classList.add('show');
+}
+document.getElementById('editUserPermsSaveBtn')?.addEventListener('click', async ()=>{
+  const user = users.find(u=>u.id===editingUserPermsId);
+  if(!user) return;
+  user.permissions = readPermsFromBox(document.getElementById('editUserPermsBox'));
+  try{
+    await saveUsers();
+    addAudit('edit_user_perms', user.username);
+    document.getElementById('editUserPermsModal').classList.remove('show');
+    toast(currentLang==='en'?'Permissions updated':'تم تحديث الصلاحيات');
+    if(currentUser && currentUser.id===user.id){ currentUser.permissions = user.permissions; applyPermissions(); renderAll(); }
+  }catch(err){
+    console.warn('Saving user permissions failed:', err);
+    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+  }
+});
+
 function renderUsers(){const el=document.getElementById('usersList');if(!el)return;el.innerHTML=users.map(user=>{
   const linkedRep=reps.find(r=>r.id===user.repId);
   const repControl = user.role==='collector' ? `<select data-link-user="${user.id}" class="mini-select" title="${t('settings.linkRep')}">
       <option value="">${t('settings.noLink')}</option>
       ${reps.map(r=>`<option value="${r.id}" ${r.id===user.repId?'selected':''}>${esc(r.name)}</option>`).join('')}
     </select>` : '';
-  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}${user.id!==1?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}">✕</button>`:''}</div>`;
+  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}<button class="icon-btn" data-edit-user-perms="${user.id}" title="${t('settings.editPermsTitle')}">⚙</button>${user.id!==1?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}">✕</button>`:''}</div>`;
 }).join('');
-  el.querySelectorAll('[data-remove-user]').forEach(button=>button.addEventListener('click',()=>{const removed=users.find(u=>u.id===Number(button.dataset.removeUser));users=users.filter(user=>user.id!==Number(button.dataset.removeUser));saveUsers();addAudit('delete_user',removed?removed.username:button.dataset.removeUser);renderUsers();}));
-  el.querySelectorAll('[data-link-user]').forEach(select=>select.addEventListener('change',()=>{
+  el.querySelectorAll('[data-remove-user]').forEach(button=>button.addEventListener('click',async ()=>{
+    const removedId = Number(button.dataset.removeUser);
+    const removed=users.find(u=>u.id===removedId);
+    const prevUsers = users;
+    users=users.filter(user=>user.id!==removedId);
+    try{
+      if(supabaseClient){ const {error} = await supabaseClient.from('users').delete().eq('id', removedId); if(error) throw error; }
+      addAudit('delete_user',removed?removed.username:button.dataset.removeUser);
+      renderUsers();
+    }catch(err){
+      users = prevUsers;
+      console.warn('Deleting user failed:', err);
+      toast(currentLang==='en'?'Could not delete — check your connection':'تعذّر الحذف — تحقق من الاتصال');
+    }
+  }));
+  el.querySelectorAll('[data-link-user]').forEach(select=>select.addEventListener('change', async ()=>{
     const user=users.find(u=>u.id===Number(select.dataset.linkUser)); if(!user) return;
     const repId=select.value?Number(select.value):null; const rep=reps.find(r=>r.id===repId);
-    user.repId=repId||undefined; saveUsers();
-    addAudit('link_user_rep', `${user.username} → ${rep?rep.name:t('settings.noLink')}`);
-    if(currentUser && currentUser.id===user.id) renderAll();
-    toast(currentLang==='en'?'Collector link updated':'تم تحديث ربط المندوب');
+    user.repId=repId||undefined;
+    try{
+      await saveUsers();
+      addAudit('link_user_rep', `${user.username} → ${rep?rep.name:t('settings.noLink')}`);
+      if(currentUser && currentUser.id===user.id) renderAll();
+      toast(currentLang==='en'?'Collector link updated':'تم تحديث ربط المندوب');
+    }catch(err){
+      console.warn('Linking user to rep failed:', err);
+      toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+    }
   }));
+  el.querySelectorAll('[data-edit-user-perms]').forEach(button=>button.addEventListener('click', ()=>openEditUserPerms(Number(button.dataset.editUserPerms))));
 }
 function renderAudit(){
   const el=document.getElementById('auditList');if(!el)return;
@@ -370,7 +544,6 @@ function renderAudit(){
   const filtered=auditLog.filter(item=>!q || item.user.toLowerCase().includes(q) || auditLabel(item.action).toLowerCase().includes(q) || (item.details||'').toLowerCase().includes(q));
   el.innerHTML=filtered.slice(0,80).map(item=>`<div class="audit-row"><b>${esc(auditLabel(item.action))}</b><span>${esc(item.user)}</span>${item.details?`<small class="audit-detail">${esc(item.details)}</small>`:''}<time>${new Date(item.date).toLocaleString(currentLang==='en'?'en-US':'ar-QA')}</time></div>`).join('') || `<div class="empty">${q?t('settings.auditEmpty'):(currentLang==='en'?'No audit events yet.':'لا توجد أحداث بعد.')}</div>`;
 }
-document.getElementById('addUserBtn').addEventListener('click',()=>{if(!can('manageUsers'))return;const username=document.getElementById('u_name').value.trim();const password=document.getElementById('u_password').value;const role=document.getElementById('u_role').value;if(!username||!password){toast(currentLang==='en'?'Username and password are required':'اسم المستخدم وكلمة المرور مطلوبان');return;}users.push({id:Date.now(),username,password,role});saveUsers();addAudit('add_user',`${username} (${roleLabel(role)})`);renderUsers();document.getElementById('u_name').value='';document.getElementById('u_password').value='';});
 
 let debtors = [
   {id:1, name:"محمد عبدالله السويدي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5511 2233", total:45000, paid:15000, due:"2026-09-10", notes:"عميل تجاري - قسط شهري", log:[
@@ -520,22 +693,28 @@ async function loadFromSupabase() {
       .select('*');
     if (quotationsActivityError) throw quotationsActivityError;
     
-    const { data: walidUser, error: walidError } = await supabaseClient
+    // One-time safety net: if the users table is completely empty (a fresh install),
+    // create a single admin account so the system isn't locked out. This runs only
+    // when there are truly zero users, and it never touches an existing account.
+    // The PREVIOUS version of this code force-reset one specific hardcoded username's
+    // password back to a fixed value on every single page load, regardless of any
+    // change made in Settings — combined with that same password being shown in plain
+    // text on the public login screen, this was a serious, unintentional backdoor.
+    const { count: usersCount, error: usersCountError } = await supabaseClient
       .from('users')
-      .select('id')
-      .eq('username',CLOUD_ADMIN.username)
-      .maybeSingle();
-    if(walidError) throw walidError;
-    if(walidUser){
-      const {error} = await supabaseClient.from('users').update({password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role}).eq('id',walidUser.id);
+      .select('id', {count:'exact', head:true});
+    if(usersCountError) throw usersCountError;
+    if(!usersCount){
+      const bootstrapPassword = 'Admin' + Math.random().toString(36).slice(2,8) + '!';
+      const { error } = await supabaseClient.from('users').insert({
+        id:1, username:'admin', password:bootstrapPassword, role:'admin', permissions:ROLE_DEFAULT_PERMISSIONS.admin
+      });
       if(error) throw error;
-    } else {
-      const {data: firstUser, error: firstUserError} = await supabaseClient.from('users').select('id').order('id',{ascending:true}).limit(1).maybeSingle();
-      if(firstUserError) throw firstUserError;
-      const {error} = firstUser
-        ? await supabaseClient.from('users').update({username:CLOUD_ADMIN.username,password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role}).eq('id',firstUser.id)
-        : await supabaseClient.from('users').insert({id:1,username:CLOUD_ADMIN.username,password:CLOUD_ADMIN.password,role:CLOUD_ADMIN.role});
-      if(error) throw error;
+      setTimeout(()=>alert(
+        (currentLang==='en'
+          ? `First run: an admin account was created.\nUsername: admin\nPassword: ${bootstrapPassword}\n\nPlease sign in and change this password immediately from Settings — this message will not be shown again.`
+          : `أول تشغيل: تم إنشاء حساب مدير.\nاسم المستخدم: admin\nكلمة المرور: ${bootstrapPassword}\n\nالرجاء تسجيل الدخول وتغيير كلمة المرور فورًا من الإعدادات — لن تظهر هذه الرسالة مرة أخرى.`)
+      ), 300);
     }
 
     // Load users from the cloud
@@ -614,7 +793,8 @@ async function loadFromSupabase() {
         username: u.username,
         password: u.password,
         role: u.role,
-        repId: u.rep_id
+        repId: u.rep_id,
+        permissions: u.permissions || null
       }));
     
     // Map audit log
@@ -1568,6 +1748,36 @@ document.getElementById('qd_print')?.addEventListener('click', ()=>{
   const q = quotations.find(x=>x.id===activeQuotationId);
   if(!q) return;
   printDocument(quotationDetailDocumentHtml(q));
+});
+// Pre-fills the "add debtor" form from an accepted quotation, so its amount, company
+// name and contact don't need retyping when a quotation turns into a collection file.
+document.getElementById('qd_convertToDebtor')?.addEventListener('click', ()=>{
+  const q = quotations.find(x=>x.id===activeQuotationId);
+  if(!q) return;
+  if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
+  closeQuotationDrawer();
+  editingDebtorId = null;
+  document.getElementById('debtorModalTitle').textContent = t('modal.addDebtor');
+  document.getElementById('saveDebtorBtn').textContent = t('modal.saveDebtor');
+  ['f_name','f_phone','f_amount','f_due','f_expectedPaymentDate','f_paid','f_notes','f_companyNumber','f_crNumber'].forEach(id=>document.getElementById(id).value='');
+  setDebtorTypeUI('company');
+  document.getElementById('f_name').value = q.companyName || '';
+  document.getElementById('f_phone').value = q.mobile || '';
+  document.getElementById('f_amount').value = q.amount || '';
+  const due = new Date(); due.setDate(due.getDate()+30);
+  document.getElementById('f_due').value = due.toISOString().slice(0,10);
+  const refParts = [
+    q.quotationNo ? `${currentLang==='en'?'Quotation No.':'رقم عرض السعر'}: ${q.quotationNo}` : '',
+    q.invoiceNo ? `${currentLang==='en'?'Invoice No.':'رقم الفاتورة'}: ${q.invoiceNo}` : '',
+    q.contactPerson ? `${currentLang==='en'?'Contact':'المسؤول'}: ${q.contactPerson}` : '',
+  ].filter(Boolean).join(' — ');
+  document.getElementById('f_notes').value = refParts;
+  document.getElementById('f_paidMethod').value = 'نقدًا';
+  document.getElementById('f_paidDate').value = todayISO();
+  fillRepSelect(document.getElementById('f_rep'));
+  lockRepFieldForCollector();
+  document.getElementById('debtorModal').classList.add('show');
+  toast(currentLang==='en'?'Review the details, then save to create the collection file':'راجع البيانات ثم احفظ لإنشاء ملف التحصيل');
 });
 
 // ============== QUOTATION ATTACHMENTS (الملفات المرفقة سحابيًا) ==============
@@ -3284,23 +3494,22 @@ function renderReports(){
 // ============== DEBUGGING & TROUBLESHOOTING ==============
 function debugAuthSystem() {
   console.log('=== AUTH SYSTEM DEBUG ===');
-  console.log('Current users:', users);
-  console.log('Auth from storage:', getAuth());
+  console.log('User count:', users.length);
   console.log('Session logged in:', sessionStorage.getItem('daftar_logged_in'));
   console.log('Session user ID:', sessionStorage.getItem('daftar_user_id'));
-  console.log('Current user:', currentUser);
+  console.log('Current user:', currentUser ? {id:currentUser.id, username:currentUser.username, role:currentUser.role} : null);
   console.log('========================');
 }
 
-// Reset login system (for troubleshooting)
+// Reset the LOCAL session only (for troubleshooting a stuck login screen on this
+// device) — does not touch the cloud database. The next reload re-fetches the real
+// user list from Supabase.
 function resetLoginSystem() {
   sessionStorage.removeItem('daftar_logged_in');
   sessionStorage.removeItem('daftar_user_id');
-  users = [];
   currentUser = null;
   updateAuthUI();
-  console.log('Login system uses the cloud account walid.');
-  alert('تسجيل الدخول السحابي: walid / Ksi@33774995');
+  console.log('Local session cleared. Reloading the page will fetch the current account list from the cloud.');
 }
 
 // Add debug functions to window for manual testing
@@ -3522,18 +3731,26 @@ function scheduleAutomatedReports() {
   }
 }
 
-document.getElementById('changeAdminPasswordBtn').addEventListener('click', () => {
-  const newPassword = prompt(currentLang === 'en' ? 'Enter new admin password:' : 'أدخل كلمة مرور المدير الجديدة:');
-  if (newPassword && newPassword.length >= appSettings.passwordMinLength) {
-    const admin = users.find(u => u.role === 'admin');
-    if (admin) {
-      admin.password = newPassword;
-      saveUsers();
-      addAudit('save_auth', 'Admin password changed');
-      toast(currentLang === 'en' ? 'Admin password changed successfully' : 'تم تغيير كلمة مرور المدير بنجاح');
-    }
-  } else if (newPassword) {
+document.getElementById('changeAdminPasswordBtn').addEventListener('click', async () => {
+  if(!can('manageUsers')){ toast(currentLang==='en'?"Only an admin can reset another user's password":'إعادة تعيين كلمة مرور مستخدم آخر متاحة للمدير فقط'); return; }
+  const targetUsername = prompt(currentLang === 'en' ? 'Username to reset:' : 'اسم المستخدم المراد إعادة تعيين كلمة مروره:');
+  if (!targetUsername) return;
+  const target = users.find(u => u.username.toLowerCase() === targetUsername.trim().toLowerCase());
+  if (!target) { toast(currentLang==='en'?'User not found':'المستخدم غير موجود'); return; }
+  const newPassword = prompt(currentLang === 'en' ? `New password for "${target.username}":` : `كلمة المرور الجديدة لـ "${target.username}":`);
+  if (!newPassword) return;
+  if (newPassword.length < appSettings.passwordMinLength) {
     toast(currentLang === 'en' ? `Password must be at least ${appSettings.passwordMinLength} characters` : `يجب أن تكون كلمة المرور ${appSettings.passwordMinLength} أحرف على الأقل`);
+    return;
+  }
+  target.password = newPassword;
+  try{
+    await saveUsers();
+    addAudit('save_auth', `${currentLang==='en'?'Password reset for':'إعادة تعيين كلمة مرور'}: ${target.username}`);
+    toast(currentLang === 'en' ? 'Password changed successfully' : 'تم تغيير كلمة المرور بنجاح');
+  }catch(err){
+    console.warn('Resetting user password failed:', err);
+    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
   }
 });
 
@@ -3794,7 +4011,8 @@ document.getElementById('quotFollowupReminders')?.addEventListener('click', ev=>
 function maybeSendDueNotifications(){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   const list = getUpcomingDue(appSettings.reminderDays);
-  if(!list.length) return;
+  const quotList = getDueQuotationFollowups();
+  if(!list.length && !quotList.length) return;
   const already = sessionStorage.getItem('daftar_notified');
   if(already) return;
   sessionStorage.setItem('daftar_notified','1');
@@ -3804,8 +4022,14 @@ function maybeSendDueNotifications(){
     playNotificationSound();
   }
   
-  const body = list.slice(0,5).map(d=>`${d.name} — ${d.due}`).join('\n');
-  new Notification(currentLang==='en'?'Debt due alert':'تنبيه استحقاق ديون', {body: currentLang==='en'?`${list.length} cases are due soon:\n${body}`:`لديك ${list.length} حالة مستحقة قريبًا:\n${body}`});
+  if(list.length){
+    const body = list.slice(0,5).map(d=>`${d.name} — ${d.due}`).join('\n');
+    new Notification(currentLang==='en'?'Debt due alert':'تنبيه استحقاق ديون', {body: currentLang==='en'?`${list.length} cases are due soon:\n${body}`:`لديك ${list.length} حالة مستحقة قريبًا:\n${body}`});
+  }
+  if(quotList.length){
+    const qBody = quotList.slice(0,5).map(q=>`${q.companyName} — ${q.nextFollowup}`).join('\n');
+    new Notification(currentLang==='en'?'Quotation follow-up alert':'تنبيه متابعة عروض أسعار', {body: currentLang==='en'?`${quotList.length} quotation(s) need follow-up:\n${qBody}`:`لديك ${quotList.length} عرض سعر بحاجة لمتابعة:\n${qBody}`});
+  }
   
   // Send email if enabled (simulation - in real implementation, this would call an API)
   if(appSettings.emailAlerts && appSettings.notificationEmail) {
