@@ -915,7 +915,7 @@ async function loadState(){
 
 // ============== HELPERS ==============
 function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
-function todayISO(){ const t=new Date(); return t.toISOString().slice(0,10); }
+function todayISO(){ const t=new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; } // local date, not UTC
 // Normalises any date value (Excel serial number, Date object, 01/09/2026, 2026-09-01,
 // 1-Sep-2026, Arabic-Indic digits...) into the ISO yyyy-mm-dd string Postgres expects.
 // Returning '' for unparsable values is important: sending a raw Excel serial such as
@@ -1556,6 +1556,112 @@ function renderQuotationsTable(){
 }
 document.getElementById('quotSearch')?.addEventListener('input', debounce(renderQuotationsTable, 200));
 document.getElementById('quotDateFilter')?.addEventListener('change', renderQuotationsTable);
+
+// ---- Quotation date picker --------------------------------------------------
+// A native <input type="date"> cannot style individual days, so #quotDateFilter is
+// now a readonly text input (still holding "YYYY-MM-DD" in .value, so every other
+// piece of code that reads/sets it keeps working) that opens this small calendar.
+// Any day that has at least one quotation is painted green; hover shows how many.
+Object.assign(translations,{
+  'qcal.today':['اليوم','Today'],
+  'qcal.legend':['أيام بها عروض أسعار','Days with quotations'],
+  'qcal.count':['عرض سعر','quotation(s)'],
+  'qcal.prev':['الشهر السابق','Previous month'],
+  'qcal.next':['الشهر التالي','Next month'],
+});
+(function initQuotationCalendar(){
+  const input = document.getElementById('quotDateFilter');
+  if(!input) return;
+  const pad = n => String(n).padStart(2,'0');
+  const iso = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+  const locale = () => currentLang==='en' ? 'en-US' : 'ar-QA-u-nu-latn';
+  const pop = document.createElement('div');
+  pop.className = 'qcal'; pop.hidden = true;
+  pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', input.getAttribute('aria-label')||'');
+  document.body.appendChild(pop);
+  let viewY = 0, viewM = 0;
+
+  function countsByDate(){
+    const counts = {};
+    quotations.forEach(q=>{ if(q.date) counts[q.date] = (counts[q.date]||0) + 1; });
+    return counts;
+  }
+  function position(){
+    const r = input.getBoundingClientRect();
+    const w = pop.offsetWidth || 292;
+    let left = currentLang==='en' ? r.left : r.right - w;
+    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+    let top = r.bottom + 6;
+    if(top + pop.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - pop.offsetHeight - 6);
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
+  function render(){
+    const rtl = currentLang!=='en';
+    const counts = countsByDate();
+    const today = todayISO();
+    const selected = input.value;
+    const title = new Intl.DateTimeFormat(locale(), {month:'long', year:'numeric'}).format(new Date(viewY, viewM, 1));
+    const wdFmt = new Intl.DateTimeFormat(locale(), {weekday:'short'});
+    // 2023-01-01 was a Sunday -> week starts on Sunday
+    const weekdays = Array.from({length:7}, (_,i)=>`<div class="qcal-wd">${esc(wdFmt.format(new Date(2023,0,1+i)))}</div>`).join('');
+    const firstDow = new Date(viewY, viewM, 1).getDay();
+    const daysInMonth = new Date(viewY, viewM+1, 0).getDate();
+    let cells = '<div></div>'.repeat(firstDow);
+    for(let d=1; d<=daysInMonth; d++){
+      const date = iso(viewY, viewM, d);
+      const n = counts[date] || 0;
+      const cls = ['qcal-day', n?'has-q':'', date===selected?'sel':'', date===today?'today':''].filter(Boolean).join(' ');
+      const tip = n ? ` title="${n} ${esc(t('qcal.count'))}"` : '';
+      cells += `<button type="button" class="${cls}" data-date="${date}"${tip}${date===selected?' aria-pressed="true"':''}>${d}</button>`;
+    }
+    pop.innerHTML = `
+      <div class="qcal-head">
+        <button type="button" class="qcal-nav" data-nav="-1" aria-label="${esc(t('qcal.prev'))}">${rtl?'›':'‹'}</button>
+        <span class="qcal-title">${esc(title)}</span>
+        <button type="button" class="qcal-nav" data-nav="1" aria-label="${esc(t('qcal.next'))}">${rtl?'‹':'›'}</button>
+      </div>
+      <div class="qcal-grid">${weekdays}${cells}</div>
+      <div class="qcal-foot">
+        <span class="qcal-legend"><i></i>${esc(t('qcal.legend'))}</span>
+        <button type="button" class="qcal-today" data-today="1">${esc(t('qcal.today'))}</button>
+      </div>`;
+    pop.dir = rtl ? 'rtl' : 'ltr';
+  }
+  function open(){
+    const base = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? input.value : todayISO();
+    viewY = Number(base.slice(0,4)); viewM = Number(base.slice(5,7)) - 1;
+    render(); pop.hidden = false; position();
+    (pop.querySelector('.qcal-day.sel') || pop.querySelector('.qcal-day'))?.focus();
+  }
+  function close(){ pop.hidden = true; }
+  function pick(date){
+    input.value = date;
+    input.dispatchEvent(new Event('change', {bubbles:true})); // re-renders the table
+    close(); input.focus();
+  }
+  input.addEventListener('click', ()=> pop.hidden ? open() : close());
+  input.addEventListener('keydown', e=>{
+    if(['Enter',' ','ArrowDown'].includes(e.key)){ e.preventDefault(); open(); }
+  });
+  pop.addEventListener('click', e=>{
+    const nav = e.target.closest('[data-nav]');
+    if(nav){
+      const d = new Date(viewY, viewM + Number(nav.dataset.nav), 1);
+      viewY = d.getFullYear(); viewM = d.getMonth(); render(); position();
+      pop.querySelector('.qcal-day')?.focus();
+      return;
+    }
+    if(e.target.closest('[data-today]')){ pick(todayISO()); return; }
+    const day = e.target.closest('[data-date]');
+    if(day) pick(day.dataset.date);
+  });
+  document.addEventListener('mousedown', e=>{
+    if(!pop.hidden && !pop.contains(e.target) && e.target!==input) close();
+  });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !pop.hidden){ close(); input.focus(); } });
+  window.addEventListener('resize', close);
+  window.addEventListener('scroll', ()=>{ if(!pop.hidden) position(); }, true);
+})();
 document.getElementById('quotStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotScopeFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotSubjectFilter')?.addEventListener('change', renderQuotationsTable);
