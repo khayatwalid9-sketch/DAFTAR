@@ -206,7 +206,7 @@ function notesTd(d){
 }
 function currency(value){ return `${fmt(value)} ${currentLang==='en'?'QAR':'ر.ق'}`; }
 function translateValue(value){
-  const map={'نقدًا':'method.cash','شيك':'method.cheque','تحويل بنكي':'method.transfer','اتصال هاتفي':'method.call','رسالة نصية':'method.sms','زيارة ميدانية':'method.visit','بريد إلكتروني':'method.email','فرد':'debtors.individual','شركة':'debtors.company'};
+  const map={'نقدًا':'method.cash','شيك':'method.cheque','تحويل بنكي':'method.transfer','اتصال هاتفي':'method.call','رسالة نصية':'method.sms','زيارة ميدانية':'method.visit','بريد إلكتروني':'method.email','فرد':'debtors.individual','شركة':'debtors.company','رصيد سابق':'method.opening','تسوية':'method.adjust'};
   return map[value]?t(map[value]):value;
 }
 function applyLanguage(){
@@ -845,6 +845,9 @@ async function loadFromSupabase() {
     if(settingsError) throw settingsError;
     if(settingsData?.settings) appSettings = {...appSettings,...settingsData.settings};
     
+    // Make sure every paid amount has an entry in the payments register.
+    const unlogged = reconcileAllPaymentLogs();
+    if(unlogged) console.info(`Payment log: recorded missing payments for ${unlogged} debtor(s)`);
     return true;
   } catch (e) {
     console.warn('Supabase load failed:', e);
@@ -972,6 +975,51 @@ function ensureLogIds(){
   debtors.forEach(d=>{ (d.log||[]).forEach(entry=>{ if(!entry.id) entry.id = genLogId(); }); });
 }
 ensureLogIds();
+
+// ---- Payment-log integrity ---------------------------------------------------
+// "paid" on a debtor can change without a matching payment entry in its log
+// (Excel import with a "paid" column, hand-editing the paid total, data saved
+// before payments were logged). Those amounts never showed in the payments
+// register. These helpers keep: sum(log payments) === debtor.paid.
+Object.assign(translations,{
+  'method.opening':['رصيد سابق','Previous balance'],
+  'method.adjust':['تسوية','Adjustment'],
+  'payments.autoNote':['سُجّل تلقائيًا: مبلغ مسدد سابقًا دون قيد في السجل','Auto-recorded: amount previously paid with no log entry'],
+  'payments.importNote':['مسدد عند الاستيراد من Excel','Paid at Excel import'],
+  'payments.adjustNote':['تسوية يدوية للمبلغ المسدد','Manual adjustment of the paid total'],
+});
+const money2 = n => Math.round((Number(n)||0)*100)/100;
+function loggedPaymentsTotal(d){
+  return money2((d.log||[]).filter(e=>e.type==='payment').reduce((s,e)=>s+(Number(e.amount)||0),0));
+}
+// Adds ONE payment entry covering whatever part of d.paid is not in the log yet.
+function recordUnloggedPayment(d, opts={}){
+  const gap = money2((Number(d.paid)||0) - loggedPaymentsTotal(d));
+  if(gap <= 0) return 0;
+  d.log = d.log || [];
+  d.log.push({id:genLogId(), type:'payment', date:opts.date||todayISO(), amount:gap,
+    method:opts.method||'رصيد سابق', note:opts.note||t('payments.autoNote')});
+  return gap;
+}
+// When the paid total is lowered by hand, shave the difference off the newest payments.
+function trimPaymentLogToPaid(d){
+  let excess = money2(loggedPaymentsTotal(d) - (Number(d.paid)||0));
+  if(excess <= 0) return;
+  const newestFirst = (d.log||[]).filter(e=>e.type==='payment')
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (Number(b.id)||0)-(Number(a.id)||0));
+  for(const e of newestFirst){
+    if(excess <= 0) break;
+    const cut = Math.min(Number(e.amount)||0, excess);
+    e.amount = money2((Number(e.amount)||0) - cut);
+    excess = money2(excess - cut);
+  }
+  d.log = d.log.filter(e=> e.type!=='payment' || Number(e.amount)>0);
+}
+function reconcileAllPaymentLogs(){
+  let fixed = 0;
+  debtors.forEach(d=>{ if(recordUnloggedPayment(d) > 0) fixed++; });
+  return fixed;
+}
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function remaining(d){ return Math.max(d.total - d.paid, 0); }
 function buildInstallments(total,due,count,frequency){
@@ -1236,7 +1284,7 @@ document.getElementById('importExcelFile').addEventListener('change', e=>{
       const pick=(row,keys)=>{const key=Object.keys(row).find(k=>keys.includes(String(k).trim().toLowerCase()));return key===undefined?'':row[key];};
       const imported=rows.map(row=>{const name=pick(row,['الاسم','اسم المدين','name','debtor name']); const total=Number(pick(row,['إجمالي الدين','المبلغ','total','total debt']))||0; const type=String(pick(row,['النوع','type'])).toLowerCase().includes('company')||String(pick(row,['النوع','type'])).includes('شركة')?'company':'individual'; return {id:nextId++,name,type,companyNumber:String(pick(row,['رقم الشركة','company number'])),crNumber:String(pick(row,['السجل التجاري','cr number'])),phone:String(pick(row,['الهاتف','phone'])),total,paid:Number(pick(row,['المسدد','paid']))||0,due:String(pick(row,['تاريخ الاستحقاق','due','due date']))||'2026-12-31',notes:String(pick(row,['ملاحظات','notes'])),repId:null,log:[]};}).filter(d=>d.name&&d.total>0);
       if(!imported.length) throw new Error('empty');
-      if(confirm(currentLang==='en'?`Import ${imported.length} debtors?`:`استيراد ${imported.length} مدين؟`)){debtors.push(...imported);renderAll();toast(currentLang==='en'?'Excel data imported':'تم استيراد بيانات Excel');}
+      if(confirm(currentLang==='en'?`Import ${imported.length} debtors?`:`استيراد ${imported.length} مدين؟`)){imported.forEach(d=>recordUnloggedPayment(d,{method:'رصيد سابق', note:t('payments.importNote')}));debtors.push(...imported);renderAll();toast(currentLang==='en'?'Excel data imported':'تم استيراد بيانات Excel');}
     }catch(err){toast(currentLang==='en'?'Could not read Excel file':'تعذّرت قراءة ملف Excel');}
   }; reader.readAsArrayBuffer(file); e.target.value='';
 });
@@ -1418,6 +1466,8 @@ document.getElementById('dr_editPaidBtn').addEventListener('click', ()=>{
   if(isNaN(newPaid) || newPaid<0){ toast(t('msg.invalidAmount')); return; }
   const oldPaid = d.paid;
   d.paid = newPaid;
+  recordUnloggedPayment(d, {method:'تسوية', note:t('payments.adjustNote')});
+  trimPaymentLogToPaid(d);
   addAudit('adjust_paid', `${d.name}: ${fmt(oldPaid)} → ${fmt(newPaid)}`);
   toast(t('msg.paidAdjusted'));
   openDrawer(d.id);
