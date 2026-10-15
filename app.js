@@ -1572,6 +1572,9 @@ function ensureQuotationDateFilter(){
     el.value = fallback;
   }
 }
+// "Show all" mode: lists every quotation regardless of the selected day, grouped by the
+// date it was registered on. Picking a day in the calendar switches it off again.
+let quotShowAll = false;
 function scopedQuotations(){
   const query = (document.getElementById('quotSearch')?.value || '').trim().toLowerCase();
   const statusF = document.getElementById('quotStatusFilter')?.value || 'all';
@@ -1579,7 +1582,7 @@ function scopedQuotations(){
   const subjectF = document.getElementById('quotSubjectFilter')?.value || 'all';
   const dateF = document.getElementById('quotDateFilter')?.value || latestQuotationDate();
   return quotations.filter(q=>{
-    if(dateF && q.date !== dateF) return false;
+    if(!quotShowAll && dateF && q.date !== dateF) return false;
     if(statusF!=='all' && q.status!==statusF) return false;
     if(scopeF!=='all' && q.companyScope!==scopeF) return false;
     if(subjectF!=='all' && q.subject!==subjectF) return false;
@@ -1590,22 +1593,67 @@ function scopedQuotations(){
     return true;
   }).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
 }
-function renderQuotationsTable(){
-  const body = document.getElementById('quotationsTableBody');
-  if(!body) return;
-  ensureQuotationDateFilter();
-  const rows = scopedQuotations();
-  document.getElementById('quotationsEmpty').style.display = rows.length ? 'none' : 'block';
-  body.innerHTML = rows.map((q,i)=>`<tr data-id="${q.id}">
-    <td class="figures">${i+1}</td><td>${esc(q.date)||'—'}</td><td class="figures">${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td>
+function quotationRowHtml(q, n){
+  return `<tr data-id="${q.id}">
+    <td class="figures">${n}</td><td>${esc(q.date)||'—'}</td><td class="figures">${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td>
     <td>${esc(q.contactPerson)||'—'}</td><td class="figures">${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td>
     <td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td>
     <td><span class="badge ${quotStatusBadgeClass(q.status)}">${quotStatusLabel(q.status)}</span></td><td>${esc(q.nextFollowup)||'—'}</td>
     <td><button type="button" class="link-btn" data-quot-edit="${q.id}">${t('action.edit')}</button> · <button type="button" class="link-btn" data-quot-delete="${q.id}">${t('action.delete')}</button></td>
-  </tr>`).join('');
+  </tr>`;
+}
+function syncQuotShowAllUi(){
+  const btn = document.getElementById('quotShowAllBtn');
+  if(btn){
+    btn.setAttribute('aria-pressed', quotShowAll ? 'true' : 'false');
+    btn.textContent = t(quotShowAll ? 'quot.showByDay' : 'quot.showAll');
+  }
+  document.getElementById('quotDateFilter')?.classList.toggle('is-dimmed', quotShowAll);
+}
+function renderQuotationsTable(){
+  const body = document.getElementById('quotationsTableBody');
+  if(!body) return;
+  ensureQuotationDateFilter();
+  syncQuotShowAllUi();
+  const rows = scopedQuotations();
+  const summary = document.getElementById('quotAllSummary');
+  document.getElementById('quotationsEmpty').style.display = rows.length ? 'none' : 'block';
+
+  if(!quotShowAll){
+    if(summary) summary.hidden = true;
+    body.innerHTML = rows.map((q,i)=>quotationRowHtml(q, i+1)).join('');
+    return;
+  }
+
+  // Group by registration date, newest day first; numbering restarts inside each day.
+  const groups = new Map();
+  rows.forEach(q=>{
+    const key = q.date || '';
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(q);
+  });
+  const days = [...groups.keys()].sort((a,b)=> b.localeCompare(a));
+  const cols = body.closest('table')?.querySelectorAll('thead th').length || 15;
+  body.innerHTML = days.map(day=>{
+    const list = groups.get(day).sort((a,b)=> (a.visitTime||'').localeCompare(b.visitTime||''));
+    return `<tr class="quot-date-group"><td colspan="${cols}">📅 ${esc(day) || t('quot.noDate')}<span class="quot-date-count">${list.length} ${esc(t('qcal.count'))}</span></td></tr>`
+      + list.map((q,i)=>quotationRowHtml(q, i+1)).join('');
+  }).join('');
+  if(summary){
+    summary.hidden = false;
+    summary.innerHTML = `${esc(t('quot.allSummary'))}: <b>${rows.length}</b> ${esc(t('qcal.count'))} — <b>${days.length}</b> ${esc(t('quot.daysWord'))}`;
+  }
 }
 document.getElementById('quotSearch')?.addEventListener('input', debounce(renderQuotationsTable, 200));
-document.getElementById('quotDateFilter')?.addEventListener('change', renderQuotationsTable);
+Object.assign(translations,{
+  'quot.showAll':['🗂 عرض جميع عروض الأسعار','🗂 Show all quotations'],
+  'quot.showByDay':['↩ العودة إلى عرض يوم محدد','↩ Back to single day'],
+  'quot.allSummary':['إجمالي العروض المعروضة','Quotations shown'],
+  'quot.daysWord':['يوم','day(s)'],
+  'quot.noDate':['بدون تاريخ','No date'],
+});
+document.getElementById('quotDateFilter')?.addEventListener('change', ()=>{ quotShowAll = false; renderQuotationsTable(); });
+document.getElementById('quotShowAllBtn')?.addEventListener('click', ()=>{ quotShowAll = !quotShowAll; renderQuotationsTable(); });
 
 // ---- Quotation date picker --------------------------------------------------
 // A native <input type="date"> cannot style individual days, so #quotDateFilter is

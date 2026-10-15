@@ -363,6 +363,7 @@
           <div>
             <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول..." title="بحث عروض الأسعار" aria-label="بحث عروض الأسعار">
             <input type="text" id="quotDateFilter" class="field qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
+            <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">🗂 عرض جميع عروض الأسعار</button>
             <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="open" data-i18n="quot.status.open">مفتوح</option>
@@ -400,6 +401,7 @@
             <button class="btn small" id="addQuotationBtn" data-i18n="quot.add">+ إضافة عرض سعر</button>
           </div>
         </div>
+        <div class="quot-all-summary" id="quotAllSummary" hidden></div>
         <div class="table-scroll">
           <table class="table-wide">
           <thead>
