@@ -66,7 +66,6 @@ Object.assign(translations,{
   'compliance.companyInfo':['معلومات الشركة للامتثال','Company Information for Compliance'],
   'compliance.generateReport':['إنشاء تقرير الامتثال','Generate Compliance Report'],
   'compliance.reportGenerated':['تم إنشاء تقرير الامتثال','Compliance report generated'],
-  'nav.footnote':['يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.','This system runs in your browser - data is saved on this device only.'],
   'dash.totalDebts':['إجمالي الديون المسجلة','Total registered debts'],'dash.via':['عبر','Across'],'dash.file':['ملف تحصيل','collection files'],'dash.collected':['المبلغ المحصَّل','Collected amount'],'dash.ofTotal':['من الإجمالي','of total'],'dash.overdueTotal':['متأخرات قائمة','Outstanding overdue'],'dash.overdueCase':['حالة متأخرة','overdue cases'],'dash.activeCases':['حالات نشطة قيد المتابعة','Active cases'],'dash.needsFollow':['تحتاج متابعة مستمرة','Need ongoing follow-up'],'dash.companyDebts':['ديون الشركات','Company debts'],'dash.companyUnit':['شركة مدينة','companies'],'dash.individualDebts':['ديون الأفراد','Individual debts'],'dash.individualUnit':['فرد مدين','individuals'],'dash.topOverdue':['أعلى المدينين تأخرًا','Most overdue debtors'],'dash.recentActivity':['آخر المتابعات','Recent activity'],'dash.upcomingDue':['تنبيهات الاستحقاق القادمة','Upcoming due alerts'],'dash.quotFollowups':['متابعات عروض الأسعار (اليوم والمتأخرة)','Quotation follow-ups (today & overdue)'],
   'debtors.allStatuses':['كل الحالات','All statuses'],'reps.count':['عدد المندوبين','Collectors'],'reps.workOn':['يعملون على ملفات التحصيل','Working on collection files'],'reps.collectedBy':['المحصَّل بواسطة المندوبين','Collected by collectors'],'reps.ofAssigned':['من إجمالي الحالات المسندة','of assigned cases'],'reps.unassigned':['حالات غير مسندة','Unassigned cases'],'reps.noRep':['مدينون بلا مندوب مسؤول','Debtors without a collector'],'reps.team':['فريق المندوبين','Collection team'],'reps.addRep':['+ إضافة مندوب','+ Add collector'],'reps.empty':['لا يوجد مندوبون مسجّلون بعد.','No collectors registered yet.'],'reps.rating':['التقييم','Rating'],'reps.monthlyReport':['التقرير الشهري للمندوبين','Monthly Collector Report'],'reps.excellent':['ممتاز','Excellent'],'reps.good':['جيد','Good'],'reps.average':['متوسط','Average'],'reps.poor':['ضعيف','Poor'],'payments.title':['سجل كل عمليات السداد','All payments'],'payments.empty':['لم يتم تسجيل أي عملية سداد بعد.','No payments recorded yet.'],'followups.title':['سجل المتابعات والاتصالات','Follow-up and contact log'],'followups.empty':['لم يتم تسجيل أي متابعة بعد.','No follow-ups recorded yet.'],
   'reports.statusDist':['توزيع حالات المدينين','Debtor status distribution'],'reports.financialSummary':['ملخص مالي','Financial summary'],'reports.totalDebts':['إجمالي الديون','Total debts'],'reports.totalCollected':['إجمالي المحصَّل','Total collected'],'reports.totalRemaining':['إجمالي المتبقي','Total remaining'],'reports.collectionRate':['نسبة التحصيل','Collection rate'],'reports.paymentsCount':['عدد عمليات السداد','Payments count'],'reports.followupsCount':['عدد المتابعات المسجّلة','Follow-ups count'],
@@ -330,7 +329,6 @@ function getAuth(){
 function updateAuthUI(){
   const auth=getAuth(); document.getElementById('s_authUser').value=auth.username;
   document.getElementById('loginScreen').style.display=sessionStorage.getItem('daftar_logged_in')==='1'?'none':'flex';
-  document.getElementById('sidebarUserLine').textContent=sessionStorage.getItem('daftar_logged_in')==='1' ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
   // Restore the session by the SPECIFIC account id that logged in — not a fixed
   // account name. Restoring "whoever is named X" regardless of who actually signed
@@ -545,47 +543,21 @@ function renderAudit(){
   el.innerHTML=filtered.slice(0,80).map(item=>`<div class="audit-row"><b>${esc(auditLabel(item.action))}</b><span>${esc(item.user)}</span>${item.details?`<small class="audit-detail">${esc(item.details)}</small>`:''}<time>${new Date(item.date).toLocaleString(currentLang==='en'?'en-US':'ar-QA')}</time></div>`).join('') || `<div class="empty">${q?t('settings.auditEmpty'):(currentLang==='en'?'No audit events yet.':'لا توجد أحداث بعد.')}</div>`;
 }
 
-let debtors = [
-  {id:1, name:"محمد عبدالله السويدي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5511 2233", total:45000, paid:15000, due:"2026-09-10", notes:"عميل تجاري - قسط شهري", log:[
-    {type:"follow", date:"2026-08-01", method:"اتصال هاتفي", note:"وعد بالسداد نهاية الشهر"},
-    {type:"payment", date:"2026-07-15", amount:5000, method:"تحويل بنكي"}
-  ]},
-  {id:2, name:"فاطمة أحمد المهندي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5522 8891", total:12000, paid:12000, due:"2026-07-01", notes:"تم السداد بالكامل", log:[
-    {type:"payment", date:"2026-06-30", amount:12000, method:"نقدًا"}
-  ]},
-  {id:3, name:"يوسف خالد النعيمي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 3344 5566", total:80000, paid:10000, due:"2026-06-01", notes:"متعثر - متابعة قانونية قيد الدرس", log:[
-    {type:"follow", date:"2026-08-10", method:"زيارة ميدانية", note:"لم يتم الوصول للعميل"},
-    {type:"follow", date:"2026-07-20", method:"اتصال هاتفي", note:"رفض الرد"}
-  ]},
-  {id:4, name:"شركة الخليج للمقاولات", type:"company", companyNumber:"CO-10452", crNumber:"128734", phone:"+974 4433 7788", total:220000, paid:120000, due:"2026-10-05", notes:"سداد على دفعات ربع سنوية", log:[
-    {type:"payment", date:"2026-08-01", amount:60000, method:"شيك"},
-    {type:"follow", date:"2026-07-25", method:"بريد إلكتروني", note:"تأكيد جدول السداد"}
-  ]},
-];
-let nextId = 5;
+// No built-in sample data: every list starts empty and is filled ONLY from the cloud (Supabase).
+let debtors = [];
+let nextId = 1;
 let activeDebtorId = null;
 let lastStatementHtml = '';
 
-let reps = [
-  {id:1, name:"أحمد سالم الكواري", phone:"+974 5566 1122", area:"الدوحة - الوسط"},
-  {id:2, name:"سارة محمد آل ثاني", phone:"+974 5577 3344", area:"الريان"},
-];
-let nextRepId = 3;
+let reps = [];
+let nextRepId = 1;
 let activeRepId = null;
 
-// assign existing sample debtors to reps
-debtors[0].repId = 1;
-debtors[2].repId = 1;
-debtors[3].repId = 2;
 
 // ============== QUOTATIONS (عروض الأسعار) ==============
-let quotations = [
-  {id:1, date:"2026-08-25", visitTime:"12:00", companyName:"شركة الخليج للمقاولات", companyScope:"mainContractor", contactPerson:"م. أحمد", mobile:"+974 5511 2233", email:"purchase@gulf-example.com", amount:85000, quotationNo:"QTN-2026-00123", invoiceNo:"", projectNo:"", subject:"quoteFollowup", nextFollowup:"2026-09-08", status:"submitted", requirement:"طلبوا عرض سعر لتوريد مواد المشروع الجديد.", followupAction:"الاتصال لتأكيد استلام العرض ومناقشة الأسعار.", notes:"", log:[
-    {id:1, date:"2026-08-25", status:"submitted", note:"تم إرسال عرض السعر عبر البريد الإلكتروني."}
-  ]},
-];
-let nextQuotationId = 2;
-let nextQuotationLogId = 2;
+let quotations = [];
+let nextQuotationId = 1;
+let nextQuotationLogId = 1;
 let activeQuotationId = null;
 
 // ============== PERSISTENCE ==============
@@ -595,6 +567,10 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 let syncInProgress = null;
 let syncQueued = false;
 let lastSyncError = null;
+// Becomes true only after the cloud data was read successfully. Until then a sync is
+// refused: an empty/unloaded local list must never be allowed to overwrite (or prune)
+// the real rows stored in Supabase.
+let cloudDataLoaded = false;
 
 // ---- Debounced persistence -------------------------------------------------
 // renderAll() runs on EVERY re-render, including on every keystroke in the
@@ -656,6 +632,11 @@ async function replaceTable(table, rows, key='id', pruneOrphans=true) {
 async function syncToSupabase() {
   if (!supabaseClient) {
     console.warn('Supabase sync skipped: client not initialized');
+    return false;
+  }
+  if (!cloudDataLoaded) {
+    lastSyncError = currentLang==='en' ? 'Cloud data was not loaded, save blocked to protect stored data' : 'لم يتم تحميل البيانات من السحابة، تم منع الحفظ لحماية البيانات المخزنة';
+    console.warn('Supabase sync skipped: cloud data not loaded yet');
     return false;
   }
   if (syncInProgress) { syncQueued = true; return syncInProgress; }
@@ -848,6 +829,7 @@ async function loadFromSupabase() {
     // Make sure every paid amount has an entry in the payments register.
     const unlogged = reconcileAllPaymentLogs();
     if(unlogged) console.info(`Payment log: recorded missing payments for ${unlogged} debtor(s)`);
+    cloudDataLoaded = true;
     return true;
   } catch (e) {
     console.warn('Supabase load failed:', e);
@@ -4843,7 +4825,10 @@ document.getElementById('s_smartReminders').checked = appSettings.smartReminders
 async function initializeApp() {
   try {
     clearLegacyBrowserState();
-    await loadState();
+    const cloudLoaded = await loadState();
+    if(!cloudLoaded){
+      setTimeout(()=>toast(currentLang==='en'?'Could not load data from the cloud. Check your connection and reload.':'تعذّر تحميل البيانات من السحابة. تحقق من الاتصال ثم أعد تحميل الصفحة.'), 400);
+    }
     loadSettings();
     // Initialize settings UI values
     if (document.getElementById('s_reminderDays')) {
