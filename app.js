@@ -66,6 +66,7 @@ Object.assign(translations,{
   'compliance.companyInfo':['معلومات الشركة للامتثال','Company Information for Compliance'],
   'compliance.generateReport':['إنشاء تقرير الامتثال','Generate Compliance Report'],
   'compliance.reportGenerated':['تم إنشاء تقرير الامتثال','Compliance report generated'],
+  'nav.footnote':['يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.','This system runs in your browser - data is saved on this device only.'],
   'dash.totalDebts':['إجمالي الديون المسجلة','Total registered debts'],'dash.via':['عبر','Across'],'dash.file':['ملف تحصيل','collection files'],'dash.collected':['المبلغ المحصَّل','Collected amount'],'dash.ofTotal':['من الإجمالي','of total'],'dash.overdueTotal':['متأخرات قائمة','Outstanding overdue'],'dash.overdueCase':['حالة متأخرة','overdue cases'],'dash.activeCases':['حالات نشطة قيد المتابعة','Active cases'],'dash.needsFollow':['تحتاج متابعة مستمرة','Need ongoing follow-up'],'dash.companyDebts':['ديون الشركات','Company debts'],'dash.companyUnit':['شركة مدينة','companies'],'dash.individualDebts':['ديون الأفراد','Individual debts'],'dash.individualUnit':['فرد مدين','individuals'],'dash.topOverdue':['أعلى المدينين تأخرًا','Most overdue debtors'],'dash.recentActivity':['آخر المتابعات','Recent activity'],'dash.upcomingDue':['تنبيهات الاستحقاق القادمة','Upcoming due alerts'],'dash.quotFollowups':['متابعات عروض الأسعار (اليوم والمتأخرة)','Quotation follow-ups (today & overdue)'],
   'debtors.allStatuses':['كل الحالات','All statuses'],'reps.count':['عدد المندوبين','Collectors'],'reps.workOn':['يعملون على ملفات التحصيل','Working on collection files'],'reps.collectedBy':['المحصَّل بواسطة المندوبين','Collected by collectors'],'reps.ofAssigned':['من إجمالي الحالات المسندة','of assigned cases'],'reps.unassigned':['حالات غير مسندة','Unassigned cases'],'reps.noRep':['مدينون بلا مندوب مسؤول','Debtors without a collector'],'reps.team':['فريق المندوبين','Collection team'],'reps.addRep':['+ إضافة مندوب','+ Add collector'],'reps.empty':['لا يوجد مندوبون مسجّلون بعد.','No collectors registered yet.'],'reps.rating':['التقييم','Rating'],'reps.monthlyReport':['التقرير الشهري للمندوبين','Monthly Collector Report'],'reps.excellent':['ممتاز','Excellent'],'reps.good':['جيد','Good'],'reps.average':['متوسط','Average'],'reps.poor':['ضعيف','Poor'],'payments.title':['سجل كل عمليات السداد','All payments'],'payments.empty':['لم يتم تسجيل أي عملية سداد بعد.','No payments recorded yet.'],'followups.title':['سجل المتابعات والاتصالات','Follow-up and contact log'],'followups.empty':['لم يتم تسجيل أي متابعة بعد.','No follow-ups recorded yet.'],
   'reports.statusDist':['توزيع حالات المدينين','Debtor status distribution'],'reports.financialSummary':['ملخص مالي','Financial summary'],'reports.totalDebts':['إجمالي الديون','Total debts'],'reports.totalCollected':['إجمالي المحصَّل','Total collected'],'reports.totalRemaining':['إجمالي المتبقي','Total remaining'],'reports.collectionRate':['نسبة التحصيل','Collection rate'],'reports.paymentsCount':['عدد عمليات السداد','Payments count'],'reports.followupsCount':['عدد المتابعات المسجّلة','Follow-ups count'],
@@ -329,6 +330,7 @@ function getAuth(){
 function updateAuthUI(){
   const auth=getAuth(); document.getElementById('s_authUser').value=auth.username;
   document.getElementById('loginScreen').style.display=sessionStorage.getItem('daftar_logged_in')==='1'?'none':'flex';
+  document.getElementById('sidebarUserLine').textContent=sessionStorage.getItem('daftar_logged_in')==='1' ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
   // Restore the session by the SPECIFIC account id that logged in — not a fixed
   // account name. Restoring "whoever is named X" regardless of who actually signed
@@ -543,21 +545,47 @@ function renderAudit(){
   el.innerHTML=filtered.slice(0,80).map(item=>`<div class="audit-row"><b>${esc(auditLabel(item.action))}</b><span>${esc(item.user)}</span>${item.details?`<small class="audit-detail">${esc(item.details)}</small>`:''}<time>${new Date(item.date).toLocaleString(currentLang==='en'?'en-US':'ar-QA')}</time></div>`).join('') || `<div class="empty">${q?t('settings.auditEmpty'):(currentLang==='en'?'No audit events yet.':'لا توجد أحداث بعد.')}</div>`;
 }
 
-// No built-in sample data: every list starts empty and is filled ONLY from the cloud (Supabase).
-let debtors = [];
-let nextId = 1;
+let debtors = [
+  {id:1, name:"محمد عبدالله السويدي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5511 2233", total:45000, paid:15000, due:"2026-09-10", notes:"عميل تجاري - قسط شهري", log:[
+    {type:"follow", date:"2026-08-01", method:"اتصال هاتفي", note:"وعد بالسداد نهاية الشهر"},
+    {type:"payment", date:"2026-07-15", amount:5000, method:"تحويل بنكي"}
+  ]},
+  {id:2, name:"فاطمة أحمد المهندي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5522 8891", total:12000, paid:12000, due:"2026-07-01", notes:"تم السداد بالكامل", log:[
+    {type:"payment", date:"2026-06-30", amount:12000, method:"نقدًا"}
+  ]},
+  {id:3, name:"يوسف خالد النعيمي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 3344 5566", total:80000, paid:10000, due:"2026-06-01", notes:"متعثر - متابعة قانونية قيد الدرس", log:[
+    {type:"follow", date:"2026-08-10", method:"زيارة ميدانية", note:"لم يتم الوصول للعميل"},
+    {type:"follow", date:"2026-07-20", method:"اتصال هاتفي", note:"رفض الرد"}
+  ]},
+  {id:4, name:"شركة الخليج للمقاولات", type:"company", companyNumber:"CO-10452", crNumber:"128734", phone:"+974 4433 7788", total:220000, paid:120000, due:"2026-10-05", notes:"سداد على دفعات ربع سنوية", log:[
+    {type:"payment", date:"2026-08-01", amount:60000, method:"شيك"},
+    {type:"follow", date:"2026-07-25", method:"بريد إلكتروني", note:"تأكيد جدول السداد"}
+  ]},
+];
+let nextId = 5;
 let activeDebtorId = null;
 let lastStatementHtml = '';
 
-let reps = [];
-let nextRepId = 1;
+let reps = [
+  {id:1, name:"أحمد سالم الكواري", phone:"+974 5566 1122", area:"الدوحة - الوسط"},
+  {id:2, name:"سارة محمد آل ثاني", phone:"+974 5577 3344", area:"الريان"},
+];
+let nextRepId = 3;
 let activeRepId = null;
 
+// assign existing sample debtors to reps
+debtors[0].repId = 1;
+debtors[2].repId = 1;
+debtors[3].repId = 2;
 
 // ============== QUOTATIONS (عروض الأسعار) ==============
-let quotations = [];
-let nextQuotationId = 1;
-let nextQuotationLogId = 1;
+let quotations = [
+  {id:1, date:"2026-08-25", visitTime:"12:00", companyName:"شركة الخليج للمقاولات", companyScope:"mainContractor", contactPerson:"م. أحمد", mobile:"+974 5511 2233", email:"purchase@gulf-example.com", amount:85000, quotationNo:"QTN-2026-00123", invoiceNo:"", projectNo:"", subject:"quoteFollowup", nextFollowup:"2026-09-08", status:"submitted", requirement:"طلبوا عرض سعر لتوريد مواد المشروع الجديد.", followupAction:"الاتصال لتأكيد استلام العرض ومناقشة الأسعار.", notes:"", log:[
+    {id:1, date:"2026-08-25", status:"submitted", note:"تم إرسال عرض السعر عبر البريد الإلكتروني."}
+  ]},
+];
+let nextQuotationId = 2;
+let nextQuotationLogId = 2;
 let activeQuotationId = null;
 
 // ============== PERSISTENCE ==============
@@ -567,10 +595,6 @@ const STORAGE_KEY = 'daftar_debt_system_v1';
 let syncInProgress = null;
 let syncQueued = false;
 let lastSyncError = null;
-// Becomes true only after the cloud data was read successfully. Until then a sync is
-// refused: an empty/unloaded local list must never be allowed to overwrite (or prune)
-// the real rows stored in Supabase.
-let cloudDataLoaded = false;
 
 // ---- Debounced persistence -------------------------------------------------
 // renderAll() runs on EVERY re-render, including on every keystroke in the
@@ -582,12 +606,23 @@ let cloudDataLoaded = false;
 // ends up persisted a moment later exactly as before. A pending save is
 // flushed immediately if the tab is hidden/closed so nothing is lost.
 let _saveDebounceTimer = null;
+// Cheap fingerprint of everything syncToSupabase() uploads. renderAll() runs on every
+// search keystroke / tab change, and those re-renders change nothing — so unless the
+// fingerprint differs from the last successful sync there is nothing to upload.
+let lastSyncedSignature = null;
+function dataSignature(){
+  try{ return JSON.stringify([debtors, quotations, reps, users, auditLog, appSettings]); }
+  catch(e){ return String(Date.now()); }   // unserialisable -> always treat as dirty
+}
+function hasUnsyncedChanges(){ return dataSignature() !== lastSyncedSignature; }
 function scheduleSave(delay = 600){
   clearTimeout(_saveDebounceTimer);
-  _saveDebounceTimer = setTimeout(()=>{ _saveDebounceTimer = null; saveState(); }, delay);
+  if(!hasUnsyncedChanges()){ _saveDebounceTimer = null; return; }
+  setSaveStatus('pending');
+  _saveDebounceTimer = setTimeout(()=>{ _saveDebounceTimer = null; if(hasUnsyncedChanges()) saveState(); }, delay);
 }
 function flushPendingSave(){
-  if(_saveDebounceTimer){ clearTimeout(_saveDebounceTimer); _saveDebounceTimer = null; saveState(); }
+  if(_saveDebounceTimer){ clearTimeout(_saveDebounceTimer); _saveDebounceTimer = null; if(hasUnsyncedChanges()) saveState(); }
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') flushPendingSave(); });
 window.addEventListener('pagehide', flushPendingSave);
@@ -632,15 +667,13 @@ async function replaceTable(table, rows, key='id', pruneOrphans=true) {
 async function syncToSupabase() {
   if (!supabaseClient) {
     console.warn('Supabase sync skipped: client not initialized');
-    return false;
-  }
-  if (!cloudDataLoaded) {
-    lastSyncError = currentLang==='en' ? 'Cloud data was not loaded, save blocked to protect stored data' : 'لم يتم تحميل البيانات من السحابة، تم منع الحفظ لحماية البيانات المخزنة';
-    console.warn('Supabase sync skipped: cloud data not loaded yet');
+    setSaveStatus('offline');
     return false;
   }
   if (syncInProgress) { syncQueued = true; return syncInProgress; }
   syncInProgress = (async()=>{
+    const signatureAtStart = dataSignature();
+    setSaveStatus('saving');
     try {
       console.info('Starting Supabase sync', { debtors: debtors.length, quotations: quotations.length, reps: reps.length });
       const debtorRows = debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null}));
@@ -658,11 +691,14 @@ async function syncToSupabase() {
       if(settingsError) throw settingsError;
       console.info('Supabase sync succeeded');
       lastSyncError = null;
+      lastSyncedSignature = signatureAtStart;
+      setSaveStatus(hasUnsyncedChanges() ? 'pending' : 'saved');
       return true;
     } catch (e) {
       const parts = [e?.code, e?.message, e?.details, e?.hint].filter(Boolean);
       lastSyncError = parts.length ? parts.join(' — ') : String(e);
       console.warn('Supabase sync failed:', e);
+      setSaveStatus('error', lastSyncError);
       return false;
     } finally {
       syncInProgress = null;
@@ -829,7 +865,6 @@ async function loadFromSupabase() {
     // Make sure every paid amount has an entry in the payments register.
     const unlogged = reconcileAllPaymentLogs();
     if(unlogged) console.info(`Payment log: recorded missing payments for ${unlogged} debtor(s)`);
-    cloudDataLoaded = true;
     return true;
   } catch (e) {
     console.warn('Supabase load failed:', e);
@@ -1024,6 +1059,250 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
+// ============== UI DIALOGS, UNDO TOAST, SAVE STATUS ==============
+Object.assign(translations,{
+  'ui.ok':['تأكيد','Confirm'],'ui.cancel':['إلغاء','Cancel'],'ui.undo':['تراجع','Undo'],'ui.delete':['حذف','Delete'],'ui.save':['حفظ','Save'],
+  'save.pending':['تعديلات بانتظار الحفظ…','Unsaved changes…'],'save.saving':['جارٍ الحفظ…','Saving…'],
+  'save.saved':['تم الحفظ','All changes saved'],'save.error':['فشل الحفظ — اضغط لإعادة المحاولة','Save failed — click to retry'],
+  'save.offline':['غير متصل بالسحابة','Not connected to the cloud'],
+  'drawer.editPaymentTitle':['تعديل دفعة','Edit payment'],'drawer.editFollowTitle':['تعديل المتابعة','Edit follow-up'],
+  'drawer.editPaidTitle':['تعديل إجمالي المسدد','Adjust total paid'],'quick.contactTitle':['تسجيل تواصل','Log a contact'],
+  'ui.invalidDate':['تاريخ غير صالح','Invalid date'],
+  'paid.lowerWarn':['خفض المسدد سيُنقص مبالغ أحدث الدفعات المسجلة بمقدار {n} ر.ق. الدفعات المتأثرة:','Lowering the paid total will reduce your most recent logged payments by {n} QAR. Affected payments:'],
+  'audit.import_debtors':['استيراد مدينين من Excel','Debtors imported from Excel'],'audit.restore_debtor':['استرجاع مدين','Debtor restored'],'audit.restore_quotation':['استرجاع عرض سعر','Quotation restored'],
+  'audit.restore_payment':['استرجاع دفعة','Payment restored'],'audit.restore_followup':['استرجاع متابعة','Follow-up restored'],
+});
+
+// Promise-based replacement for window.prompt()/confirm(). Resolves to the entered values
+// ({} for a plain confirmation) or null if cancelled. `validate(values)` may return an
+// error message, which is shown inline while the dialog stays open.
+function uiDialog({title='', message='', fields=[], confirmText, cancelText, danger=false, html='', validate} = {}){
+  return new Promise(resolve=>{
+    const prevFocus = document.activeElement;
+    const rtl = currentLang!=='en';
+    const wrap = document.createElement('div');
+    wrap.className = 'uidlg-bg';
+    const fieldHtml = fields.map((f,i)=>{
+      const id = `uidlg_${i}`;
+      let control;
+      if(f.type==='select'){
+        control = `<select id="${id}" class="field">${f.options.map(o=>`<option value="${esc(o.value)}"${String(o.value)===String(f.value)?' selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
+      } else if(f.type==='textarea'){
+        control = `<textarea id="${id}" class="field" rows="3">${esc(f.value??'')}</textarea>`;
+      } else {
+        control = `<input id="${id}" class="field" type="${f.type||'text'}" value="${esc(f.value??'')}"${f.min!=null?` min="${f.min}"`:''}${f.step!=null?` step="${f.step}"`:''}${f.placeholder?` placeholder="${esc(f.placeholder)}"`:''}${f.type==='number'?' inputmode="decimal"':''}${f.type==='password'?' autocomplete="new-password"':''}>`;
+      }
+      return `<label class="uidlg-field" for="${id}"><span>${esc(f.label||'')}</span>${control}</label>`;
+    }).join('');
+    wrap.innerHTML = `<div class="uidlg" role="dialog" aria-modal="true"${title?' aria-labelledby="uidlgTitle"':''} dir="${rtl?'rtl':'ltr'}">
+      ${title?`<h3 id="uidlgTitle">${esc(title)}</h3>`:''}
+      ${message?`<div class="uidlg-msg">${esc(message).replace(/\n/g,'<br>')}</div>`:''}
+      ${html}${fieldHtml}
+      <p class="uidlg-error" role="alert" hidden></p>
+      <div class="uidlg-actions">
+        <button type="button" class="btn secondary" data-uidlg-cancel>${esc(cancelText||t('ui.cancel'))}</button>
+        <button type="button" class="btn${danger?' danger':''}" data-uidlg-ok>${esc(confirmText||t('ui.ok'))}</button>
+      </div></div>`;
+    document.body.appendChild(wrap);
+    const dlg = wrap.querySelector('.uidlg');
+    const errEl = wrap.querySelector('.uidlg-error');
+    const close = result=>{
+      document.removeEventListener('keydown', onKey, true);
+      wrap.remove();
+      try{ prevFocus && prevFocus.focus && prevFocus.focus(); }catch(e){}
+      resolve(result);
+    };
+    const submit = ()=>{
+      const vals = {};
+      fields.forEach((f,i)=>{ vals[f.name] = wrap.querySelector('#uidlg_'+i).value; });
+      if(validate){
+        const err = validate(vals);
+        if(err){ errEl.textContent = err; errEl.hidden = false; return; }
+      }
+      close(vals);
+    };
+    function onKey(e){
+      if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); close(null); return; }
+      if(e.key==='Enter' && !['TEXTAREA','BUTTON','SELECT'].includes(e.target.tagName)){ e.preventDefault(); submit(); return; }
+      if(e.key==='Tab'){
+        const items = [...dlg.querySelectorAll('input,select,textarea,button')].filter(x=>!x.disabled);
+        if(!items.length) return;
+        const first = items[0], last = items[items.length-1];
+        if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+      }
+    }
+    document.addEventListener('keydown', onKey, true);
+    wrap.addEventListener('mousedown', e=>{ if(e.target===wrap) close(null); });
+    wrap.querySelector('[data-uidlg-cancel]').addEventListener('click', ()=>close(null));
+    wrap.querySelector('[data-uidlg-ok]').addEventListener('click', submit);
+    const firstField = wrap.querySelector('#uidlg_0');
+    const focusEl = firstField || (danger ? wrap.querySelector('[data-uidlg-cancel]') : wrap.querySelector('[data-uidlg-ok]'));
+    setTimeout(()=>{ focusEl.focus(); if(firstField && firstField.select && firstField.tagName!=='SELECT') firstField.select(); }, 0);
+  });
+}
+async function uiConfirm(message, opts={}){ return !!(await uiDialog({message, ...opts})); }
+async function uiPrompt(message, defaultValue='', opts={}){
+  const {type='text', title='', validate, confirmText} = opts;
+  const res = await uiDialog({title, confirmText, validate: validate ? (v=>validate(v.value)) : undefined,
+    fields:[{name:'value', label:message, type, value:defaultValue}]});
+  return res ? res.value : null;
+}
+
+// Undo toast: the destructive action has ALREADY happened; onUndo reverses it. onCommit
+// (optional) runs once the window closes (or another undo toast replaces this one, or the
+// page is closed) — use it for irreversible clean-up such as storage deletion.
+let _undoState = null;
+function commitPendingUndo(){
+  if(!_undoState) return;
+  const st = _undoState; _undoState = null;
+  clearTimeout(st.timer); st.el.remove();
+  try{ st.onCommit && st.onCommit(); }catch(e){ console.warn('Undo commit failed:', e); }
+}
+function toastUndo(message, onUndo, {onCommit, ms=8000} = {}){
+  commitPendingUndo();
+  const el = document.createElement('div');
+  el.className = 'undo-toast'; el.setAttribute('role','status');
+  el.innerHTML = `<span class="undo-msg">${esc(message)}</span><button type="button" class="undo-btn">${esc(t('ui.undo'))}</button><i class="undo-bar" style="animation-duration:${ms}ms"></i>`;
+  document.body.appendChild(el);
+  const st = {el, onCommit, timer:setTimeout(commitPendingUndo, ms)};
+  _undoState = st;
+  el.querySelector('.undo-btn').addEventListener('click', ()=>{
+    if(_undoState!==st) return;
+    _undoState = null; clearTimeout(st.timer); el.remove();
+    try{ onUndo && onUndo(); }catch(e){ console.warn('Undo failed:', e); }
+  });
+}
+window.addEventListener('pagehide', commitPendingUndo);
+
+function setSaveStatus(state, detail=''){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  el.hidden = false;
+  el.dataset.state = state;
+  el.textContent = t('save.'+state);
+  el.title = detail || '';
+  el.setAttribute('role', state==='error' ? 'alert' : 'status');
+}
+document.getElementById('saveStatus')?.addEventListener('click', ()=>{
+  const el = document.getElementById('saveStatus');
+  if(el.dataset.state==='error'){
+    if(lastSyncError) showSyncErrorBanner(currentLang==='en'?'saving':'الحفظ', lastSyncError);
+    saveState();
+  }
+});
+// Warn before leaving the page while edits are still waiting for (or failed to reach) the cloud.
+window.addEventListener('beforeunload', e=>{
+  const st = document.getElementById('saveStatus')?.dataset.state;
+  if(st==='pending' || st==='saving' || st==='error'){ flushPendingSave(); e.preventDefault(); e.returnValue = ''; }
+});
+
+const PAYMENT_METHODS = ['نقدًا','شيك','تحويل بنكي'];
+const FOLLOW_METHODS = ['اتصال هاتفي','رسالة نصية','زيارة ميدانية','بريد إلكتروني'];
+function methodOptions(list, current){
+  const vals = (!current || list.includes(current)) ? list : [...list, current];
+  return vals.map(v=>({value:v, label:translateValue(v)}));
+}
+// One implementation shared by the debtor drawer and the payments register.
+async function editPaymentEntry(d, entry){
+  const res = await uiDialog({
+    title:t('drawer.editPaymentTitle'), message:d.name,
+    fields:[
+      {name:'amount', label:t('th.amountPaid'), type:'number', value:entry.amount, min:0, step:'any'},
+      {name:'date', label:t('th.date'), type:'date', value:entry.date||todayISO()},
+      {name:'method', label:t('th.method'), type:'select', value:entry.method, options:methodOptions(PAYMENT_METHODS, entry.method)},
+    ],
+    validate:v=>{
+      const a = parseFloat(v.amount);
+      if(isNaN(a) || a<=0) return t('msg.invalidAmount');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(v.date)) return t('ui.invalidDate');
+      return '';
+    }
+  });
+  if(!res) return false;
+  const newAmt = parseFloat(res.amount);
+  d.paid = Math.max(0, money2(d.paid - entry.amount + newAmt));
+  addAudit('edit_payment', `${d.name}: ${fmt(entry.amount)} → ${fmt(newAmt)}`);
+  entry.amount = newAmt; entry.date = res.date; entry.method = res.method;
+  toast(t('msg.paymentUpdated'));
+  return true;
+}
+function deletePaymentWithUndo(d, entry){
+  const idx = d.log.indexOf(entry);
+  if(idx<0) return;
+  d.paid = Math.max(0, money2(d.paid - entry.amount));
+  d.log = d.log.filter(e=>e!==entry);
+  addAudit('delete_payment', `${d.name}: ${fmt(entry.amount)}`);
+  if(activeDebtorId===d.id) openDrawer(d.id);
+  renderAll();
+  toastUndo(t('msg.paymentDeleted'), ()=>{
+    if(!debtors.includes(d)) return;
+    d.log.splice(Math.min(idx, d.log.length), 0, entry);
+    d.paid = money2((Number(d.paid)||0) + entry.amount);
+    addAudit('restore_payment', `${d.name}: ${fmt(entry.amount)}`);
+    if(activeDebtorId===d.id) openDrawer(d.id);
+    renderAll();
+  });
+}
+async function editFollowEntry(d, entry){
+  const res = await uiDialog({title:t('drawer.editFollowTitle'), message:d.name,
+    fields:[{name:'note', label:t('drawer.editFollowPrompt'), type:'textarea', value:entry.note||''}]});
+  if(!res) return false;
+  const newNote = res.note.trim();
+  addAudit('edit_followup', `${d.name}: ${entry.note||'—'} → ${newNote||'—'}`);
+  entry.note = newNote;
+  toast(t('msg.followUpdated'));
+  return true;
+}
+function deleteFollowWithUndo(d, entry){
+  const idx = d.log.indexOf(entry);
+  if(idx<0) return;
+  d.log = d.log.filter(e=>e!==entry);
+  addAudit('delete_followup', `${d.name}: ${entry.note||'—'}`);
+  if(activeDebtorId===d.id) openDrawer(d.id);
+  renderAll();
+  toastUndo(t('msg.followDeleted'), ()=>{
+    if(!debtors.includes(d)) return;
+    d.log.splice(Math.min(idx, d.log.length), 0, entry);
+    addAudit('restore_followup', `${d.name}: ${entry.note||'—'}`);
+    if(activeDebtorId===d.id) openDrawer(d.id);
+    renderAll();
+  });
+}
+async function deleteDebtorWithUndo(id, confirmKey='confirm.deleteDebtor'){
+  if(!can('delete')){ toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف'); return; }
+  const d = debtors.find(x=>x.id===id);
+  if(!d) return;
+  const ok = await uiConfirm(t(confirmKey), {title:d.name, danger:true, confirmText:t('ui.delete')});
+  if(!ok) return;
+  const idx = debtors.indexOf(d);
+  debtors = debtors.filter(x=>x!==d);
+  if(activeDebtorId===id) closeDrawer();
+  addAudit('delete_debtor', `${d.name} — ${fmt(remaining(d))}`);
+  renderAll();
+  toastUndo(t('msg.debtorDeleted'), ()=>{
+    debtors.splice(Math.min(idx, debtors.length), 0, d);
+    addAudit('restore_debtor', d.name);
+    renderAll();
+  });
+}
+// Lowering the paid total trims the newest payments (see trimPaymentLogToPaid) — show exactly
+// which ones before the user commits to it.
+function previewPaymentTrim(d, newPaid){
+  let excess = money2(loggedPaymentsTotal(d) - newPaid);
+  const out = [];
+  if(excess<=0) return {excess:0, out};
+  const newestFirst = (d.log||[]).filter(e=>e.type==='payment')
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (Number(b.id)||0)-(Number(a.id)||0));
+  for(const e of newestFirst){
+    if(excess<=0) break;
+    const cut = Math.min(Number(e.amount)||0, excess);
+    out.push({entry:e, from:Number(e.amount)||0, to:money2((Number(e.amount)||0)-cut)});
+    excess = money2(excess-cut);
+  }
+  return {excess:money2(loggedPaymentsTotal(d)-newPaid), out};
+}
+
 // ============== MOBILE MENU ==============
 document.getElementById('mobileMenuToggle').addEventListener('click', () => {
   const sidebar = document.getElementById('sidebar');
@@ -1146,7 +1425,7 @@ function fillRepSelect(sel, selected){
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', e=>{
   document.getElementById(e.target.dataset.close).classList.remove('show');
 }));
-document.getElementById('saveDebtorBtn').addEventListener('click', ()=>{
+document.getElementById('saveDebtorBtn').addEventListener('click', async ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   const type = document.getElementById('debtorModal').dataset.debtorType || 'individual';
   const name = document.getElementById('f_name').value.trim();
@@ -1164,6 +1443,14 @@ document.getElementById('saveDebtorBtn').addEventListener('click', ()=>{
   const installmentCount = Math.max(1,parseInt(document.getElementById('f_installments').value)||1);
   const frequency = document.getElementById('f_frequency').value;
   if(!name || !amount){ toast(type==='company' ? t('toast.needCompanyName') : t('toast.needName')); return; }
+  {
+    const prev = editingDebtorId ? debtors.find(x=>x.id===editingDebtorId) : null;
+    const idsChanged = !prev || prev.name!==name || (prev.phone||'')!==phone || (prev.companyNumber||'')!==companyNumber || (prev.crNumber||'')!==crNumber;
+    if(idsChanged){
+      const dups = findDebtorDuplicates({name, phone, companyNumber, crNumber}, editingDebtorId);
+      if(dups.length && !(await confirmDuplicate(dups, 'dup.debtorMsg'))) return;
+    }
+  }
 
   if(editingDebtorId){
     const d = debtors.find(x=>x.id===editingDebtorId);
@@ -1200,6 +1487,66 @@ document.getElementById('saveDebtorBtn').addEventListener('click', ()=>{
 
 // ============== SEARCH & FILTER ==============
 document.getElementById('globalSearch').addEventListener('input', debounce(renderAll, 200));
+
+// Dropdown under the top search box: matching debtors AND quotations in one place.
+function renderGlobalSearchResults(){
+  const input = document.getElementById('globalSearch');
+  const box = document.getElementById('globalSearchResults');
+  if(!input || !box) return;
+  const q = (input.value||'').trim().toLowerCase();
+  if(q.length < 2 || !currentUser){ box.hidden = true; box.innerHTML = ''; return; }
+  const more = n => `<div class="sr-empty">${esc(t('sr.more').replace('{n}', n))}</div>`;
+  let html = '';
+  let any = false;
+  if(canSeePage('debtors')){
+    // same matching rules as the debtors table's own search
+    const list = scopedDebtors().filter(d=> d.name.toLowerCase().includes(q) || (d.phone||'').includes(q)
+      || (d.companyNumber||'').toLowerCase().includes(q) || (d.crNumber||'').toLowerCase().includes(q)
+      || (d.notes||'').toLowerCase().includes(q));
+    if(list.length){
+      any = true;
+      html += `<div class="sr-head">${esc(t('sr.debtors'))} (${list.length})</div>` + list.slice(0,5).map(d=>
+        `<button type="button" class="sr-item" data-sr-debtor="${d.id}">${esc(d.name)}<small>${esc(d.phone||'')}${d.phone?' · ':''}${esc(t('th.remaining')||'')} ${esc(fmt(remaining(d)))}</small></button>`).join('')
+        + (list.length>5 ? more(list.length-5) : '');
+    }
+  }
+  if(canSeePage('quotations')){
+    const hits = quotations.filter(x=>`${x.companyName||''} ${x.contactPerson||''} ${x.mobile||''} ${x.email||''} ${x.quotationNo||''} ${x.invoiceNo||''} ${x.projectNo||''}`.toLowerCase().includes(q))
+      .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if(hits.length){
+      any = true;
+      html += `<div class="sr-head">${esc(t('sr.quotations'))} (${hits.length})</div>` + hits.slice(0,5).map(x=>
+        `<button type="button" class="sr-item" data-sr-quot="${x.id}">${esc(x.companyName)}<small>${esc(x.date||'—')}${x.quotationNo?' · '+esc(x.quotationNo):''} · ${esc(quotStatusLabel(x.status))}</small></button>`).join('')
+        + (hits.length>5 ? more(hits.length-5) : '');
+    }
+  }
+  box.innerHTML = any ? html : `<div class="sr-empty">${esc(t('sr.none'))}</div>`;
+  box.hidden = false;
+}
+(function initGlobalSearchDropdown(){
+  const input = document.getElementById('globalSearch');
+  const box = document.getElementById('globalSearchResults');
+  if(!input || !box) return;
+  input.addEventListener('input', debounce(renderGlobalSearchResults, 150));
+  input.addEventListener('focus', renderGlobalSearchResults);
+  box.addEventListener('click', e=>{
+    const dBtn = e.target.closest('[data-sr-debtor]');
+    const qBtn = e.target.closest('[data-sr-quot]');
+    if(dBtn){ openDrawer(Number(dBtn.dataset.srDebtor)); box.hidden = true; }
+    if(qBtn){
+      const qt = quotations.find(x=>x.id===Number(qBtn.dataset.srQuot));
+      if(!qt) return;
+      document.querySelector('.nav-item[data-page="quotations"]')?.click();
+      quotShowAll = false; quotSortFollowup = false;
+      const df = document.getElementById('quotDateFilter'); if(df && qt.date) df.value = qt.date;
+      renderQuotationsTable();
+      openQuotationDrawer(qt.id);
+      box.hidden = true;
+    }
+  });
+  document.addEventListener('mousedown', e=>{ if(!box.hidden && !e.target.closest('.search-wrap')) box.hidden = true; });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !box.hidden){ box.hidden = true; } });
+})();
 document.getElementById('statusFilter').addEventListener('change', renderAll);
 document.getElementById('typeFilter').addEventListener('change', renderAll);
 
@@ -1258,15 +1605,131 @@ function loadSavedSearch() {
     }
   } catch (e) {}
 }
+Object.assign(translations,{
+  'th.lastPayment':['آخر دفعة','Last payment'],'th.daysSincePayment':['أيام منذ آخر دفعة','Days since payment'],
+  'dup.title':['احتمال تكرار','Possible duplicate'],
+  'dup.debtorMsg':['يوجد مدين مشابه بالفعل. هل تريد الحفظ على أي حال؟','A similar debtor already exists. Save anyway?'],
+  'dup.quotMsg':['يوجد عرض سعر مشابه بالفعل. هل تريد الحفظ على أي حال؟','A similar quotation already exists. Save anyway?'],
+  'dup.saveAnyway':['حفظ على أي حال','Save anyway'],
+  'dup.byName':['الاسم','name'],'dup.byPhone':['الهاتف','phone'],'dup.byCompanyNo':['رقم الشركة','company no.'],'dup.byCr':['السجل التجاري','CR no.'],
+  'dup.byQuotNo':['رقم عرض السعر','quotation no.'],'dup.byCompanyDate':['نفس الشركة والتاريخ','same company & date'],
+  'imp.title':['معاينة الاستيراد','Import preview'],
+  'imp.summary':['{total} صف في الملف — صالح: {valid} · مرفوض: {bad} · مكرر: {dup}','{total} rows in file — valid: {valid} · rejected: {bad} · duplicates: {dup}'],
+  'imp.rejected':['صفوف مرفوضة','Rejected rows'],'imp.duplicates':['صفوف مكررة','Duplicate rows'],
+  'imp.row':['سطر','Row'],'imp.noName':['اسم فارغ','empty name'],'imp.badTotal':['إجمالي الدين صفر أو غير صالح','total is zero or invalid'],
+  'imp.dupExisting':['موجود مسبقًا','already exists'],'imp.dupInFile':['مكرر داخل الملف','repeated in the file'],
+  'imp.dupMode':['عند وجود مكررات','When duplicates exist'],'imp.skipDup':['تخطي المكررات','Skip duplicates'],'imp.keepDup':['استيرادها أيضًا','Import them too'],
+  'imp.confirm':['استيراد {n}','Import {n}'],'imp.nothing':['لا توجد صفوف صالحة للاستيراد','There are no valid rows to import'],
+  'imp.paidOver':['المسدد أكبر من إجمالي الدين','paid exceeds the total debt'],'imp.warnings':['تنبيهات (ستُستورد مع ذلك)','Warnings (still imported)'],
+  'imp.done':['تم استيراد {n} مدين','{n} debtors imported'],
+});
+const normName = v => String(v||'').toLowerCase().replace(/\s+/g,' ').trim();
+const digitsOnly = v => String(v||'').replace(/\D/g,'');
+// Compare phones by their last 8 digits so "+974 6661-1111" and "66611111" are the same number.
+const phoneKey = v => { const d = digitsOnly(v); return d.length>8 ? d.slice(-8) : d; };
+// Debtors that look like the one being saved: same name, same phone (6+ digits), same company / CR number.
+function findDebtorDuplicates({name, phone, companyNumber, crNumber}, excludeId=null){
+  const n = normName(name), p = phoneKey(phone), cn = normName(companyNumber), cr = normName(crNumber);
+  const out = [];
+  debtors.forEach(d=>{
+    if(excludeId!=null && d.id===excludeId) return;
+    const why = [];
+    if(n && normName(d.name)===n) why.push(t('dup.byName'));
+    if(p.length>=6 && phoneKey(d.phone)===p) why.push(t('dup.byPhone'));
+    if(cn && normName(d.companyNumber)===cn) why.push(t('dup.byCompanyNo'));
+    if(cr && normName(d.crNumber)===cr) why.push(t('dup.byCr'));
+    if(why.length) out.push({label:`${d.name}${d.phone?' — '+d.phone:''}`, why:why.join(' + ')});
+  });
+  return out;
+}
+// A quotation is a likely duplicate if it reuses a quotation number, or is the same company on the same day.
+function findQuotationDuplicates({companyName, quotationNo, date}, excludeId=null){
+  const n = normName(companyName), no = normName(quotationNo);
+  const out = [];
+  quotations.forEach(q=>{
+    if(excludeId!=null && q.id===excludeId) return;
+    const why = [];
+    if(no && normName(q.quotationNo)===no) why.push(t('dup.byQuotNo'));
+    if(n && normName(q.companyName)===n && (q.date||'')===(date||'')) why.push(t('dup.byCompanyDate'));
+    if(why.length) out.push({label:`${q.companyName} — ${q.date||'—'}${q.quotationNo?' — '+q.quotationNo:''}`, why:why.join(' + ')});
+  });
+  return out;
+}
+async function confirmDuplicate(items, msgKey){
+  const html = `<div class="uidlg-list">${items.slice(0,6).map(x=>`<div><span>${esc(x.label)}</span><span>${esc(x.why)}</span></div>`).join('')}${items.length>6?`<div><span>+${items.length-6}</span></div>`:''}</div>`;
+  return !!(await uiDialog({title:t('dup.title'), message:t(msgKey), html, confirmText:t('dup.saveAnyway')}));
+}
+// Excel serial number / dd/mm/yyyy / ISO -> "YYYY-MM-DD" ('' when it cannot be understood)
+function normalizeImportDate(v){
+  if(v===''||v==null) return '';
+  if(typeof v==='number' && isFinite(v)){
+    const d = new Date(Math.round((v-25569)*86400000));
+    return isNaN(d) ? '' : d.toISOString().slice(0,10);
+  }
+  const str = String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const m = str.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if(m) return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  return '';
+}
+// Parses sheet rows WITHOUT touching app state: ids are only assigned when the user confirms.
+function parseDebtorImportRows(rows){
+  const pick=(row,keys)=>{const key=Object.keys(row).find(k=>keys.includes(String(k).trim().toLowerCase()));return key===undefined?'':row[key];};
+  const valid=[], rejected=[], duplicates=[];
+  const seen = new Set();
+  rows.forEach((row,i)=>{
+    const rowNo = i+2;                       // row 1 of the sheet is the header
+    const name = String(pick(row,['الاسم','اسم المدين','name','debtor name'])).trim();
+    const total = Number(pick(row,['إجمالي الدين','المبلغ','total','total debt']))||0;
+    if(!name){ rejected.push({rowNo, name:'—', reason:t('imp.noName')}); return; }
+    if(!(total>0)){ rejected.push({rowNo, name, reason:t('imp.badTotal')}); return; }
+    const typeRaw = String(pick(row,['النوع','type']));
+    const type = typeRaw.toLowerCase().includes('company') || typeRaw.includes('شركة') ? 'company' : 'individual';
+    const paid = Number(pick(row,['المسدد','paid']))||0;
+    const item = {rowNo, name, type, total, paid:Math.max(0,paid),
+      companyNumber:String(pick(row,['رقم الشركة','company number'])), crNumber:String(pick(row,['السجل التجاري','cr number'])),
+      phone:String(pick(row,['الهاتف','phone'])), due:normalizeImportDate(pick(row,['تاريخ الاستحقاق','due','due date'])) || '2026-12-31',
+      notes:String(pick(row,['ملاحظات','notes'])), warn: paid>total ? t('imp.paidOver') : ''};
+    const dupExisting = findDebtorDuplicates(item);
+    const key = normName(name)+'|'+phoneKey(item.phone);
+    if(dupExisting.length){ duplicates.push({rowNo, name, reason:t('imp.dupExisting'), item}); }
+    else if(seen.has(key)){ duplicates.push({rowNo, name, reason:t('imp.dupInFile'), item}); }
+    else { seen.add(key); valid.push(item); }
+  });
+  return {valid, rejected, duplicates};
+}
+async function importDebtorsFromRows(rows){
+  const {valid, rejected, duplicates} = parseDebtorImportRows(rows);
+  const total = valid.length + rejected.length + duplicates.length;
+  const lineList = (title, list) => list.length ? `<div class="sr-head">${esc(title)} (${list.length})</div><div class="uidlg-list">${list.slice(0,8).map(x=>`<div><span>${esc(t('imp.row'))} ${x.rowNo}: ${esc(x.name)}</span><span>${esc(x.reason)}</span></div>`).join('')}${list.length>8?`<div><span>+${list.length-8}</span></div>`:''}</div>` : '';
+  const fields = duplicates.length ? [{name:'dupMode', label:t('imp.dupMode'), type:'select', value:'skip',
+    options:[{value:'skip',label:t('imp.skipDup')},{value:'keep',label:t('imp.keepDup')}]}] : [];
+  const countFor = mode => valid.length + (mode==='keep' ? duplicates.length : 0);
+  const res = await uiDialog({
+    title:t('imp.title'),
+    message:t('imp.summary').replace('{total}',total).replace('{valid}',valid.length).replace('{bad}',rejected.length).replace('{dup}',duplicates.length),
+    html: lineList(t('imp.rejected'), rejected) + lineList(t('imp.duplicates'), duplicates)
+      + lineList(t('imp.warnings'), valid.filter(x=>x.warn).map(x=>({rowNo:x.rowNo, name:x.name, reason:x.warn}))),
+    fields, confirmText:t('imp.confirm').replace('{n}', valid.length),
+    validate: v => countFor(v.dupMode||'skip') > 0 ? '' : t('imp.nothing'),
+  });
+  if(!res) return;
+  const chosen = [...valid, ...((res.dupMode==='keep') ? duplicates.map(x=>x.item) : [])];
+  const imported = chosen.map(it=>{ const {warn, rowNo, ...d} = it; return {id:nextId++, ...d, repId:null, log:[]}; });
+  imported.forEach(d=>recordUnloggedPayment(d,{method:'رصيد سابق', note:t('payments.importNote')}));
+  debtors.push(...imported);
+  addAudit('import_debtors', `${imported.length}`);
+  renderAll();
+  toast(t('imp.done').replace('{n}', imported.length));
+}
 document.getElementById('importExcelFile').addEventListener('change', e=>{
   const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader(); reader.onload=()=>{
+  const reader=new FileReader(); reader.onload=async ()=>{
     try{
-      const rows=XLSX.utils.sheet_to_json(XLSX.read(reader.result,{type:'array'}).Sheets[XLSX.read(reader.result,{type:'array'}).SheetNames[0]],{defval:''});
-      const pick=(row,keys)=>{const key=Object.keys(row).find(k=>keys.includes(String(k).trim().toLowerCase()));return key===undefined?'':row[key];};
-      const imported=rows.map(row=>{const name=pick(row,['الاسم','اسم المدين','name','debtor name']); const total=Number(pick(row,['إجمالي الدين','المبلغ','total','total debt']))||0; const type=String(pick(row,['النوع','type'])).toLowerCase().includes('company')||String(pick(row,['النوع','type'])).includes('شركة')?'company':'individual'; return {id:nextId++,name,type,companyNumber:String(pick(row,['رقم الشركة','company number'])),crNumber:String(pick(row,['السجل التجاري','cr number'])),phone:String(pick(row,['الهاتف','phone'])),total,paid:Number(pick(row,['المسدد','paid']))||0,due:String(pick(row,['تاريخ الاستحقاق','due','due date']))||'2026-12-31',notes:String(pick(row,['ملاحظات','notes'])),repId:null,log:[]};}).filter(d=>d.name&&d.total>0);
-      if(!imported.length) throw new Error('empty');
-      if(confirm(currentLang==='en'?`Import ${imported.length} debtors?`:`استيراد ${imported.length} مدين؟`)){imported.forEach(d=>recordUnloggedPayment(d,{method:'رصيد سابق', note:t('payments.importNote')}));debtors.push(...imported);renderAll();toast(currentLang==='en'?'Excel data imported':'تم استيراد بيانات Excel');}
+      const wb = XLSX.read(reader.result,{type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      if(!rows.length) throw new Error('empty');
+      await importDebtorsFromRows(rows);
     }catch(err){toast(currentLang==='en'?'Could not read Excel file':'تعذّرت قراءة ملف Excel');}
   }; reader.readAsArrayBuffer(file); e.target.value='';
 });
@@ -1438,14 +1901,23 @@ document.getElementById('dr_addPayment').addEventListener('click', ()=>{
   openDrawer(d.id);
   renderAll();
 });
-document.getElementById('dr_editPaidBtn').addEventListener('click', ()=>{
+document.getElementById('dr_editPaidBtn').addEventListener('click', async ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   const d = debtors.find(x=>x.id===activeDebtorId);
   if(!d) return;
-  const input = prompt(t('drawer.editPaidPrompt'), String(d.paid||0));
+  const input = await uiPrompt(t('drawer.editPaidPrompt'), String(d.paid||0), {type:'number', title:d.name,
+    validate:v=>{ const n=parseFloat(v); return (isNaN(n)||n<0) ? t('msg.invalidAmount') : ''; }});
   if(input===null) return;
   const newPaid = parseFloat(input);
   if(isNaN(newPaid) || newPaid<0){ toast(t('msg.invalidAmount')); return; }
+  const trim = previewPaymentTrim(d, newPaid);
+  if(trim.out.length){
+    const list = `<div class="uidlg-list">${trim.out.map(x=>`<div><span>${esc(x.entry.date||'')}</span><span>${esc(fmt(x.from))} → ${esc(fmt(x.to))}</span></div>`).join('')}</div>`;
+    const ok = await uiDialog({title:d.name, danger:true, confirmText:t('ui.ok'),
+      message:t('paid.lowerWarn').replace('{n}', fmt(trim.excess)), html:list});
+    if(!ok) return;
+  }
+  if(!debtors.includes(d)) return;
   const oldPaid = d.paid;
   d.paid = newPaid;
   recordUnloggedPayment(d, {method:'تسوية', note:t('payments.adjustNote')});
@@ -1455,7 +1927,7 @@ document.getElementById('dr_editPaidBtn').addEventListener('click', ()=>{
   openDrawer(d.id);
   renderAll();
 });
-document.getElementById('dr_log').addEventListener('click', (ev)=>{
+document.getElementById('dr_log').addEventListener('click', async (ev)=>{
   const editPayBtn = ev.target.closest('[data-edit-payment]');
   const delPayBtn = ev.target.closest('[data-delete-payment]');
   const editFollowBtn = ev.target.closest('[data-edit-follow]');
@@ -1465,42 +1937,19 @@ document.getElementById('dr_log').addEventListener('click', (ev)=>{
   const d = debtors.find(x=>x.id===activeDebtorId);
   if(!d) return;
   if(editPayBtn || delPayBtn){
-    const logId = Number((editPayBtn||delPayBtn).dataset.editPayment || (editPayBtn||delPayBtn).dataset.deletePayment);
+    const btn = editPayBtn || delPayBtn;
+    const logId = Number(btn.dataset.editPayment || btn.dataset.deletePayment);
     const entry = d.log.find(e=>e.id===logId && e.type==='payment');
     if(!entry) return;
-    if(editPayBtn){
-      const input = prompt(t('drawer.editPaymentPrompt'), String(entry.amount));
-      if(input===null) return;
-      const newAmt = parseFloat(input);
-      if(isNaN(newAmt) || newAmt<=0){ toast(t('msg.invalidAmount')); return; }
-      d.paid = Math.max(0, d.paid - entry.amount + newAmt);
-      addAudit('edit_payment', `${d.name}: ${fmt(entry.amount)} → ${fmt(newAmt)}`);
-      entry.amount = newAmt;
-      toast(t('msg.paymentUpdated'));
-    } else {
-      if(!confirm(t('drawer.deletePaymentConfirm'))) return;
-      d.paid = Math.max(0, d.paid - entry.amount);
-      d.log = d.log.filter(e=>e.id!==logId);
-      addAudit('delete_payment', `${d.name}: ${fmt(entry.amount)}`);
-      toast(t('msg.paymentDeleted'));
-    }
-  } else if(editFollowBtn || delFollowBtn){
-    const logId = Number((editFollowBtn||delFollowBtn).dataset.editFollow || (editFollowBtn||delFollowBtn).dataset.deleteFollow);
+    if(editPayBtn){ if(!(await editPaymentEntry(d, entry))) return; }
+    else { deletePaymentWithUndo(d, entry); return; }
+  } else {
+    const btn = editFollowBtn || delFollowBtn;
+    const logId = Number(btn.dataset.editFollow || btn.dataset.deleteFollow);
     const entry = d.log.find(e=>e.id===logId && e.type==='follow');
     if(!entry) return;
-    if(editFollowBtn){
-      const input = prompt(t('drawer.editFollowPrompt'), String(entry.note||''));
-      if(input===null) return;
-      const newNote = input.trim();
-      addAudit('edit_followup', `${d.name}: ${entry.note||'—'} → ${newNote||'—'}`);
-      entry.note = newNote;
-      toast(t('msg.followUpdated'));
-    } else {
-      if(!confirm(t('drawer.deleteFollowConfirm'))) return;
-      d.log = d.log.filter(e=>e.id!==logId);
-      addAudit('delete_followup', `${d.name}: ${entry.note||'—'}`);
-      toast(t('msg.followDeleted'));
-    }
+    if(editFollowBtn){ if(!(await editFollowEntry(d, entry))) return; }
+    else { deleteFollowWithUndo(d, entry); return; }
   }
   openDrawer(d.id);
   renderAll();
@@ -1523,15 +1972,8 @@ document.getElementById('dr_addFollow').addEventListener('click', ()=>{
   renderAll();
 });
 document.getElementById('dr_delete').addEventListener('click', ()=>{
-  if(!can('delete')){toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف');return;}
   if(!activeDebtorId) return;
-  if(!confirm(t('msg.deleteDebtor'))) return;
-  const d = debtors.find(x=>x.id===activeDebtorId);
-  debtors = debtors.filter(x=>x.id!==activeDebtorId);
-  closeDrawer();
-  toast(t('msg.debtorDeleted'));
-  addAudit('delete_debtor', d ? `${d.name} — ${fmt(remaining(d))}` : String(activeDebtorId));
-  renderAll();
+  deleteDebtorWithUndo(activeDebtorId, 'msg.deleteDebtor');
 });
 
 // ============== QUOTATIONS (عروض الأسعار) ==============
@@ -1575,12 +2017,37 @@ function scopedQuotations(){
     return true;
   }).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
 }
+Object.assign(translations,{
+  'quot.dayValue':['قيمة العروض','Quotations value'],'quot.closedRatio':['مغلق','Closed'],
+  'quot.inlineStatusNote':['تغيير الحالة من القائمة','Status changed from the list'],
+  'quot.sortFollowup':['⏰ فرز حسب المتابعة القادمة','⏰ Sort by next follow-up'],
+  'quot.sortByDay':['↩ الترتيب العادي','↩ Normal order'],
+  'quot.overdueWord':['متأخرة','overdue'],'quot.followupToday':['المتابعة اليوم','Follow-up today'],'quot.followupOverdue':['متابعة متأخرة','Follow-up overdue'],
+  'quot.daySheet':['ملخص الأيام','Daily summary'],'quot.daySheetHeaders':['التاريخ|عدد العروض|إجمالي القيمة|المغلقة','Date|Quotations|Total value|Closed'],
+  'sr.debtors':['المدينون','Debtors'],'sr.quotations':['عروض الأسعار','Quotations'],'sr.none':['لا توجد نتائج مطابقة','No matching results'],'sr.more':['+ {n} نتيجة أخرى','+ {n} more'],
+});
+const QUOT_STATUSES = ['open','followup','submitted','paymentPending','closed'];
+let quotSortFollowup = false;
+function quotFollowupState(q){
+  if(!q.nextFollowup || q.status==='closed') return '';
+  const today = todayISO();
+  return q.nextFollowup < today ? 'overdue' : (q.nextFollowup===today ? 'today' : '');
+}
+function overdueQuotationsCount(){ return quotations.filter(q=>quotFollowupState(q)==='overdue').length; }
 function quotationRowHtml(q, n){
-  return `<tr data-id="${q.id}">
+  const fu = quotFollowupState(q);
+  const fuCell = !q.nextFollowup ? '—'
+    : fu==='overdue' ? `<span class="fu-overdue" title="${esc(t('quot.followupOverdue'))}">⚠ ${esc(q.nextFollowup)}</span>`
+    : fu==='today' ? `<span class="fu-today" title="${esc(t('quot.followupToday'))}">● ${esc(q.nextFollowup)}</span>`
+    : esc(q.nextFollowup);
+  const statusCell = can('write')
+    ? `<select class="status-select badge ${quotStatusBadgeClass(q.status)}" data-quot-status="${q.id}" aria-label="${esc(t('th.status'))}">${QUOT_STATUSES.map(st=>`<option value="${st}"${st===q.status?' selected':''}>${esc(quotStatusLabel(st))}</option>`).join('')}</select>`
+    : `<span class="badge ${quotStatusBadgeClass(q.status)}">${quotStatusLabel(q.status)}</span>`;
+  return `<tr data-id="${q.id}"${fu==='overdue'?' class="quot-row-overdue"':''}>
     <td class="figures">${n}</td><td>${esc(q.date)||'—'}</td><td class="figures">${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td>
     <td>${esc(q.contactPerson)||'—'}</td><td class="figures">${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td>
     <td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td>
-    <td><span class="badge ${quotStatusBadgeClass(q.status)}">${quotStatusLabel(q.status)}</span></td><td>${esc(q.nextFollowup)||'—'}</td>
+    <td>${statusCell}</td><td>${fuCell}</td>
     <td><button type="button" class="link-btn" data-quot-edit="${q.id}">${t('action.edit')}</button> · <button type="button" class="link-btn" data-quot-delete="${q.id}">${t('action.delete')}</button></td>
   </tr>`;
 }
@@ -1589,6 +2056,12 @@ function syncQuotShowAllUi(){
   if(btn){
     btn.setAttribute('aria-pressed', quotShowAll ? 'true' : 'false');
     btn.textContent = t(quotShowAll ? 'quot.showByDay' : 'quot.showAll');
+  }
+  const sortBtn = document.getElementById('quotSortFollowupBtn');
+  if(sortBtn){
+    sortBtn.setAttribute('aria-pressed', quotSortFollowup ? 'true' : 'false');
+    const od = overdueQuotationsCount();
+    sortBtn.textContent = t(quotSortFollowup ? 'quot.sortByDay' : 'quot.sortFollowup') + (od ? ` (${od} ${t('quot.overdueWord')})` : '');
   }
   document.getElementById('quotDateFilter')?.classList.toggle('is-dimmed', quotShowAll);
 }
@@ -1601,6 +2074,17 @@ function renderQuotationsTable(){
   const summary = document.getElementById('quotAllSummary');
   document.getElementById('quotationsEmpty').style.display = rows.length ? 'none' : 'block';
 
+  if(quotSortFollowup){
+    // Flat list ordered by the next follow-up date (overdue first); rows without one go last.
+    const sorted = [...rows].sort((a,b)=>{
+      const ka = a.nextFollowup && a.status!=='closed' ? a.nextFollowup : '9999-99-99';
+      const kb = b.nextFollowup && b.status!=='closed' ? b.nextFollowup : '9999-99-99';
+      return ka.localeCompare(kb);
+    });
+    if(summary) summary.hidden = true;
+    body.innerHTML = sorted.map((q,i)=>quotationRowHtml(q, i+1)).join('');
+    return;
+  }
   if(!quotShowAll){
     if(summary) summary.hidden = true;
     body.innerHTML = rows.map((q,i)=>quotationRowHtml(q, i+1)).join('');
@@ -1618,12 +2102,17 @@ function renderQuotationsTable(){
   const cols = body.closest('table')?.querySelectorAll('thead th').length || 15;
   body.innerHTML = days.map(day=>{
     const list = groups.get(day).sort((a,b)=> (a.visitTime||'').localeCompare(b.visitTime||''));
-    return `<tr class="quot-date-group"><td colspan="${cols}">📅 ${esc(day) || t('quot.noDate')}<span class="quot-date-count">${list.length} ${esc(t('qcal.count'))}</span></td></tr>`
+    const sum = money2(list.reduce((s,q)=>s+(Number(q.amount)||0),0));
+    const closed = list.filter(q=>q.status==='closed').length;
+    const pct = Math.round(closed/list.length*100);
+    const meta = `${sum?`${esc(t('quot.dayValue'))}: ${currency(sum)} · `:''}${esc(t('quot.closedRatio'))}: ${closed}/${list.length} (${pct}%)`;
+    return `<tr class="quot-date-group"><td colspan="${cols}">📅 ${esc(day) || t('quot.noDate')}<span class="quot-date-count">${list.length} ${esc(t('qcal.count'))}</span><span class="group-total">${meta}</span></td></tr>`
       + list.map((q,i)=>quotationRowHtml(q, i+1)).join('');
   }).join('');
   if(summary){
     summary.hidden = false;
-    summary.innerHTML = `${esc(t('quot.allSummary'))}: <b>${rows.length}</b> ${esc(t('qcal.count'))} — <b>${days.length}</b> ${esc(t('quot.daysWord'))}`;
+    const grand = money2(rows.reduce((s,q)=>s+(Number(q.amount)||0),0));
+    summary.innerHTML = `${esc(t('quot.allSummary'))}: <b>${rows.length}</b> ${esc(t('qcal.count'))} — <b>${days.length}</b> ${esc(t('quot.daysWord'))}${grand?` — ${esc(t('quot.dayValue'))}: <b>${currency(grand)}</b>`:''}`;
   }
 }
 document.getElementById('quotSearch')?.addEventListener('input', debounce(renderQuotationsTable, 200));
@@ -1636,6 +2125,7 @@ Object.assign(translations,{
 });
 document.getElementById('quotDateFilter')?.addEventListener('change', ()=>{ quotShowAll = false; renderQuotationsTable(); });
 document.getElementById('quotShowAllBtn')?.addEventListener('click', ()=>{ quotShowAll = !quotShowAll; renderQuotationsTable(); });
+document.getElementById('quotSortFollowupBtn')?.addEventListener('click', ()=>{ quotSortFollowup = !quotSortFollowup; renderQuotationsTable(); });
 
 // ---- Quotation date picker --------------------------------------------------
 // A native <input type="date"> cannot style individual days, so #quotDateFilter is
@@ -1649,8 +2139,7 @@ Object.assign(translations,{
   'qcal.prev':['الشهر السابق','Previous month'],
   'qcal.next':['الشهر التالي','Next month'],
 });
-(function initQuotationCalendar(){
-  const input = document.getElementById('quotDateFilter');
+function attachQuotationCalendar(input){
   if(!input) return;
   const pad = n => String(n).padStart(2,'0');
   const iso = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
@@ -1741,12 +2230,30 @@ Object.assign(translations,{
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !pop.hidden){ close(); input.focus(); } });
   window.addEventListener('resize', close);
   window.addEventListener('scroll', ()=>{ if(!pop.hidden) position(); }, true);
-})();
+}
+attachQuotationCalendar(document.getElementById('quotDateFilter'));
+attachQuotationCalendar(document.getElementById('quotVisitReportDate'));
 document.getElementById('quotStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotScopeFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotSubjectFilter')?.addEventListener('change', renderQuotationsTable);
 
+document.getElementById('quotationsTableBody')?.addEventListener('change', (ev)=>{
+  const sel = ev.target.closest('[data-quot-status]');
+  if(!sel) return;
+  if(!can('write')){ toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات'); renderQuotationsTable(); return; }
+  const q = quotations.find(x=>x.id===Number(sel.dataset.quotStatus));
+  if(!q) return;
+  const status = sel.value;
+  if(status===q.status) return;
+  q.log = q.log || [];
+  q.log.push({id:genQuotationLogId(), date:todayISO(), status, note:t('quot.inlineStatusNote')});
+  q.status = status;
+  addAudit('quotation_status_update', `${q.companyName}: ${quotStatusLabel(status)}`);
+  toast(t('quot.updateAdded'));
+  renderAll();
+});
 document.getElementById('quotationsTableBody')?.addEventListener('click', (ev)=>{
+  if(ev.target.closest('select')) return;
   const editBtn = ev.target.closest('[data-quot-edit]');
   const delBtn = ev.target.closest('[data-quot-delete]');
   if(editBtn){ openQuotationEditModal(Number(editBtn.dataset.quotEdit)); return; }
@@ -1823,6 +2330,14 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
     followupAction: document.getElementById('q_followupAction').value.trim(),
     notes: document.getElementById('q_notes').value.trim(),
   };
+  {
+    const prevQ = editingQuotationId ? quotations.find(x=>x.id===editingQuotationId) : null;
+    const changed = !prevQ || prevQ.companyName!==payload.companyName || (prevQ.quotationNo||'')!==payload.quotationNo || (prevQ.date||'')!==payload.date;
+    if(changed){
+      const dups = findQuotationDuplicates(payload, editingQuotationId);
+      if(dups.length && !(await confirmDuplicate(dups, 'dup.quotMsg'))) return;
+    }
+  }
   if(editingQuotationId){
     const q = quotations.find(x=>x.id===editingQuotationId);
     if(q) Object.assign(q, payload);
@@ -1865,25 +2380,28 @@ function deleteQuotation(id){
   if(!can('delete')){toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف');return;}
   const q = quotations.find(x=>x.id===id);
   if(!q) return;
-  if(!confirm(t('quot.confirmDelete'))) return;
-  // Clean the bucket up too; the quotation_files rows disappear via ON DELETE CASCADE.
-  const attached = filesForQuotation(id);
-  if(attached.length && supabaseClient){
-    supabaseClient.storage.from(QUOT_BUCKET).remove(attached.map(f=>f.storagePath)).catch(err=>console.warn('Attachment cleanup failed:', err));
-    quotationFiles = quotationFiles.filter(f=>Number(f.quotationId)!==Number(id));
-  }
-  quotations = quotations.filter(x=>x.id!==id);
+  const idx = quotations.indexOf(q);
+  const attached = filesForQuotation(id).slice();
+  quotations = quotations.filter(x=>x!==q);
   if(activeQuotationId===id) closeQuotationDrawer();
   addAudit('delete_quotation', q.companyName);
-  // Deleted explicitly and immediately, rather than relying on the general save's
-  // "prune what's missing locally" pass — see the note on replaceTable's pruneOrphans.
-  if(supabaseClient){
+  renderAll();
+  toastUndo(t('quot.deleted'), ()=>{
+    quotations.splice(Math.min(idx, quotations.length), 0, q);
+    addAudit('restore_quotation', q.companyName);
+    renderAll();
+  }, {onCommit: ()=>{
+    // Irreversible clean-up only happens once the undo window has closed. The delete is
+    // explicit rather than relying on the general save's prune pass (see replaceTable's
+    // pruneOrphans note); quotation_files rows go via ON DELETE CASCADE.
+    if(!supabaseClient) return;
+    if(attached.length){
+      supabaseClient.storage.from(QUOT_BUCKET).remove(attached.map(f=>f.storagePath)).catch(err=>console.warn('Attachment cleanup failed:', err));
+      quotationFiles = quotationFiles.filter(f=>Number(f.quotationId)!==Number(id));
+    }
     supabaseClient.from('quotations').delete().eq('id', id)
       .then(({error})=>{ if(error) console.warn('Explicit quotation delete failed:', error); });
-  }
-  saveState();
-  toast(t('quot.deleted'));
-  renderAll();
+  }});
 }
 
 // ---- Quotation detail drawer ----
@@ -2132,7 +2650,7 @@ async function uploadQuotationFile(file, quotationId, extractedText=''){
 async function deleteQuotationFile(fileId){
   const entry = quotationFiles.find(f=>Number(f.id)===Number(fileId));
   if(!entry) return;
-  if(!confirm(currentLang==='en'?'Delete this attachment permanently?':'هل تريد حذف هذا الملف المرفق نهائيًا؟')) return;
+  if(!(await uiConfirm(currentLang==='en'?'Delete this attachment permanently?':'هل تريد حذف هذا الملف المرفق نهائيًا؟', {danger:true, confirmText:t('ui.delete')}))) return;
   try{
     await supabaseClient.storage.from(QUOT_BUCKET).remove([entry.storagePath]);
     const { error } = await supabaseClient.from('quotation_files').delete().eq('id', entry.id);
@@ -2562,7 +3080,7 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', asyn
       }).filter(Boolean);
       if(!imported.length) throw new Error('empty');
       const msg = t('quot.importConfirm') ? (currentLang==='en'?`Import ${imported.length} quotations?`:`استيراد ${imported.length} عرض سعر؟`) : '';
-      if(confirm(msg)){
+      if(await uiConfirm(msg)){
         quotations.push(...imported);
         if(document.getElementById('quotDateFilter')) document.getElementById('quotDateFilter').value = selectedQuotationDate;
         const synced = await saveStateOrWarn(currentLang==='en'?`importing ${imported.length} rows from Excel`:`استيراد ${imported.length} صف من Excel`);
@@ -2601,10 +3119,18 @@ document.getElementById('quotExcelBtn')?.addEventListener('click', ()=>{
   const sheet = XLSX.utils.aoa_to_sheet(data);
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, currentLang==='en'?'Quotations':'عروض الأسعار');
+  if(quotShowAll){
+    const days = [...new Set(rows.map(q=>q.date||''))].sort((a,b)=>b.localeCompare(a));
+    const sum = [t('quot.daySheetHeaders').split('|'), ...days.map(day=>{
+      const list = rows.filter(q=>(q.date||'')===day);
+      return [day, list.length, money2(list.reduce((s,q)=>s+(Number(q.amount)||0),0)), list.filter(q=>q.status==='closed').length];
+    })];
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sum), t('quot.daySheet'));
+  }
   XLSX.writeFile(book, `daftar-quotations-${todayISO()}.xlsx`);
   addAudit('export_excel', currentLang==='en'?'Quotations list':'قائمة عروض الأسعار');
 });
-document.getElementById('quotPrintBtn')?.addEventListener('click', ()=>printDocument(quotationsListDocumentHtml(scopedQuotations())));
+document.getElementById('quotPrintBtn')?.addEventListener('click', ()=>printDocument(quotationsListDocumentHtml(scopedQuotations(), undefined, {groupByDate:quotShowAll})));
 
 // ---- Quotation print column picker ----
 function getQuotPrintColumnKeys(){
@@ -2638,7 +3164,7 @@ document.getElementById('quotPrintConfirmBtn')?.addEventListener('click', ()=>{
   appSettings.quotPrintColumns = selected;
   saveState(); // remembered for next time, same as any other setting
   document.getElementById('quotPrintOptionsModal').classList.remove('show');
-  printDocument(quotationsListDocumentHtml(scopedQuotations(), selected));
+  printDocument(quotationsListDocumentHtml(scopedQuotations(), selected, {groupByDate:quotShowAll}));
 });
 
 // Single source of truth for the quotations-list print/PDF columns, shared by the
@@ -2663,20 +3189,35 @@ const QUOT_PRINT_COLUMNS = [
   {key:'notes', ar:'ملاحظات', en:'Notes', get:q=>esc(q.notes)||'—'},
   {key:'requirement', ar:'التفاصيل', en:'Details', get:q=>esc(q.requirement)||'—'},
 ];
-function quotationsListDocumentHtml(rows, selectedKeys){
+function quotationsListDocumentHtml(rows, selectedKeys, opts={}){
   const title = t('quot.title');
   const cols = selectedKeys ? QUOT_PRINT_COLUMNS.filter(c=>selectedKeys.includes(c.key)) : QUOT_PRINT_COLUMNS;
   const noHeader = currentLang==='en' ? 'No.' : 'م.';
   const headers = [noHeader, ...cols.map(c=>currentLang==='en'?c.en:c.ar)];
+  const rowHtml = (q,i)=>`<tr><td>${i}</td>${cols.map(c=>`<td${c.cls?` class="${c.cls}"`:''}>${c.get(q)}</td>`).join('')}</tr>`;
+  let bodyRows;
+  if(opts.groupByDate){
+    // "Show all" view: one heading per registration date, numbering restarts inside each day.
+    const days = [...new Set(rows.map(q=>q.date||''))].sort((a,b)=>b.localeCompare(a));
+    bodyRows = days.map(day=>{
+      const list = rows.filter(q=>(q.date||'')===day);
+      const sum = money2(list.reduce((s,q)=>s+(Number(q.amount)||0),0));
+      const closed = list.filter(q=>q.status==='closed').length;
+      return `<tr class="grp"><td colspan="${cols.length+1}">${esc(day)||'—'} — ${list.length} ${esc(t('qcal.count'))}${sum?` — ${esc(t('quot.dayValue'))}: ${currency(sum)}`:''} — ${esc(t('quot.closedRatio'))}: ${closed}/${list.length}</td></tr>`
+        + list.map((q,i)=>rowHtml(q,i+1)).join('');
+    }).join('');
+  } else {
+    bodyRows = rows.map((q,i)=>rowHtml(q,i+1)).join('');
+  }
   // 18 columns is a lot for one printed page, so this report prints in landscape with a
   // denser font (see printSharedStyle's dense/landscape options) and an auto-sized
   // ("wide") table instead of forcing all columns to the same width — that equal-width
   // forcing is what previously squeezed every field down to one letter per line.
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<style>${printSharedStyle({orientation:'landscape', dense:true})}</style></head><body>
+<style>${printSharedStyle({orientation:'landscape', dense:true})} tr.grp td{background:#eef1f6; font-weight:800; border-top:2px solid #cbd2dd;}</style></head><body>
 ${printBrandHeader(title)}
-<table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,i)=>`<tr><td>${i+1}</td>${cols.map(c=>`<td${c.cls?` class="${c.cls}"`:''}>${c.get(q)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length+1}" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
+<table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${bodyRows || `<tr><td colspan="${cols.length+1}" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
 <div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div>
 </body></html>`;
 }
@@ -2987,10 +3528,10 @@ document.getElementById('rd_edit').addEventListener('click', ()=>{
   if(!activeRepId) return;
   openRepEditModal(activeRepId);
 });
-document.getElementById('rd_delete').addEventListener('click', ()=>{
+document.getElementById('rd_delete').addEventListener('click', async ()=>{
   if(!can('delete')){toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف');return;}
   if(!activeRepId) return;
-  if(!confirm(currentLang==='en'?'Delete this collector? Assigned cases will become unassigned.':'حذف هذا المندوب؟ سيتم إلغاء إسناد حالاته تلقائيًا.')) return;
+  if(!(await uiConfirm(currentLang==='en'?'Delete this collector? Assigned cases will become unassigned.':'حذف هذا المندوب؟ سيتم إلغاء إسناد حالاته تلقائيًا.', {danger:true, confirmText:t('ui.delete')}))) return;
   const rep=reps.find(x=>x.id===activeRepId);
   debtors.forEach(d=>{ if(d.repId===activeRepId) d.repId=null; });
   reps = reps.filter(x=>x.id!==activeRepId);
@@ -3045,10 +3586,10 @@ function renderReps(){
   });
   body.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); openRepDrawer(Number(b.dataset.open)); }));
   body.querySelectorAll('[data-edit-rep]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); openRepEditModal(Number(b.dataset.editRep)); }));
-  body.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', e=>{
+  body.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', async e=>{
     e.stopPropagation();
     if(!can('delete')){toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف');return;}
-    if(!confirm(currentLang==='en'?'Delete this collector? Assigned cases will become unassigned.':'حذف هذا المندوب؟ سيتم إلغاء إسناد حالاته تلقائيًا.')) return;
+    if(!(await uiConfirm(currentLang==='en'?'Delete this collector? Assigned cases will become unassigned.':'حذف هذا المندوب؟ سيتم إلغاء إسناد حالاته تلقائيًا.', {danger:true, confirmText:t('ui.delete')}))) return;
     const id = Number(b.dataset.del);
     const rep = reps.find(x=>x.id===id);
     debtors.forEach(d=>{ if(d.repId===id) d.repId=null; });
@@ -3520,8 +4061,12 @@ function renderDebtorsTable(){
   const body = document.getElementById('debtorsTableBody');
   document.getElementById('debtorsEmpty').style.display = list.length ? 'none' : 'block';
   body.innerHTML = list.map(d=>{
-    const lastLog = [...d.log].reverse()[0];
-    const lastContact = lastLog ? lastLog.date : '—';
+    // "Last contact" = the most recent follow-up (payments are not contacts, and auto-recorded
+    // opening-balance entries must not make every imported debtor look contacted today).
+    const lastContact = d.log.filter(e=>e.type==='follow').map(e=>e.date||'').sort().pop() || '—';
+    const lastPay = d.log.filter(e=>e.type==='payment').map(e=>e.date||'').sort().pop() || '';
+    const daysSince = lastPay ? Math.max(0, daysBetween(lastPay, todayISO())) : null;
+    const daysCls = daysSince===null ? 'days-ok' : (remaining(d)<=0 ? 'days-ok' : daysSince>60 ? 'days-bad' : daysSince>30 ? 'days-warn' : 'days-ok');
     const repName = reps.find(r=>r.id===d.repId);
     const isCompany = d.type==='company';
     return `<tr data-id="${d.id}">
@@ -3536,6 +4081,8 @@ function renderDebtorsTable(){
       ${notesTd(d)}
       <td>${d.expectedPaymentDate||'—'}</td>
       <td>${esc(lastContact)}</td>
+      <td>${esc(lastPay)||'—'}</td>
+      <td class="figures ${daysCls}">${daysSince===null?'—':daysSince}</td>
       <td>
         <div class="row-actions">
           <button class="icon-btn" data-open="${d.id}" title="${t('action.view')}">◎</button>
@@ -3553,15 +4100,21 @@ function renderDebtorsTable(){
     });
   });
   body.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); openDrawer(Number(b.dataset.open)); }));
-  body.querySelectorAll('[data-quick-contact]').forEach(b=>b.addEventListener('click', e=>{
+  body.querySelectorAll('[data-quick-contact]').forEach(b=>b.addEventListener('click', async e=>{
     e.preventDefault(); e.stopPropagation();
     if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
     const d = debtors.find(x=>x.id===Number(b.dataset.quickContact));
     if(!d) return;
-    const note = prompt(currentLang==='en'?'Contact outcome / note:':'نتيجة التواصل / الملاحظة:');
-    if(note===null || !note.trim()) return;
+    const res = await uiDialog({title:t('quick.contactTitle'), message:d.name,
+      fields:[
+        {name:'method', label:t('th.contactMethod'), type:'select', value:'اتصال هاتفي', options:methodOptions(FOLLOW_METHODS)},
+        {name:'note', label:currentLang==='en'?'Contact outcome / note:':'نتيجة التواصل / الملاحظة:', type:'textarea', value:''},
+      ],
+      validate:v=> v.note.trim() ? '' : (currentLang==='en'?'Enter the outcome / note':'الرجاء إدخال النتيجة / الملاحظة')});
+    if(!res || !debtors.includes(d)) return;
+    const note = res.note;
     const date = todayISO();
-    const method = 'اتصال هاتفي';
+    const method = res.method;
     d.log.push({id:genLogId(), type:'follow', date, method, note:note.trim()});
     d.notes = `[${date}] ${translateValue(method)}: ${note.trim()}` + (d.notes ? '\n' + d.notes : '');
     addAudit('add_followup', `${d.name} (${translateValue(method)}): ${note.trim()}`);
@@ -3571,59 +4124,116 @@ function renderDebtorsTable(){
   body.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); openDebtorEditModal(Number(b.dataset.edit)); }));
   body.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', e=>{
     e.preventDefault(); e.stopPropagation();
-    if(!can('delete')){toast(currentLang==='en'?'You do not have permission to delete':'لا تملك صلاحية الحذف');return;}
-    if(!confirm(t('confirm.deleteDebtor'))) return;
-    const target=debtors.find(x=>x.id===Number(b.dataset.del));
-    debtors = debtors.filter(x=>x.id!==Number(b.dataset.del));
-    addAudit('delete_debtor', target ? `${target.name} — ${fmt(remaining(target))}` : String(b.dataset.del));
-    toast(t('toast.deleted'));
-    renderAll();
+    deleteDebtorWithUndo(Number(b.dataset.del));
   }));
 }
 
-function renderPayments(){
-  let rows = [];
+// ---- Payments register ------------------------------------------------------
+Object.assign(translations,{
+  'pay.search':['بحث باسم الشركة...','Search by company...'],
+  'pay.from':['من','From'],'pay.to':['إلى','To'],
+  'pay.allMethods':['كل الطرق','All methods'],
+  'pay.autoOnly':['القيود التلقائية فقط','Auto-recorded only'],
+  'pay.groupBy':['🏢 تجميع حسب الشركة','🏢 Group by company'],
+  'pay.ungroup':['↩ عرض كقائمة واحدة','↩ Show as one list'],
+  'pay.exportExcel':['⭳ تصدير إكسل','⭳ Export Excel'],
+  'pay.count':['عدد الدفعات','Payments'],'pay.total':['إجمالي المسدد','Total paid'],'pay.companies':['عدد الشركات','Companies'],
+  'pay.auto':['تلقائي','Auto'],
+  'pay.autoTip':['قيد سُجّل تلقائيًا (رصيد سابق أو تسوية) — راجع تاريخه الفعلي وصحّحه عند الحاجة','Auto-recorded entry (previous balance / adjustment) — check its real date and correct it if needed'],
+  'pay.summarySheet':['ملخص الشركات','Company summary'],'pay.sheet':['سجل السداد','Payments'],
+});
+let payGroupByCompany = false;
+const AUTO_PAYMENT_METHODS = ['رصيد سابق','تسوية'];
+const isAutoPayment = e => AUTO_PAYMENT_METHODS.includes(e.method);
+function filteredPaymentRows(){
+  const q = (document.getElementById('paySearch')?.value || '').trim().toLowerCase();
+  const from = document.getElementById('payFrom')?.value || '';
+  const to = document.getElementById('payTo')?.value || '';
+  const method = document.getElementById('payMethod')?.value || 'all';
+  const autoOnly = !!document.getElementById('payAutoOnly')?.checked;
+  const rows = [];
   scopedDebtors().forEach(d=>{
-    d.log.filter(e=>e.type==='payment').forEach(e=>rows.push({...e, debtor:d.name, debtorId:d.id}));
+    if(q && !String(d.name||'').toLowerCase().includes(q)) return;
+    d.log.filter(e=>e.type==='payment').forEach(e=>{
+      if(from && (e.date||'') < from) return;
+      if(to && (e.date||'') > to) return;
+      if(method!=='all' && e.method!==method) return;
+      if(autoOnly && !isAutoPayment(e)) return;
+      rows.push({...e, debtor:d.name, debtorId:d.id});
+    });
   });
-  rows.sort((a,b)=> a.date < b.date ? 1 : -1);
+  return rows.sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (Number(b.id)||0)-(Number(a.id)||0));
+}
+function paymentRowHtml(r, actionsAllowed){
+  const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-pay-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}">✎</button><button class="icon-btn danger" data-pay-del="${r.debtorId}:${r.id}" title="${t('action.delete')}">✕</button></div>` : '—';
+  const badge = isAutoPayment(r) ? `<span class="auto-badge" title="${esc(t('pay.autoTip'))}">${esc(t('pay.auto'))}</span>` : '';
+  return `<tr>
+    <td>${esc(r.date)}</td><td>${esc(r.debtor)}</td><td class="figures">${currency(r.amount)}</td><td>${translateValue(r.method)}${badge}</td>${notesTd({notes:r.note})}<td>${actions}</td>
+  </tr>`;
+}
+function renderPayments(){
+  const rows = filteredPaymentRows();
   const body = document.getElementById('paymentsTableBody');
   document.getElementById('paymentsEmpty').style.display = rows.length ? 'none' : 'block';
   const actionsAllowed = can('write');
-  body.innerHTML = rows.map(r=>{
-    const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-pay-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}">✎</button><button class="icon-btn danger" data-pay-del="${r.debtorId}:${r.id}" title="${t('action.delete')}">✕</button></div>` : '—';
-    return `<tr>
-    <td>${esc(r.date)}</td><td>${esc(r.debtor)}</td><td class="figures">${currency(r.amount)}</td><td>${translateValue(r.method)}</td>${notesTd({notes:r.note})}<td>${actions}</td>
-  </tr>`;
-  }).join('');
-  body.querySelectorAll('[data-pay-edit]').forEach(b=>b.addEventListener('click', ()=>{
+  const grpBtn = document.getElementById('payGroupBtn');
+  if(grpBtn){ grpBtn.setAttribute('aria-pressed', payGroupByCompany?'true':'false'); grpBtn.textContent = t(payGroupByCompany?'pay.ungroup':'pay.groupBy'); }
+  const grandTotal = money2(rows.reduce((s,r)=>s+(Number(r.amount)||0),0));
+  const companyIds = new Set(rows.map(r=>r.debtorId));
+  const summary = document.getElementById('paySummary');
+  if(summary){
+    summary.hidden = !rows.length;
+    summary.innerHTML = `${esc(t('pay.count'))}: <b>${rows.length}</b> — ${esc(t('pay.companies'))}: <b>${companyIds.size}</b> — ${esc(t('pay.total'))}: <b>${currency(grandTotal)}</b>`;
+  }
+  if(!payGroupByCompany){
+    body.innerHTML = rows.map(r=>paymentRowHtml(r, actionsAllowed)).join('');
+  } else {
+    const groups = new Map();
+    rows.forEach(r=>{ if(!groups.has(r.debtorId)) groups.set(r.debtorId, {name:r.debtor, list:[]}); groups.get(r.debtorId).list.push(r); });
+    const cols = body.closest('table')?.querySelectorAll('thead th').length || 6;
+    body.innerHTML = [...groups.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name), 'ar')).map(g=>{
+      const sum = money2(g.list.reduce((s,r)=>s+(Number(r.amount)||0),0));
+      return `<tr class="quot-date-group"><td colspan="${cols}">🏢 ${esc(g.name)}<span class="quot-date-count">${g.list.length}</span><span class="group-total">${esc(t('pay.total'))}: ${currency(sum)}</span></td></tr>`
+        + g.list.map(r=>paymentRowHtml(r, actionsAllowed)).join('');
+    }).join('');
+  }
+  body.querySelectorAll('[data-pay-edit]').forEach(b=>b.addEventListener('click', async ()=>{
     const [debtorId, logId] = b.dataset.payEdit.split(':').map(Number);
     const d = debtors.find(x=>x.id===debtorId);
     const entry = d && d.log.find(e=>e.id===logId && e.type==='payment');
     if(!d || !entry) return;
-    const input = prompt(t('drawer.editPaymentPrompt'), String(entry.amount));
-    if(input===null) return;
-    const newAmt = parseFloat(input);
-    if(isNaN(newAmt) || newAmt<=0){ toast(t('msg.invalidAmount')); return; }
-    d.paid = Math.max(0, d.paid - entry.amount + newAmt);
-    addAudit('edit_payment', `${d.name}: ${fmt(entry.amount)} → ${fmt(newAmt)}`);
-    entry.amount = newAmt;
-    toast(t('msg.paymentUpdated'));
-    renderAll();
+    if(await editPaymentEntry(d, entry)) renderAll();
   }));
   body.querySelectorAll('[data-pay-del]').forEach(b=>b.addEventListener('click', ()=>{
     const [debtorId, logId] = b.dataset.payDel.split(':').map(Number);
     const d = debtors.find(x=>x.id===debtorId);
     const entry = d && d.log.find(e=>e.id===logId && e.type==='payment');
     if(!d || !entry) return;
-    if(!confirm(t('drawer.deletePaymentConfirm'))) return;
-    d.paid = Math.max(0, d.paid - entry.amount);
-    d.log = d.log.filter(e=>e.id!==logId);
-    addAudit('delete_payment', `${d.name}: ${fmt(entry.amount)}`);
-    toast(t('msg.paymentDeleted'));
-    renderAll();
+    deletePaymentWithUndo(d, entry);
   }));
 }
+['paySearch'].forEach(id=>document.getElementById(id)?.addEventListener('input', debounce(renderPayments, 200)));
+['payFrom','payTo','payMethod','payAutoOnly'].forEach(id=>document.getElementById(id)?.addEventListener('change', renderPayments));
+document.getElementById('payGroupBtn')?.addEventListener('click', ()=>{ payGroupByCompany = !payGroupByCompany; renderPayments(); });
+document.getElementById('payExcelBtn')?.addEventListener('click', ()=>{
+  const rows = filteredPaymentRows();
+  if(!rows.length){ toast(t('payments.empty')); return; }
+  const en = currentLang==='en';
+  const ordered = payGroupByCompany
+    ? [...rows].sort((a,b)=>String(a.debtor).localeCompare(String(b.debtor),'ar') || (a.date||'').localeCompare(b.date||''))
+    : rows;
+  const headers = en ? ['Date','Company','Amount (QAR)','Method','Notes','Auto-recorded'] : ['التاريخ','الشركة','المبلغ (ر.ق)','طريقة الدفع','ملاحظات','قيد تلقائي'];
+  const data = [headers, ...ordered.map(r=>[r.date||'', r.debtor, Number(r.amount)||0, translateValue(r.method), r.note||'', isAutoPayment(r)?(en?'Yes':'نعم'):''])];
+  const per = new Map();
+  rows.forEach(r=>{ const o = per.get(r.debtorId) || {name:r.debtor, n:0, sum:0}; o.n++; o.sum = money2(o.sum + (Number(r.amount)||0)); per.set(r.debtorId, o); });
+  const summary = [[en?'Company':'الشركة', en?'Payments':'عدد الدفعات', en?'Total paid (QAR)':'إجمالي المسدد (ر.ق)'],
+    ...[...per.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar')).map(o=>[o.name,o.n,o.sum])];
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(data), t('pay.sheet'));
+  XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(summary), t('pay.summarySheet'));
+  XLSX.writeFile(book, `daftar-payments-${todayISO()}.xlsx`);
+  addAudit('export_excel', t('payments.title'));
+});
 
 function renderFollowups(){
   let rows = [];
@@ -3640,29 +4250,19 @@ function renderFollowups(){
     <td>${esc(r.date)}</td><td>${esc(r.debtor)}</td><td>${translateValue(r.method)}</td><td>${esc(r.note)||'—'}</td>${notesTd({notes:r.debtorNotes})}<td>${actions}</td>
   </tr>`;
   }).join('');
-  body.querySelectorAll('[data-follow-edit]').forEach(b=>b.addEventListener('click', ()=>{
+  body.querySelectorAll('[data-follow-edit]').forEach(b=>b.addEventListener('click', async ()=>{
     const [debtorId, logId] = b.dataset.followEdit.split(':').map(Number);
     const d = debtors.find(x=>x.id===debtorId);
     const entry = d && d.log.find(e=>e.id===logId && e.type==='follow');
     if(!d || !entry) return;
-    const input = prompt(t('drawer.editFollowPrompt'), String(entry.note||''));
-    if(input===null) return;
-    const newNote = input.trim();
-    addAudit('edit_followup', `${d.name}: ${entry.note||'—'} → ${newNote||'—'}`);
-    entry.note = newNote;
-    toast(t('msg.followUpdated'));
-    renderAll();
+    if(await editFollowEntry(d, entry)) renderAll();
   }));
   body.querySelectorAll('[data-follow-del]').forEach(b=>b.addEventListener('click', ()=>{
     const [debtorId, logId] = b.dataset.followDel.split(':').map(Number);
     const d = debtors.find(x=>x.id===debtorId);
     const entry = d && d.log.find(e=>e.id===logId && e.type==='follow');
     if(!d || !entry) return;
-    if(!confirm(t('drawer.deleteFollowConfirm'))) return;
-    d.log = d.log.filter(e=>e.id!==logId);
-    addAudit('delete_followup', `${d.name}: ${entry.note||'—'}`);
-    toast(t('msg.followDeleted'));
-    renderAll();
+    deleteFollowWithUndo(d, entry);
   }));
 }
 
@@ -3950,11 +4550,11 @@ function scheduleAutomatedReports() {
 
 document.getElementById('changeAdminPasswordBtn').addEventListener('click', async () => {
   if(!can('manageUsers')){ toast(currentLang==='en'?"Only an admin can reset another user's password":'إعادة تعيين كلمة مرور مستخدم آخر متاحة للمدير فقط'); return; }
-  const targetUsername = prompt(currentLang === 'en' ? 'Username to reset:' : 'اسم المستخدم المراد إعادة تعيين كلمة مروره:');
+  const targetUsername = await uiPrompt(currentLang === 'en' ? 'Username to reset:' : 'اسم المستخدم المراد إعادة تعيين كلمة مروره:');
   if (!targetUsername) return;
   const target = users.find(u => u.username.toLowerCase() === targetUsername.trim().toLowerCase());
   if (!target) { toast(currentLang==='en'?'User not found':'المستخدم غير موجود'); return; }
-  const newPassword = prompt(currentLang === 'en' ? `New password for "${target.username}":` : `كلمة المرور الجديدة لـ "${target.username}":`);
+  const newPassword = await uiPrompt(currentLang === 'en' ? `New password for "${target.username}":` : `كلمة المرور الجديدة لـ "${target.username}":`, '', {type:'password'});
   if (!newPassword) return;
   if (newPassword.length < appSettings.passwordMinLength) {
     toast(currentLang === 'en' ? `Password must be at least ${appSettings.passwordMinLength} characters` : `يجب أن تكون كلمة المرور ${appSettings.passwordMinLength} أحرف على الأقل`);
@@ -4475,7 +5075,7 @@ document.getElementById('importDataFile').addEventListener('change', async (e)=>
     try{
       const data = JSON.parse(reader.result);
       if(!Array.isArray(data.debtors)) throw new Error('invalid');
-      if(!confirm('سيؤدي الاستيراد إلى استبدال جميع البيانات الحالية بالبيانات الموجودة في الملف. هل تريد المتابعة؟')) return;
+      if(!(await uiConfirm('سيؤدي الاستيراد إلى استبدال جميع البيانات الحالية بالبيانات الموجودة في الملف. هل تريد المتابعة؟', {danger:true}))) return;
       debtors = data.debtors.map(d=>({type:'individual', companyNumber:'', crNumber:'', ...d}));
       reps = data.reps || [];
       nextId = data.nextId || (Math.max(0, ...debtors.map(d=>d.id))+1);
@@ -4506,8 +5106,8 @@ document.getElementById('importDataFile').addEventListener('change', async (e)=>
 });
 
 document.getElementById('clearAllDataBtn').addEventListener('click', async ()=>{
-  if(!confirm('هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-  if(!confirm('تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟')) return;
+  if(!(await uiConfirm('هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', {danger:true}))) return;
+  if(!(await uiConfirm('تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟', {danger:true, confirmText:t('ui.delete')}))) return;
   const counts = `${debtors.length} ${currentLang==='en'?'debtors':'مدين'}, ${reps.length} ${currentLang==='en'?'collectors':'مندوب'}`;
   debtors = [];
   reps = [];
@@ -4825,10 +5425,7 @@ document.getElementById('s_smartReminders').checked = appSettings.smartReminders
 async function initializeApp() {
   try {
     clearLegacyBrowserState();
-    const cloudLoaded = await loadState();
-    if(!cloudLoaded){
-      setTimeout(()=>toast(currentLang==='en'?'Could not load data from the cloud. Check your connection and reload.':'تعذّر تحميل البيانات من السحابة. تحقق من الاتصال ثم أعد تحميل الصفحة.'), 400);
-    }
+    await loadState();
     loadSettings();
     // Initialize settings UI values
     if (document.getElementById('s_reminderDays')) {

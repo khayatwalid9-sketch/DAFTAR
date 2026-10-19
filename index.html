@@ -62,6 +62,8 @@
     <div class="nav-item" data-page="settings"><span class="ic">⚙</span> <span data-i18n="nav.settings">الإعدادات</span></div>
   </nav>
   <div class="sidebar-foot">
+    <div id="sidebarUserLine"></div>
+    <div data-i18n="nav.footnote">يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.</div>
     <button class="btn secondary small" id="logoutBtn" data-i18n="nav.logout">🚪 تسجيل الخروج</button>
   </div>
 </aside>
@@ -73,13 +75,14 @@
       <div class="sub" id="pageSub">نظرة عامة على حالة التحصيل اليوم</div>
     </div>
     <div class="topbar-actions">
+      <span class="save-status" id="saveStatus" role="status" aria-live="polite" data-state="saved" hidden></span>
       <div class="lang-switch">
         <button id="langArBtn" class="active" data-lang="ar">AR</button>
         <button id="langEnBtn" data-lang="en">EN</button>
       </div>
       <button class="icon-btn notification-btn" id="notificationsBtn" title="الإشعارات" aria-label="الإشعارات">🔔<span id="notificationCount" class="notification-count">0</span></button>
       <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي" aria-label="الوضع الليلي">◐</button>
-      <input class="search" id="globalSearch" data-i18n-ph="topbar.search" placeholder="بحث عن مدين، هاتف...">
+      <div class="search-wrap"><input class="search" id="globalSearch" data-i18n-ph="topbar.search" placeholder="بحث عن مدين، هاتف..." autocomplete="off" aria-controls="globalSearchResults"><div class="search-results" id="globalSearchResults" role="listbox" hidden></div></div>
       <button class="btn" id="addDebtorBtn" data-i18n="topbar.addDebtor">+ إضافة مدين</button>
     </div>
   </div>
@@ -259,7 +262,7 @@
           <table class="table-wide">
           <thead>
             <tr>
-              <th data-i18n="th.name">الاسم</th><th data-i18n="th.type">النوع</th><th data-i18n="th.phone">الهاتف</th><th data-i18n="th.total">إجمالي الدين</th><th data-i18n="th.paid">المسدد</th><th data-i18n="th.remaining">المتبقي</th><th data-i18n="th.status">الحالة</th><th data-i18n="th.rep">المندوب</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.due">تاريخ الدفع المتوقع</th><th data-i18n="th.lastContact">آخر تواصل</th><th data-i18n="th.actions">إجراءات</th>
+              <th data-i18n="th.name">الاسم</th><th data-i18n="th.type">النوع</th><th data-i18n="th.phone">الهاتف</th><th data-i18n="th.total">إجمالي الدين</th><th data-i18n="th.paid">المسدد</th><th data-i18n="th.remaining">المتبقي</th><th data-i18n="th.status">الحالة</th><th data-i18n="th.rep">المندوب</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.due">تاريخ الدفع المتوقع</th><th data-i18n="th.lastContact">آخر تواصل</th><th data-i18n="th.lastPayment">آخر دفعة</th><th data-i18n="th.daysSincePayment">أيام منذ آخر دفعة</th><th data-i18n="th.actions">إجراءات</th>
             </tr>
           </thead>
           <tbody id="debtorsTableBody"></tbody>
@@ -322,7 +325,26 @@
     <!-- ================= PAYMENTS ================= -->
     <section class="page" id="page-payments">
       <div class="panel">
-        <div class="panel-head"><h3 data-i18n="payments.title">سجل كل عمليات السداد</h3></div>
+        <div class="panel-head">
+          <h3 data-i18n="payments.title">سجل كل عمليات السداد</h3>
+          <div class="pay-filters">
+            <input id="paySearch" class="field" data-i18n-ph="pay.search" placeholder="بحث باسم الشركة..." aria-label="بحث باسم الشركة">
+            <label class="pay-filter"><span data-i18n="pay.from">من</span><input type="date" id="payFrom" class="field" aria-label="من تاريخ"></label>
+            <label class="pay-filter"><span data-i18n="pay.to">إلى</span><input type="date" id="payTo" class="field" aria-label="إلى تاريخ"></label>
+            <select id="payMethod" class="field" aria-label="طريقة الدفع">
+              <option value="all" data-i18n="pay.allMethods">كل الطرق</option>
+              <option value="نقدًا" data-i18n="method.cash">نقدًا</option>
+              <option value="شيك" data-i18n="method.cheque">شيك</option>
+              <option value="تحويل بنكي" data-i18n="method.transfer">تحويل بنكي</option>
+              <option value="رصيد سابق" data-i18n="method.opening">رصيد سابق</option>
+              <option value="تسوية" data-i18n="method.adjust">تسوية</option>
+            </select>
+            <label class="pay-filter"><input type="checkbox" id="payAutoOnly"><span data-i18n="pay.autoOnly">القيود التلقائية فقط</span></label>
+            <button type="button" class="btn secondary small" id="payGroupBtn" aria-pressed="false" data-i18n="pay.groupBy">🏢 تجميع حسب الشركة</button>
+            <button type="button" class="btn secondary small" id="payExcelBtn" data-i18n="pay.exportExcel">⭳ تصدير إكسل</button>
+          </div>
+        </div>
+        <div class="quot-all-summary" id="paySummary"></div>
         <div class="table-scroll">
           <table>
           <thead><tr><th data-i18n="th.date">التاريخ</th><th data-i18n="th.debtor">المدين</th><th data-i18n="th.amountPaid">المبلغ المسدد</th><th data-i18n="th.method">طريقة الدفع</th><th data-i18n="th.notes">ملاحظات</th><th data-i18n="th.actions">إجراءات</th></tr></thead>
@@ -362,6 +384,7 @@
             <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول..." title="بحث عروض الأسعار" aria-label="بحث عروض الأسعار">
             <input type="text" id="quotDateFilter" class="field qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
             <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">🗂 عرض جميع عروض الأسعار</button>
+            <button type="button" class="btn secondary small" id="quotSortFollowupBtn" aria-pressed="false">⏰ فرز حسب المتابعة القادمة</button>
             <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="open" data-i18n="quot.status.open">مفتوح</option>
@@ -426,7 +449,7 @@
         <div class="panel-body">
           <datalist id="quotRepsList"></datalist>
           <div class="field-row">
-            <div class="field"><label data-i18n="quot.visitReportDate">تاريخ التقرير</label><input type="date" id="quotVisitReportDate" title="تاريخ التقرير" aria-label="تاريخ التقرير"></div>
+            <div class="field"><label data-i18n="quot.visitReportDate">تاريخ التقرير</label><input type="text" id="quotVisitReportDate" class="qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ التقرير" aria-label="تاريخ التقرير"></div>
             <div class="field"><label data-i18n="quot.salesInCharge">مسؤول المبيعات</label><input type="text" list="quotRepsList" id="quotVisitReportRep" class="field" data-i18n-ph="quot.salesInChargePh" placeholder="اسم مسؤول المبيعات" title="مسؤول المبيعات" aria-label="مسؤول المبيعات"></div>
             <div class="field"><label data-i18n="quot.areaRoute">المنطقة / خط السير</label><input type="text" id="quotVisitReportArea" class="field" data-i18n-ph="quot.areaRoutePh" placeholder="مثال: الدوحة" title="المنطقة / خط السير" aria-label="المنطقة / خط السير"></div>
             <div class="field">

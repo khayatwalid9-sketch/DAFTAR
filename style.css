@@ -68,8 +68,6 @@ h1,h2,h3,.brand{font-family:'Tajawal', sans-serif;}
   position:sticky;
   top:0;
   height:100vh;
-  height:100dvh; /* real visible height on mobile browsers (address bar aware) */
-  overflow:hidden; /* the nav list scrolls inside; the footer (logout) never gets pushed off-screen */
   transition:transform 0.3s ease;
 }
 
@@ -120,7 +118,6 @@ h1,h2,h3,.brand{font-family:'Tajawal', sans-serif;}
   .nav-item{padding:12px 16px;}
 }
 .brand{
-  flex-shrink:0;
   display:flex;
   align-items:center;
   gap:10px;
@@ -141,14 +138,7 @@ h1,h2,h3,.brand{font-family:'Tajawal', sans-serif;}
 .brand-text b{font-size:17px; font-weight:900;}
 .brand-text span{font-size:11px; color:var(--muted); letter-spacing:0.5px;}
 
-.nav{
-  display:flex; flex-direction:column; gap:4px;
-  flex:1 1 auto;
-  min-height:0; /* lets the list shrink and scroll instead of overflowing the sidebar */
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  scrollbar-width:thin;
-}
+.nav{display:flex; flex-direction:column; gap:4px;}
 .nav-item{
   display:flex; align-items:center; gap:10px;
   padding:11px 12px;
@@ -165,23 +155,12 @@ h1,h2,h3,.brand{font-family:'Tajawal', sans-serif;}
 .nav-item.active{background:var(--surface-2); color:var(--gold); border-color:var(--border);}
 
 .sidebar-foot{
-  flex-shrink:0; /* always fully visible at the bottom of the sidebar */
   margin-top:auto;
-  padding-top:12px;
-  padding-bottom:env(safe-area-inset-bottom, 0px);
+  padding-top:16px;
   border-top:1px solid var(--border);
   font-size:11px;
   color:var(--muted);
   line-height:1.7;
-}
-.sidebar-foot .btn{width:100%; justify-content:center;}
-
-/* Short screens (small laptops, landscape phones): tighten the sidebar so everything fits */
-@media (max-height:760px){
-  .sidebar{padding-top:14px; padding-bottom:12px;}
-  .brand{padding-bottom:12px; margin-bottom:10px;}
-  .nav{gap:2px;}
-  .nav-item{padding:8px 12px;}
 }
 
 /* ===== Main ===== */
@@ -688,3 +667,75 @@ tr.quot-date-group td{background:var(--surface-2); color:var(--ink); font-weight
   padding:9px 14px; border-top:2px solid var(--border); border-bottom:1px solid var(--border);}
 tr.quot-date-group .quot-date-count{display:inline-block; margin-inline-start:10px; padding:1px 9px; border-radius:999px;
   background:#16a34a; color:#fff; font-size:11px; font-weight:700;}
+
+
+/* ---- UI dialogs (replace native prompt()/confirm()) ---- */
+.uidlg-bg{position:fixed; inset:0; z-index:600; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(5,10,20,.62); backdrop-filter:blur(3px);}
+.uidlg{width:min(440px,100%); max-height:90vh; overflow:auto; background:var(--surface); color:var(--ink); border:1px solid var(--border); border-radius:14px; padding:20px; box-shadow:0 24px 70px rgba(0,0,0,.45);}
+.uidlg h3{margin:0 0 10px; font-size:17px;}
+.uidlg-msg{font-size:14px; line-height:1.7; margin-bottom:12px;}
+.uidlg-field{display:block; margin-bottom:12px;}
+.uidlg-field>span{display:block; font-size:12px; color:var(--muted); margin-bottom:5px;}
+.uidlg-field .field{width:100%; box-sizing:border-box;}
+.uidlg-error{margin:0 0 10px; color:#f87171; font-size:13px;}
+.uidlg-list{margin:0 0 12px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; font-size:13px; max-height:170px; overflow:auto;}
+.uidlg-list div{display:flex; justify-content:space-between; gap:12px; padding:2px 0;}
+.uidlg-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:6px;}
+.uidlg .btn.danger{background:#dc2626; border-color:#dc2626; color:#fff;}
+
+/* ---- Undo toast shown after deleting something ---- */
+.undo-toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:620; display:flex; align-items:center; gap:14px;
+  padding:12px 16px 15px; background:var(--surface-3); color:var(--ink); border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 14px 40px rgba(0,0,0,.4); font-size:14px; overflow:hidden; max-width:calc(100vw - 24px);}
+.undo-btn{background:transparent; border:1px solid var(--gold); color:var(--gold); font:inherit; font-weight:700; border-radius:8px; padding:4px 12px; cursor:pointer;}
+.undo-btn:hover{background:var(--gold); color:var(--gold-ink);}
+.undo-bar{position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--gold); transform-origin:left center; animation:undoBar linear forwards;}
+html[dir="rtl"] .undo-bar{transform-origin:right center;}
+@keyframes undoBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* ---- Save status pill in the top bar ---- */
+.save-status{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); padding:4px 10px; border:1px solid var(--border); border-radius:999px; white-space:nowrap;}
+.save-status[hidden]{display:none;}
+.save-status::before{content:''; width:8px; height:8px; border-radius:50%; background:#9ca3af;}
+.save-status[data-state="saved"]::before{background:#22c55e;}
+.save-status[data-state="pending"]::before,.save-status[data-state="saving"]::before{background:#f59e0b; animation:savePulse 1s infinite;}
+.save-status[data-state="error"]{border-color:#ef4444; color:#f87171; cursor:pointer;}
+.save-status[data-state="error"]::before{background:#ef4444;}
+@keyframes savePulse{50%{opacity:.25}}
+@media (max-width:700px){ .save-status{font-size:11px; padding:3px 8px;} }
+
+
+/* ---- Payments register: filters, auto badge ---- */
+.pay-filters{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+.pay-filter{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);}
+#payGroupBtn[aria-pressed="true"]{background:var(--gold); color:var(--gold-ink); border-color:var(--gold); font-weight:700;}
+.auto-badge{display:inline-block; margin-inline-start:6px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700;
+  background:rgba(245,158,11,.16); color:#f59e0b; border:1px solid rgba(245,158,11,.4); vertical-align:middle;}
+tr.quot-date-group .group-total{margin-inline-start:10px; color:var(--muted); font-weight:600; font-size:12px;}
+
+
+/* ---- Quotations: inline status, overdue follow-ups, day totals ---- */
+.status-select{appearance:auto; font:inherit; font-size:12px; font-weight:700; border-radius:999px; padding:3px 8px; cursor:pointer; max-width:150px;
+  background:var(--surface-2); color:var(--ink); border:1px solid var(--border);}
+.fu-overdue{color:#f87171; font-weight:700;}
+.fu-today{color:#f59e0b; font-weight:700;}
+tr.quot-row-overdue td:first-child{box-shadow:inset 3px 0 0 #ef4444;}
+html[dir="rtl"] tr.quot-row-overdue td:first-child{box-shadow:inset -3px 0 0 #ef4444;}
+#quotSortFollowupBtn[aria-pressed="true"]{background:var(--gold); color:var(--gold-ink); border-color:var(--gold); font-weight:700;}
+
+/* ---- Global search dropdown ---- */
+.search-wrap{position:relative;}
+.search-results{position:absolute; top:calc(100% + 6px); inset-inline-end:0; width:360px; max-width:calc(100vw - 24px); max-height:70vh; overflow:auto;
+  background:var(--surface); color:var(--ink); border:1px solid var(--border); border-radius:12px; padding:6px; z-index:140; box-shadow:0 18px 50px rgba(0,0,0,.35);}
+.search-results[hidden]{display:none;}
+.sr-head{font-size:11px; color:var(--muted); padding:8px 10px 3px; font-weight:700;}
+.sr-item{display:block; width:100%; text-align:start; background:transparent; border:0; color:var(--ink); padding:8px 10px; border-radius:8px; cursor:pointer; font:inherit; font-size:13px;}
+.sr-item:hover,.sr-item:focus-visible{background:var(--surface-3); outline:none;}
+.sr-item small{display:block; color:var(--muted); font-size:11.5px; margin-top:2px;}
+.sr-empty{padding:12px; color:var(--muted); font-size:13px;}
+
+
+/* ---- Debtors: days since last payment ---- */
+.days-ok{color:var(--muted);}
+.days-warn{color:#f59e0b; font-weight:700;}
+.days-bad{color:#f87171; font-weight:700;}
