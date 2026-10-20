@@ -253,4 +253,11 @@ Object.assign(translations,{
   'pay.auto':['تلقائي','Auto'],
   'pay.autoTip':['قيد سُجّل تلقائيًا (رصيد سابق أو تسوية) — راجع تاريخه الفعلي وصحّحه عند الحاجة','Auto-recorded entry (previous balance / adjustment) — check its real date and correct it if needed'],
   'pay.summarySheet':['ملخص الشركات','Company summary'],'pay.sheet':['سجل السداد','Payments'],
+  'promise.title':['وعد الدفع','Promise to pay'],'promise.current':['الوعد الحالي','Current promise'],'promise.save':['حفظ الوعد','Save promise'],'promise.clear':['إلغاء','Clear'],
+  'promise.none':['لا يوجد وعد دفع','No promise recorded'],'promise.broken':['وعد منكوث','Broken promise'],'promise.today':['وعد اليوم','Promise today'],'promise.upcoming':['وعد دفع','Promise'],
+  'promise.saved':['تم حفظ وعد الدفع','Promise saved'],'promise.cleared':['تم إلغاء وعد الدفع','Promise cleared'],'promise.needDate':['أدخل تاريخ الوعد','Enter the promise date'],'promise.amountPh':['المبلغ الموعود','Promised amount'],
+  'notifications.promiseBroken':['وعد دفع منكوث','Broken payment promise'],'notifications.promiseToday':['وعد دفع مستحق اليوم','Payment promise due today'],
+  'audit.promise':['وعد دفع','Payment promise'],'audit.promise_clear':['إلغاء وعد دفع','Promise cleared'],'audit.backup':['نسخة احتياطية','Backup'],
+  'backup.title':['نسخة احتياطية','Backup'],'backup.desc':['تنزيل كل بيانات النظام في ملف واحد (JSON). احتفظ به في مكان آمن؛ لا يتضمن مفاتيح API.','Download all system data as one JSON file. Keep it somewhere safe; it does not include API keys.'],
+  'backup.btn':['تنزيل نسخة احتياطية كاملة','Download full backup'],'backup.done':['تم تنزيل النسخة الاحتياطية','Backup downloaded'],'backup.failed':['تعذّر إنشاء النسخة — تحقق من الاتصال','Backup failed — check your connection'],
 });

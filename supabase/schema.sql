@@ -14,6 +14,8 @@ create table if not exists public.debtors (
   due date,
   notes text,
   rep_id bigint,
+  promise_date date,
+  promise_amount numeric(14,2),
   created_at timestamptz not null default now()
 );
 

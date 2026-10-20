@@ -676,6 +676,14 @@
         </div>
       </div>
 
+      <div class="panel" id="backupPanel">
+        <div class="panel-head"><h3 data-i18n="backup.title">نسخة احتياطية</h3></div>
+        <div class="panel-body">
+          <p style="color:var(--muted);margin:0 0 12px" data-i18n="backup.desc">تنزيل كل بيانات النظام في ملف واحد (JSON). احتفظ به في مكان آمن؛ لا يتضمن مفاتيح API.</p>
+          <button class="btn secondary" id="backupBtn" data-i18n="backup.btn">تنزيل نسخة احتياطية كاملة</button>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="settings.users">المستخدمون والصلاحيات</h3></div>
         <div class="panel-body">
@@ -1136,6 +1144,15 @@
     <div class="mini-form" id="dr_assignRepBox">
       <select id="dr_repSelect" title="المندوب" aria-label="المندوب"><option value="" data-i18n="drawer.noRep">بدون مندوب</option></select>
       <button class="btn small" id="dr_assignRep" data-i18n="drawer.assign">تعيين</button>
+    </div>
+
+    <div class="dr-section-title" data-i18n="promise.title">وعد الدفع</div>
+    <div class="dr-stat"><span data-i18n="promise.current">الوعد الحالي</span><span id="dr_promiseStatus">—</span></div>
+    <div class="mini-form">
+      <input type="date" id="dr_promiseDate" data-write title="تاريخ الوعد" aria-label="تاريخ الوعد">
+      <input type="number" id="dr_promiseAmount" data-write data-i18n-ph="promise.amountPh" placeholder="المبلغ الموعود" title="المبلغ الموعود" aria-label="المبلغ الموعود">
+      <button class="btn small" id="dr_savePromise" data-write data-i18n="promise.save">حفظ الوعد</button>
+      <button class="btn secondary small" id="dr_clearPromise" data-write data-i18n="promise.clear">إلغاء</button>
     </div>
 
     <div class="dr-section-title" data-i18n="drawer.recordPayment">تسجيل دفعة سداد</div>

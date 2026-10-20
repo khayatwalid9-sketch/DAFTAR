@@ -68,8 +68,26 @@ document.querySelectorAll('[data-login-lang]').forEach(button=>button.addEventLi
 }));
 let currentMode='dark';
 let notifications=[];
+function promiseState(d){   // null when there is no open promise
+  if(!d.promiseDate || remaining(d)<=0) return null;
+  const diff=daysBetween(todayISO(), d.promiseDate);
+  return {type: diff<0?'broken':diff===0?'today':'upcoming', diff};
+}
+function promiseBadge(d){
+  const p=promiseState(d); if(!p) return '';
+  const label=p.type==='broken'?t('promise.broken'):p.type==='today'?t('promise.today'):`${t('promise.upcoming')}: ${esc(d.promiseDate)}`;
+  return ` <span class="badge ${p.type==='broken'?'overdue':'active'}" style="margin-inline-start:6px" title="${esc(d.promiseDate)}${d.promiseAmount?' · '+fmt(d.promiseAmount):''}">${label}</span>`;
+}
 function getNotifications(){
-  return scopedDebtors().filter(d=>remaining(d)>0).map(d=>{const diff=daysBetween(todayISO(),d.due);return diff<0?{type:'overdue',name:d.name,date:d.due}:diff===0?{type:'dueToday',name:d.name,date:d.due}:diff<=7?{type:'dueSoon',name:d.name,date:d.due}:null;}).filter(Boolean);
+  return scopedDebtors().filter(d=>remaining(d)>0).flatMap(d=>{
+    const out=[]; const diff=daysBetween(todayISO(),d.due);
+    if(diff<0) out.push({type:'overdue',name:d.name,date:d.due});
+    else if(diff===0) out.push({type:'dueToday',name:d.name,date:d.due});
+    else if(diff<=7) out.push({type:'dueSoon',name:d.name,date:d.due});
+    const p=promiseState(d);
+    if(p && p.type!=='upcoming') out.push({type:p.type==='broken'?'promiseBroken':'promiseToday',name:d.name,date:d.promiseDate});
+    return out;
+  });
 }
 function renderNotifications(){
   const list=getNotifications(); const panel=document.getElementById('notificationsList'); const count=document.getElementById('notificationCount');
@@ -287,6 +305,7 @@ function applyPermissions(){
   document.querySelectorAll('.bnav-item[data-page]').forEach(b=>{ b.style.display = canSeePage(b.dataset.page) ? 'flex' : 'none'; });
   const assignBox=document.getElementById('dr_assignRepBox');
   if(assignBox) assignBox.style.display=(currentUser?.role==='admin')?'':'none';
+  const bp=document.getElementById('backupPanel'); if(bp) bp.style.display=(currentUser?.role==='admin')?'':'none';
   const assignTitle=document.getElementById('dr_assignRepTitle');
   if(assignTitle) assignTitle.style.display=(currentUser?.role==='admin')?'':'none';
 }
@@ -503,7 +522,7 @@ function snapshotRows(table, rows, key='id'){
 }
 function buildSyncRows(){
   return {
-    debtors: debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null})),
+    debtors: debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null,promise_date:debtor.promiseDate||null,promise_amount:debtor.promiseAmount||null})),
     debtors_activity: debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null}))),
     reps: reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})),
     quotations: quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''})),
@@ -638,6 +657,8 @@ async function loadFromSupabase() {
         due: d.due,
         notes: d.notes || '',
         repId: d.rep_id,
+        promiseDate: d.promise_date || '',
+        promiseAmount: d.promise_amount==null ? 0 : Number(d.promise_amount),
         log: []
       }));
       
@@ -1662,6 +1683,7 @@ function openDrawer(id){
   const rep = reps.find(r=>r.id===d.repId);
   document.getElementById('dr_repName').textContent = rep ? rep.name : t('drawer.noRep');
   fillRepSelect(document.getElementById('dr_repSelect'), d.repId||'');
+  renderPromiseBox(d);
   document.getElementById('dr_paymentDate').value = todayISO();
   document.getElementById('dr_followDate').value = todayISO();
 
@@ -1706,6 +1728,58 @@ document.getElementById('dr_assignRep').addEventListener('click', ()=>{
   toast(val ? t('msg.assign') : t('msg.unassign'));
   openDrawer(d.id);
   renderAll();
+});
+
+// ---- Promise to pay (وعد الدفع): one open promise per debtor (date + amount) ----
+function renderPromiseBox(d){
+  document.getElementById('dr_promiseDate').value=d.promiseDate||'';
+  document.getElementById('dr_promiseAmount').value=d.promiseAmount||'';
+  const p=promiseState(d); const el=document.getElementById('dr_promiseStatus');
+  el.innerHTML = p ? `<span class="badge ${p.type==='broken'?'overdue':'active'}">${p.type==='broken'?t('promise.broken'):p.type==='today'?t('promise.today'):t('promise.upcoming')}</span> ${esc(d.promiseDate)}${d.promiseAmount?' · '+currency(d.promiseAmount):''}` : esc(t('promise.none'));
+}
+document.getElementById('dr_savePromise').addEventListener('click', ()=>{
+  if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
+  const d=debtors.find(x=>x.id===activeDebtorId); if(!d) return;
+  const date=document.getElementById('dr_promiseDate').value;
+  if(!date){ toast(t('promise.needDate')); return; }
+  const amt=parseFloat(document.getElementById('dr_promiseAmount').value);
+  d.promiseDate=date; d.promiseAmount=amt>0?amt:0;
+  addAudit('promise',`${d.name}: ${date}${d.promiseAmount?' · '+d.promiseAmount:''}`).catch(()=>{});
+  toast(t('promise.saved')); renderPromiseBox(d); renderAll();
+});
+document.getElementById('dr_clearPromise').addEventListener('click', ()=>{
+  if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
+  const d=debtors.find(x=>x.id===activeDebtorId); if(!d) return;
+  d.promiseDate=''; d.promiseAmount=0;
+  addAudit('promise_clear',d.name).catch(()=>{});
+  toast(t('promise.cleared')); renderPromiseBox(d); renderAll();
+});
+
+// ---- Full backup (admin only): downloads every table as one JSON file; nothing is kept in the browser ----
+async function fetchAllRows(table){
+  const out=[];
+  for(let from=0;;from+=1000){
+    const {data,error}=await supabaseClient.from(table).select('*').range(from,from+999);
+    if(error) throw error;
+    out.push(...data); if(data.length<1000) break;
+  }
+  return out;
+}
+document.getElementById('backupBtn').addEventListener('click', async ()=>{
+  const en=currentLang==='en';
+  if(currentUser?.role!=='admin'){ toast(en?'Only an admin can do this':'هذا الإجراء للمدير فقط'); return; }
+  const btn=document.getElementById('backupBtn'); btn.disabled=true;
+  try{
+    const backup={app:'daftar',created:new Date().toISOString(),by:currentUser.username,tables:{}};
+    for(const tb of ['debtors','debtors_activity','reps','quotations','quotations_activity','quotation_files','audit_log']) backup.tables[tb]=await fetchAllRows(tb);
+    const {data:s,error:sErr}=await supabaseClient.from('app_settings').select('*').eq('id',1);   // row 2 (API keys) is deliberately excluded
+    if(sErr) throw sErr; backup.tables.app_settings=s||[];
+    const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([JSON.stringify(backup,null,1)],{type:'application/json'}));
+    link.download=`daftar-backup-${todayISO()}.json`; document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+    addAudit('backup').catch(()=>{}); toast(t('backup.done'));
+  }catch(err){ console.warn('Backup failed:',err); toast(t('backup.failed')); }
+  finally{ btn.disabled=false; }
 });
 document.getElementById('dr_addPayment').addEventListener('click', ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
@@ -3328,7 +3402,7 @@ function openRepDrawer(id){
   const listEl = document.getElementById('rd_cases_list');
   listEl.innerHTML = st.cases.length ? st.cases.map(d=>`
     <div class="log-entry" style="cursor:pointer" data-goto="${d.id}">
-      <div class="top"><b>${esc(d.name)}</b><span class="badge ${statusOf(d)}">${statusLabel(statusOf(d))}</span></div>
+      <div class="top"><b>${esc(d.name)}</b><span class="badge ${statusOf(d)}">${statusLabel(statusOf(d))}</span>${promiseBadge(d)}</div>
       <div class="note">${currentLang==='en'?'Remaining':'المتبقي'}: <span class="figures">${fmt(remaining(d))}</span> ${currentLang==='en'?'QAR':'ر.ق'}</div>
     </div>`).join('') : `<div style="color:var(--muted); font-size:12.5px; padding:10px 0">${t('msg.noCases')}</div>`;
   listEl.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click', ()=>{
@@ -3902,7 +3976,7 @@ function renderDebtorsTable(){
       <td class="figures">${fmt(d.total)}</td>
       <td class="figures">${fmt(d.paid)}</td>
       <td class="figures">${fmt(remaining(d))}</td>
-      <td><span class="badge ${statusOf(d)}">${statusLabel(statusOf(d))}</span></td>
+      <td><span class="badge ${statusOf(d)}">${statusLabel(statusOf(d))}</span>${promiseBadge(d)}</td>
       <td style="color:${repName?'var(--ink)':'var(--muted)'}">${repName?esc(repName.name):t('drawer.noRep')}</td>
       ${notesTd(d)}
       <td>${d.expectedPaymentDate||'—'}</td>

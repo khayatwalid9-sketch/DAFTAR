@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.2 — Promise to pay + backup
+- Promise to pay (وعد الدفع): one open promise per debtor (date + amount) in the debtor drawer; badge in the debtors table/cards (upcoming / today / broken); bell notifications for promises due today and broken ones. A promise stops counting once the debtor is fully paid.
+- Admin-only full backup: Settings › Backup downloads every table as one JSON file (API-key row excluded). Nothing is stored in the browser.
+- **Run `supabase/promise-to-pay-migration.sql` BEFORE deploying v3.2** (adds `promise_date`, `promise_amount` to `debtors`; without it saving debtors fails).
+- Not done: conflict detection / live refresh, ES-module split of `app.js`, integer-money storage, scheduled reports.
+
 ## v3.1 — Deployment fixes
 - `fonts/fonts.css`: font URLs were relative to the CSS file (`/fonts/fonts/…`, 404); now correct.
 - Login screen shows a specific message when `vendor/` is missing from the deployment instead of the generic "cloud database unavailable".

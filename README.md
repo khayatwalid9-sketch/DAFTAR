@@ -21,7 +21,8 @@ Static web app + Supabase (Auth, Postgres with Row Level Security, Storage, one 
    supabase secrets set AUTH_EMAIL_DOMAIN=daftar-auth.app ALLOWED_ORIGIN=https://your-app.vercel.app
    ```
 6. **الإعدادات:** حدّث `supabase-config.js` (url و anonKey). نطاق البريد `emailDomain` يجب أن يطابق `AUTH_EMAIL_DOMAIN`.
-7. انشر على Vercel (`vercel.json` يضبط CSP وبقية ترويسات الأمان). بعد التأكد أن كل شيء يعمل: `drop table public.users;` (القسم 7).
+7. شغّل أيضًا `supabase/promise-to-pay-migration.sql` (وعود الدفع) **قبل** النشر.
+8. انشر على Vercel (`vercel.json` يضبط CSP وبقية ترويسات الأمان). بعد التأكد أن كل شيء يعمل: `drop table public.users;` (القسم 7).
 
 > اسم المستخدم يُحوَّل داخليًا إلى بريد (`username@emailDomain`) — لا تُرسل أي رسائل بريد. أنشئ بقية المستخدمين من الإعدادات › المستخدمون (تمر عبر الدالة؛ مفتاح service_role لا يصل للمتصفح أبدًا).
 
