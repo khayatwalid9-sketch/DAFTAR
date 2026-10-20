@@ -224,7 +224,7 @@ document.getElementById('loginBtn').addEventListener('click',async()=>{
   const wait=Math.ceil((loginLockedUntil-Date.now())/1000);
   if(wait>0){ errEl.textContent=en?`Too many attempts. Try again in ${wait}s`:`محاولات كثيرة. حاول بعد ${wait} ثانية`; return; }
   if(!user||!pass){ errEl.textContent=en?'Enter username and password':'أدخل اسم المستخدم وكلمة المرور'; return; }
-  if(!supabaseClient){ errEl.textContent=en?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة'; return; }
+  if(!supabaseClient){ errEl.textContent=(typeof window.supabase==='undefined')?(en?'App files are missing from the server (vendor/ folder). Re-deploy the full project.':'ملفات التطبيق ناقصة على الخادم (مجلد vendor). أعد نشر المشروع كاملًا.'):(en?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة'); return; }
   const btn=document.getElementById('loginBtn'); btn.disabled=true;
   try{
     const {data,error}=await supabaseClient.auth.signInWithPassword({email:usernameToEmail(user),password:pass});

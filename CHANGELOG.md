@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1 — Deployment fixes
+- `fonts/fonts.css`: font URLs were relative to the CSS file (`/fonts/fonts/…`, 404); now correct.
+- Login screen shows a specific message when `vendor/` is missing from the deployment instead of the generic "cloud database unavailable".
+- Deploy the WHOLE folder (including `vendor/` and `fonts/`): `script-src 'self'` means nothing is loaded from a CDN.
+
 ## v3 — Security, no-browser-storage, brand redesign
 **Security**
 - Real auth: Supabase Auth + Row Level Security (`supabase/secure-auth-migration.sql`); plaintext `users.password` and every `using (true)` policy removed; anon key sees nothing.
