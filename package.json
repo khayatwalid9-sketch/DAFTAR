@@ -2,6 +2,9 @@
   "name": "daftar-debt-collection",
   "private": true,
   "scripts": {
-    "test": "node tests/app.test.js"
+    "test": "node --test tests/behavior.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
   }
 }

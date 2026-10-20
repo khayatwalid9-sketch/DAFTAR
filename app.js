@@ -1,198 +1,32 @@
 
 // ============== DATA ==============
 const IMAGE_PATH = '305922021_523349173131481_1401793005313797692_n.jpg';
-let currentLang = localStorage.getItem('daftar_language') || 'ar';
+let currentLang = 'ar';
+// Nothing is ever written to localStorage / sessionStorage / cookies / IndexedDB.
+// Preferences live in the database (per user); everything else lives in memory only.
+let lastWeeklyReport = null;
+let dueNotified = false;
+let dataLoaded = false;          // sync is blocked until a real load from the server succeeded
+let _suppressPrefSave = false;
 
 // ============== SUPABASE CLIENT ==============
 let supabaseClient = null;
 try {
   if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
-    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    // Session is held in memory only (no localStorage). A page refresh requires signing in again.
+    const memoryAuthStorage = (()=>{ const m=new Map(); return {
+      getItem:k=>m.has(k)?m.get(k):null, setItem:(k,v)=>{m.set(k,String(v));}, removeItem:k=>{m.delete(k);} }; })();
+    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+      auth:{ persistSession:false, autoRefreshToken:true, detectSessionInUrl:false, storage:memoryAuthStorage }
+    });
   }
 } catch (e) {
   console.warn('Supabase client initialization failed:', e);
 }
 
-// Page titles for English mode
-const EN_TITLES = {
-  dashboard:['Dashboard','Overview of collection status today'], 
-  debtors:['Debtors','Manage all debtor files'], 
-  reps:['Collectors','Field collection team and performance'],
-  payments:['Payment log','All recorded payments'], 
-  followups:['Follow-ups','Calls and visits log'], 
-  quotations:['Quotations','Track price quotations sent to client companies'],
-  aging:['Debt aging','Overdue classification by 30/60/90 days'], 
-  reports:['Reports','Financial summary and case analysis'], 
-  settings:['Settings','Backup and system data management']
-};
+// (EN_TITLES and the base `translations` dictionary now live in i18n.js)
 
-// Translation dictionary for internationalization
-const translations = {
-  'brand.subtitle':['نظام تحصيل الديون','Debt collection system'],'notifications.title':['الإشعارات','Notifications'],'notifications.none':['لا توجد إشعارات جديدة','No new notifications'],'notifications.overdue':['متأخر','Overdue'],'notifications.dueToday':['مستحق اليوم','Due today'],'notifications.dueSoon':['استحقاق قريب','Due soon'],'theme.darkMode':['الوضع الليلي','Dark mode'],'theme.lightMode':['الوضع الفاتح','Light mode'],
-  'nav.dashboard':['لوحة التحكم','Dashboard'],'nav.debtors':['المدينون','Debtors'],'nav.reps':['المندوبون','Collectors'],'nav.payments':['سجل السداد','Payments'],'nav.followups':['المتابعات','Follow-ups'],'nav.aging':['أعمار الديون','Debt aging'],'nav.reports':['التقارير','Reports'],'nav.settings':['الإعدادات','Settings'],'nav.logout':['تسجيل الخروج','Log out'],
-  'topbar.addDebtor':['+ إضافة مدين','+ Add debtor'],'topbar.search':['بحث عن مدين، هاتف...','Search debtor or phone...'],
-  'topbar.printPage':['🖶 طباعة الصفحة','🖶 Print page'],'topbar.downloadPagePdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'modal.addDebtor':['إضافة مدين جديد','Add debtor'],'modal.editDebtor':['تعديل بيانات المدين','Edit debtor'],'modal.saveDebtor':['حفظ المدين','Save debtor'],'modal.saveChanges':['حفظ التعديلات','Save changes'],'modal.cancel':['إلغاء','Cancel'],'modal.save':['حفظ','Save'],'modal.fullName':['الاسم الكامل','Full name'],'modal.fullNamePh':['مثال: محمد عبدالله السويدي','e.g. John Smith'],'modal.companyName':['اسم الشركة','Company name'],'modal.companyNamePh':['مثال: شركة الخليج','e.g. Gulf Trading'],'modal.debtorType':['نوع المدين','Debtor type'],'modal.phone':['رقم الهاتف','Phone'],'modal.totalAmount':['إجمالي مبلغ الدين','Total debt'],'modal.dueDate':['تاريخ الاستحقاق','Due date'],'modal.expectedPaymentDate':['تاريخ الدفع المتوقع','Expected payment date'],'modal.paidUpfront':['مبلغ مسدد مسبقًا (اختياري)','Upfront payment (optional)'],'modal.assignedRep':['المندوب المسؤول (اختياري)','Assigned collector (optional)'],'modal.notesPh':['تفاصيل إضافية عن الحالة...','Additional case details...'],'modal.collectionMethod':['طريقة التحصيل','Payment method'],'modal.collectionDate':['تاريخ التحصيل','Payment date'],
-  'debtors.title':['قائمة المدينين','Debtors list'],'debtors.allTypes':['كل الأنواع','All types'],'debtors.individuals':['أفراد','Individuals'],'debtors.companies':['شركات','Companies'],'debtors.importExcel':['⭱ استيراد من إكسل','⭱ Import Excel'],'debtors.downloadTemplate':['⭳ نموذج الاستيراد','⭳ Import template'],'debtors.individual':['فرد','Individual'],'debtors.company':['شركة','Company'],'debtors.empty':['لا يوجد مدينون مطابقون لبحثك.','No matching debtors.'],
-  'status.active':['نشط','Active'],'status.overdue':['متأخر','Overdue'],'status.paid':['مسدد بالكامل','Paid'],
-  'th.name':['الاسم','Name'],'th.type':['النوع','Type'],'th.phone':['الهاتف','Phone'],'th.total':['إجمالي الدين','Total debt'],'th.paid':['المسدد','Paid'],'th.remaining':['المتبقي','Remaining'],'th.status':['الحالة','Status'],'th.rep':['المندوب','Collector'],'th.lastContact':['آخر تواصل','Last contact'],'th.actions':['إجراءات','Actions'],'th.notes':['ملاحظات','Notes'],'th.date':['التاريخ','Date'],'th.debtor':['المدين','Debtor'],'th.amountPaid':['المبلغ المسدد','Amount paid'],'th.method':['طريقة الدفع','Method'],'th.area':['المنطقة','Area'],'th.assignedCases':['الحالات المسندة','Assigned cases'],'th.collected':['المحصّل','Collected'],'th.rate':['نسبة الإنجاز','Completion rate'],'th.contactMethod':['طريقة التواصل','Contact method'],'th.outcome':['النتيجة','Outcome'],'th.due':['تاريخ الاستحقاق','Due date'],
-  'aging.title':['تقرير أعمار الديون التفصيلي','Detailed debt aging report'],'aging.print':['🖶 طباعة التقرير','🖶 Print report'],'aging.pdf':['⭳ تحميل PDF','⭳ Download PDF'],'aging.daysLate':['أيام التأخير','Days late'],'aging.bucket':['الفئة العمرية','Aging bucket'],'aging.b1':['1 – 30 يوم تأخير','1 - 30 days late'],'aging.b2':['31 – 60 يوم تأخير','31 - 60 days late'],'aging.b3':['61 – 90 يوم تأخير','61 - 90 days late'],'aging.b4':['أكثر من 90 يوم','Over 90 days'],'aging.empty':['لا توجد ديون متأخرة حاليًا — جميع الحالات ضمن موعدها.','No overdue debts currently.'],
-  'action.view':['عرض التفاصيل','View details'],'action.edit':['تعديل','Edit'],'action.delete':['حذف','Delete'],'confirm.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'drawer.noRep':['بدون مندوب','Unassigned'],'drawer.amount':['المبلغ','Amount'],'drawer.outcomePh':['النتيجة / الملاحظة','Outcome / note'],'drawer.add':['إضافة','Add'],'drawer.printStatement':['🖶 طباعة كشف حساب','🖶 Print statement'],'drawer.downloadPdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'login.title':['دفتر — تسجيل الدخول','Daftar - Sign in'],'login.sub':['الرجاء تسجيل الدخول للوصول إلى نظام تحصيل الديون','Sign in to access the debt collection system'],'login.user':['اسم المستخدم','Username'],'login.pass':['كلمة المرور','Password'],'login.btn':['دخول','Sign in'],
-  'toast.updated':['تم تحديث بيانات المدين','Debtor updated'],'toast.deleted':['تم حذف المدين','Debtor deleted'],'toast.needName':['الرجاء إدخال الاسم والمبلغ','Enter a name and amount'],'toast.needCompanyName':['الرجاء إدخال اسم الشركة والمبلغ','Enter a company name and amount'],'toast.debtorAdded':['تمت إضافة المدين بنجاح','Debtor added'],'toast.companyAdded':['تمت إضافة الشركة بنجاح','Company added'],
-  'method.cash':['نقدًا','Cash'],'method.cheque':['شيك','Cheque'],'method.transfer':['تحويل بنكي','Bank transfer'],'method.call':['اتصال هاتفي','Phone call'],'method.sms':['رسالة نصية','SMS'],'method.visit':['زيارة ميدانية','Field visit'],'method.email':['بريد إلكتروني','Email']
-};
-Object.assign(translations,{
-  'dash.monthlyTarget':['المستهدف الشهري','Monthly Target'],'dash.targetProgress':['تقدم الهدف','Target Progress'],'dash.collectionRate':['نسبة التحصيل','Collection Rate'],'dash.rateComparison':['مقارنة بالشهر الماضي','vs Last Month'],'dash.avgDaysToCollect':['متوسط أيام التحصيل','Avg Days to Collect'],'dash.daysTrend':['اتجاه الأيام','Days Trend'],
-  'integration.title':['التكامل الخارجي','External Integration'],
-  'integration.smsProvider':['مزود خدمة SMS','SMS Provider'],
-  'integration.none':['بدون','None'],
-  'integration.smsApiKey':['مفتاح API','API Key'],
-  'integration.emailProvider':['مزود خدمة البريد الإلكتروني','Email Provider'],
-  'integration.emailApiKey':['مفتاح API','API Key'],
-  'integration.testIntegration':['اختبار التكامل','Test Integration'],
-  'integration.testSuccess':['تم اختبار التكامل بنجاح','Integration test successful'],
-  'integration.testFailed':['فشل اختبار التكامل','Integration test failed'],
-  'automation.title':['الأتمتة والقواعد','Automation & Rules'],
-  'automation.autoFollowups':['إنشاء متابعات تلقائية للديون المتأخرة','Auto-create followups for overdue debts'],
-  'automation.autoReports':['إنشاء تقارير أسبوعية تلقائية','Auto-create weekly reports'],
-  'automation.smartReminders':['تنبيهات ذكية تعتمد على أنماط السداد','Smart reminders based on payment patterns'],
-  'automation.followupFrequency':['تكرار المتابعة التلقائية (أيام)','Auto followup frequency (days)'],
-  'automation.rulesApplied':['تم تطبيق قواعد الأتمتة','Automation rules applied'],
-  'compliance.title':['الامتثال القانوني','Legal Compliance'],
-  'compliance.dataRetention':['الالتزام بسياسة الاحتفاظ بالبيانات','Data Retention Policy'],
-  'compliance.gdprCompliance':['الامتثال للوائح حماية البيانات','GDPR Compliance'],
-  'compliance.auditTrail':['تفعيل سجل التدقيق الكامل','Full Audit Trail'],
-  'compliance.companyInfo':['معلومات الشركة للامتثال','Company Information for Compliance'],
-  'compliance.generateReport':['إنشاء تقرير الامتثال','Generate Compliance Report'],
-  'compliance.reportGenerated':['تم إنشاء تقرير الامتثال','Compliance report generated'],
-  'nav.footnote':['يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.','This system runs in your browser - data is saved on this device only.'],
-  'dash.totalDebts':['إجمالي الديون المسجلة','Total registered debts'],'dash.via':['عبر','Across'],'dash.file':['ملف تحصيل','collection files'],'dash.collected':['المبلغ المحصَّل','Collected amount'],'dash.ofTotal':['من الإجمالي','of total'],'dash.overdueTotal':['متأخرات قائمة','Outstanding overdue'],'dash.overdueCase':['حالة متأخرة','overdue cases'],'dash.activeCases':['حالات نشطة قيد المتابعة','Active cases'],'dash.needsFollow':['تحتاج متابعة مستمرة','Need ongoing follow-up'],'dash.companyDebts':['ديون الشركات','Company debts'],'dash.companyUnit':['شركة مدينة','companies'],'dash.individualDebts':['ديون الأفراد','Individual debts'],'dash.individualUnit':['فرد مدين','individuals'],'dash.topOverdue':['أعلى المدينين تأخرًا','Most overdue debtors'],'dash.recentActivity':['آخر المتابعات','Recent activity'],'dash.upcomingDue':['تنبيهات الاستحقاق القادمة','Upcoming due alerts'],'dash.quotFollowups':['متابعات عروض الأسعار (اليوم والمتأخرة)','Quotation follow-ups (today & overdue)'],
-  'debtors.allStatuses':['كل الحالات','All statuses'],'reps.count':['عدد المندوبين','Collectors'],'reps.workOn':['يعملون على ملفات التحصيل','Working on collection files'],'reps.collectedBy':['المحصَّل بواسطة المندوبين','Collected by collectors'],'reps.ofAssigned':['من إجمالي الحالات المسندة','of assigned cases'],'reps.unassigned':['حالات غير مسندة','Unassigned cases'],'reps.noRep':['مدينون بلا مندوب مسؤول','Debtors without a collector'],'reps.team':['فريق المندوبين','Collection team'],'reps.addRep':['+ إضافة مندوب','+ Add collector'],'reps.empty':['لا يوجد مندوبون مسجّلون بعد.','No collectors registered yet.'],'reps.rating':['التقييم','Rating'],'reps.monthlyReport':['التقرير الشهري للمندوبين','Monthly Collector Report'],'reps.excellent':['ممتاز','Excellent'],'reps.good':['جيد','Good'],'reps.average':['متوسط','Average'],'reps.poor':['ضعيف','Poor'],'payments.title':['سجل كل عمليات السداد','All payments'],'payments.empty':['لم يتم تسجيل أي عملية سداد بعد.','No payments recorded yet.'],'followups.title':['سجل المتابعات والاتصالات','Follow-up and contact log'],'followups.empty':['لم يتم تسجيل أي متابعة بعد.','No follow-ups recorded yet.'],
-  'reports.statusDist':['توزيع حالات المدينين','Debtor status distribution'],'reports.financialSummary':['ملخص مالي','Financial summary'],'reports.totalDebts':['إجمالي الديون','Total debts'],'reports.totalCollected':['إجمالي المحصَّل','Total collected'],'reports.totalRemaining':['إجمالي المتبقي','Total remaining'],'reports.collectionRate':['نسبة التحصيل','Collection rate'],'reports.paymentsCount':['عدد عمليات السداد','Payments count'],'reports.followupsCount':['عدد المتابعات المسجّلة','Follow-ups count'],
-  'reports.advanced':['التحليل المالي المتقدم','Advanced financial analysis'],'reports.averageDebt':['متوسط الدين','Average debt'],'reports.overdueRate':['نسبة المتأخرات','Overdue rate'],'reports.expectedMonthly':['المتوقع شهريًا','Expected monthly'],'reports.month':['الشهر','Month'],'reports.dueAmount':['مستحق','Due'],'reports.paidAmount':['محصل','Collected'],
-  'reports.title':['التقارير المالية','Financial reports'],'reports.print':['🖶 طباعة التقرير','🖶 Print report'],'reports.pdf':['⭳ تحميل PDF','⭳ Download PDF'],'reports.debtorsNotes':['المدينون والملاحظات','Debtors and notes'],
-  'settings.account':['بيانات تسجيل الدخول','Login details'],'settings.username':['اسم المستخدم','Username'],'settings.newPassword':['كلمة مرور جديدة (اتركها فارغة لعدم التغيير)','New password (leave blank to keep current)'],'settings.saveAccount':['حفظ بيانات الدخول','Save login details'],'settings.printWatermark':['شعار الطباعة','Print watermark'],'settings.printWatermarkDesc':['يظهر شعار الشركة تلقائيًا كخلفية شفافة في كل كشوفات الحساب والتقارير المطبوعة أو التي يتم تحميلها كملف PDF.','The company image appears as a transparent background on printed and PDF statements and reports.'],'settings.enableWatermark':['تفعيل شعار الخلفية عند الطباعة/التصدير','Enable watermark for printing/export'],'settings.dueAlerts':['تنبيهات الاستحقاق','Due alerts'],'settings.reminderDays':['تنبيه قبل تاريخ الاستحقاق بـ (أيام)','Alert before due date (days)'],'settings.enableNotif':['🔔 تفعيل تنبيهات المتصفح','🔔 Enable browser alerts'],'settings.notifOff':['تنبيهات المتصفح غير مفعّلة حاليًا.','Browser alerts are currently disabled.'],'settings.dataStorage':['حفظ البيانات','Data storage'],'settings.backup':['نسخ احتياطي','Backup'],'settings.exportBackup':['⭳ تصدير نسخة احتياطية (JSON)','⭳ Export backup (JSON)'],'settings.importBackup':['⭱ استيراد نسخة احتياطية','⭱ Import backup'],'settings.dangerZone':['منطقة الخطر','Danger zone'],'settings.clearAll':['مسح جميع البيانات المسجلة','Clear all data'],
-  'drawer.totalAssigned':['إجمالي المسند','Total assigned'],'drawer.repCases':['الحالات المسندة لهذا المندوب','Cases assigned to this collector'],'drawer.deleteRep':['حذف هذا المندوب','Delete collector'],'drawer.assignedRep':['المندوب المسؤول','Assigned collector'],'drawer.assignRep':['إسناد / تغيير المندوب','Assign / change collector'],'drawer.assign':['تعيين','Assign'],'drawer.recordPayment':['تسجيل دفعة سداد','Record payment'],'drawer.addFollow':['إضافة متابعة','Add follow-up'],'drawer.activityLog':['سجل النشاط','Activity log'],'drawer.deleteDebtor':['حذف هذا المدين نهائيًا','Delete debtor permanently'],'drawer.installmentPlan':['خطة الأقساط','Installment plan'],'drawer.editPaidTitle':['تعديل المبلغ المسدد','Edit total paid'],'drawer.editPaidPrompt':['أدخل إجمالي المبلغ المسدد الصحيح:','Enter the correct total paid amount:'],'drawer.editPaymentPrompt':['أدخل المبلغ الصحيح لهذه الدفعة:','Enter the correct amount for this payment:'],'drawer.deletePaymentConfirm':['هل أنت متأكد من حذف هذه الدفعة؟ سيتم خصم مبلغها من إجمالي المسدد.','Delete this payment? Its amount will be removed from the total paid.'],'msg.paidAdjusted':['تم تعديل المبلغ المسدد','Total paid updated'],'msg.paymentUpdated':['تم تعديل الدفعة','Payment updated'],'msg.paymentDeleted':['تم حذف الدفعة','Payment deleted'],'drawer.editDebtor':['✎ تعديل بيانات المدين','✎ Edit debtor info'],'drawer.editRep':['✎ تعديل بيانات المندوب','✎ Edit collector info'],'drawer.editFollowPrompt':['أدخل النص الصحيح للملاحظة:','Enter the correct note text:'],'drawer.deleteFollowConfirm':['هل أنت متأكد من حذف هذه المتابعة؟','Delete this follow-up?'],'msg.followUpdated':['تم تعديل المتابعة','Follow-up updated'],'msg.followDeleted':['تم حذف المتابعة','Follow-up deleted'],'modal.editRep':['تعديل بيانات المندوب','Edit collector'],'modal.companyNumber':['رقم الشركة','Company number'],'modal.crNumber':['رقم السجل التجاري','Commercial registration'],'modal.addRep':['إضافة مندوب جديد','Add collector'],'modal.repName':['اسم المندوب','Collector name'],'modal.repArea':['المنطقة المسؤول عنها','Assigned area'],'modal.saveRep':['حفظ المندوب','Save collector'],
-  'settings.users':['المستخدمون والصلاحيات','Users and permissions'],'settings.userName':['اسم المستخدم','Username'],'settings.userPassword':['كلمة المرور','Password'],'settings.userRole':['الدور','Role'],'settings.addUser':['إضافة مستخدم','Add user'],'settings.editPermsTitle':['صلاحيات المستخدم','User permissions'],'settings.userPermsHint':['الصفحات والصلاحيات المتاحة لهذا المستخدم (معبأة تلقائيا حسب الدور، ويمكن تعديلها)','Pages and capabilities available to this user (pre-filled from the role, and editable)'],'settings.security':['إعدادات الأمان','Security Settings'],'settings.autoLogout':['تسجيل خروج تلقائي بعد 30 دقيقة من عدم النشاط','Auto logout after 30 minutes of inactivity'],'settings.sessionTimeout':['تنبيه قبل انتهاء الجلسة بـ 5 دقائق','Alert 5 minutes before session timeout'],'settings.passwordMinLength':['الحد الأدنى لطول كلمة المرور','Minimum password length'],'settings.changeAdminPassword':['إعادة تعيين كلمة مرور مستخدم آخر','Reset a user password'],'settings.appearance':['المظهر','Appearance'],'settings.palette':['لون الواجهة','Interface color'],'settings.theme':['لون التمييز','Accent color'],'settings.sync':['مزامنة Supabase','Supabase sync'],'settings.syncNow':['مزامنة الآن','Sync now'],'settings.audit':['سجل التدقيق','Audit log'],
-  'role.admin':['مدير','Admin'],'role.collector':['مندوب','Collector'],'role.viewer':['مشاهد','Viewer'],'theme.gold':['ذهبي','Gold'],'theme.teal':['فيروزي','Teal'],'theme.blue':['أزرق','Blue'],'theme.rose':['وردي','Rose'],'theme.orange':['برتقالي','Orange'],'theme.purple':['بنفسجي','Purple'],'theme.green':['أخضر','Green'],'theme.custom':['لون مخصص...','Custom color...'],'theme.currentCustom':['لون مخصص','Custom color'],
-  'palette.navy':['أزرق بحري','Navy'],'palette.forest':['أخضر غامق','Forest'],'palette.burgundy':['عنابي','Burgundy'],'palette.charcoal':['رمادي فحمي','Charcoal'],'palette.purple':['بنفسجي','Purple'],'palette.teal':['زيتي','Teal'],'palette.midnight':['منتصف الليل','Midnight'],'palette.sunset':['غروب','Sunset'],'palette.lightNavy':['أزرق فاتح','Light Navy'],'palette.lightForest':['أخضر فاتح','Light Forest'],'palette.lightRose':['وردي فاتح','Light Rose'],'palette.lightLavender':['بنفسجي فاتح','Light Lavender'],'palette.lightPeach':['خوخي فاتح','Light Peach'],'palette.custom':['لون مخصص...','Custom color...'],'palette.currentCustom':['لون مخصص','Custom color'],
-  'modal.installments':['عدد الأقساط','Number of installments'],'modal.frequency':['دورية القسط','Installment frequency'],'frequency.monthly':['شهري','Monthly'],'frequency.quarterly':['ربع سنوي','Quarterly'],'frequency.weekly':['أسبوعي','Weekly'],
-  'msg.assign':['تم إسناد الحالة للمندوب','Case assigned to collector'],'msg.unassign':['تم إلغاء إسناد الحالة','Case unassigned'],'msg.paymentAdded':['تم تسجيل الدفعة وخصمها من إجمالي الدين','Payment recorded and deducted from total debt'],'msg.followAdded':['تم تسجيل المتابعة','Follow-up recorded'],'msg.deleteDebtor':['هل أنت متأكد من حذف هذا المدين نهائيًا؟','Delete this debtor permanently?'],'msg.debtorDeleted':['تم حذف المدين','Debtor deleted'],'msg.repRequired':['الرجاء إدخال اسم المندوب','Enter the collector name'],'msg.repDeleted':['تم حذف المندوب','Collector deleted'],'msg.invalidAmount':['أدخل مبلغًا صحيحًا','Enter a valid amount'],'msg.noCases':['لا توجد حالات مسندة لهذا المندوب.','No cases assigned to this collector.'],'msg.exported':['تم تصدير النسخة الاحتياطية','Backup exported'],'msg.imported':['تم استيراد النسخة الاحتياطية بنجاح','Backup imported'],'msg.clearConfirm':['هل أنت متأكد من مسح جميع البيانات المسجلة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.','Clear all saved data permanently? This cannot be undone.'],'msg.clearConfirm2':['تأكيد أخير: سيتم حذف كل المدينين والمندوبين وسجلات السداد والمتابعات. متابعة؟','Final confirmation: delete all debtors, collectors, payments and follow-ups?'],'msg.cleared':['تم مسح جميع البيانات المسجلة','All saved data cleared'],'msg.noUpcoming':['لا توجد ديون مستحقة خلال هذه الفترة.','No debts are due in this period.'],'msg.todayDue':['مستحق اليوم','Due today'],'msg.daysLeft':['متبقي','remaining'],'msg.days':['يوم','days'],'msg.printedOn':['تم إصدار هذا الكشف إلكترونيًا من نظام دفتر لإدارة تحصيل الديون بتاريخ','This statement was generated electronically by Daftar on'],'msg.debtorSignature':['توقيع المدين','Debtor signature'],'msg.collectorSignature':['توقيع المسؤول عن التحصيل','Collector signature'],'msg.originalBalance':['رصيد الدين الأصلي','Original debt balance'],'msg.payment':['دفعة سداد','Payment'],'msg.statement':['كشف حساب مدين','Debtor statement'],'msg.statementSystem':['دفتر — نظام إدارة تحصيل الديون','Daftar - Debt collection system'],'msg.issued':['تاريخ الإصدار','Issued'],'msg.statusLabel':['الحالة','Status'],'msg.debtorData':['بيانات المدين','Debtor details'],'msg.companyData':['بيانات الشركة','Company details'],'msg.accountSummary':['ملخص الحساب','Account summary'],'msg.name':['الاسم','Name'],'msg.phone':['الهاتف','Phone'],'msg.companyNumber':['رقم الشركة','Company number'],'msg.crNumber':['السجل التجاري','Commercial registration'],'msg.dueDate':['تاريخ الاستحقاق','Due date'],'msg.collector':['المندوب المسؤول','Assigned collector'],'msg.notes':['ملاحظات','Notes'],'msg.date':['التاريخ','Date'],'msg.description':['البيان','Description'],'msg.debit':['مدين (سداد)','Debit (payment)'],'msg.credit':['دائن (دين)','Credit (debt)'],'msg.balance':['الرصيد المتبقي','Remaining balance'],'msg.totalDebt':['إجمالي الدين','Total debt'],'msg.totalPaid':['إجمالي المسدد','Total paid'],'msg.remainingBalance':['الرصيد المتبقي','Remaining balance'],'msg.followups':['سجل المتابعات','Follow-ups'],'msg.notAssigned':['غير مسند','Unassigned'],
-  'audit.login':['تسجيل دخول','Login'],'audit.logout':['تسجيل خروج','Logout'],'audit.add_debtor':['إضافة مدين','Add debtor'],'audit.update_debtor':['تعديل مدين','Update debtor'],'audit.delete_debtor':['حذف مدين','Delete debtor'],'audit.add_payment':['تسجيل دفعة','Record payment'],'audit.add_followup':['إضافة متابعة','Add follow-up'],'audit.assign_rep':['إسناد مندوب','Assign collector'],'audit.unassign_rep':['إلغاء إسناد مندوب','Unassign collector'],'audit.add_rep':['إضافة مندوب','Add collector'],'audit.delete_rep':['حذف مندوب','Delete collector'],'audit.add_user':['إضافة مستخدم','Add user'],'audit.edit_user_perms':['تعديل صلاحيات مستخدم','Edit user permissions'],'audit.delete_user':['حذف مستخدم','Delete user'],'audit.link_user_rep':['ربط مستخدم بمندوب','Link user to collector'],'audit.save_auth':['تحديث بيانات الدخول','Update login details'],'audit.sync_supabaseClient':['مزامنة Supabase','Supabase sync'],'audit.theme_change':['تغيير لون النظام','Change system color'],'audit.palette_change':['تغيير لون الواجهة','Change interface color'],'audit.export_excel':['تصدير إكسل','Export Excel'],'audit.settings_change':['تغيير إعداد','Settings change'],'audit.export_backup':['تصدير نسخة احتياطية','Export backup'],'audit.import_backup':['استيراد نسخة احتياطية','Import backup'],'audit.clear_all_data':['مسح جميع البيانات','Clear all data'],
-  'settings.auditFilter':['تصفية حسب المستخدم أو الإجراء...','Filter by user or action...'],'settings.auditEmpty':['لا توجد نتائج مطابقة.','No matching results.'],'settings.linkRep':['ربط بمندوب','Link collector'],'settings.noLink':['بدون ربط','Not linked'],'settings.repRequiredForCollector':['هذا المستخدم مندوب — اربطه بملف مندوب ليرى حالاته فقط','This user is a collector — link them to a collector profile so they only see their own cases'],
-});
-Object.assign(translations,{
-  'nav.quotations':['عروض الأسعار','Quotations'],
-  'quot.title':['قائمة عروض الأسعار','Quotations list'],
-  'quot.search':['بحث باسم الشركة أو المسؤول...','Search by company or contact...'],
-  'quot.importExcel':['⭱ استيراد من إكسل','⭱ Import Excel'],
-  'quot.downloadTemplate':['⭳ نموذج الاستيراد','⭳ Import template'],
-  'quot.print':['🖶 طباعة القائمة','🖶 Print list'],
-  'quot.exportExcel':['⭳ تصدير إكسل','⭳ Export Excel'],
-  'quot.pdf':['⭳ تحميل PDF','⭳ Download PDF'],
-  'quot.add':['+ إضافة عرض سعر','+ Add quotation'],
-  'quot.addTitle':['إضافة عرض سعر جديد','Add new quotation'],
-  'quot.editTitle':['تعديل عرض السعر','Edit quotation'],
-  'quot.save':['حفظ عرض السعر','Save quotation'],
-  'quot.no':['م.','No.'],
-  'quot.time':['الوقت','Time'],
-  'quot.company':['اسم الشركة (العميل)','Company name (client)'],
-  'quot.companyPh':['مثال: شركة الخليج للمقاولات','e.g. Gulf Trading & Contracting'],
-  'quot.scope':['نشاط الشركة','Company activity'],
-  'quot.contact':['المسؤول','Contact person'],
-  'quot.mobile':['الجوال','Mobile'],
-  'quot.email':['البريد الإلكتروني','Email'],
-  'quot.amount':['قيمة العرض','Quotation value'],
-  'quot.quotationNo':['رقم عرض السعر','Quotation No.'],
-  'quot.quotationNoPh':['مثال: QTN-2026-00123','e.g. QTN-2026-00123'],
-  'quot.invoiceNo':['رقم الفاتورة','Invoice No.'],
-  'quot.projectNo':['رقم المشروع','Project No.'],
-  'quot.subject':['الموضوع','Subject'],
-  'quot.nextFollowup':['المتابعة القادمة','Next follow-up'],
-  'quot.requirement':['تفاصيل / متطلبات العميل','Details / client requirement'],
-  'quot.requirementPh':['تفاصيل النقاش مع العميل...','Discussion details with the client...'],
-  'quot.followupAction':['إجراء المتابعة / الخطوة القادمة','Follow-up action / next step'],
-  'quot.followupActionPh':['مثال: الاتصال يوم الأحد لتأكيد السعر','e.g. Call on Sunday to confirm pricing'],
-  'quot.empty':['لا توجد عروض أسعار مطابقة.','No matching quotations.'],
-  'quot.scope.mainContractor':['مقاول رئيسي','Main contractor'],
-  'quot.scope.subcontractor':['مقاول من الباطن','Subcontractor'],
-  'quot.scope.consultant':['استشاري','Consultant'],
-  'quot.scope.developer':['مطوّر / عميل مباشر','Developer / direct client'],
-  'quot.scope.supplier':['مورّد / مصنّع','Supplier / manufacturer'],
-  'quot.subject.quoteFollowup':['متابعة عرض سعر','Follow up quote'],
-  'quot.subject.newClient':['عميل مستهدف جديد','New target client'],
-  'quot.subject.payment':['متابعة دفعة','Payment follow-up'],
-  'quot.status.open':['مفتوح','Open'],
-  'quot.status.submitted':['تم تقديم العرض','Quotation submitted'],
-  'quot.status.followup':['بانتظار المتابعة','Follow-up required'],
-  'quot.status.paymentPending':['بانتظار الدفع','Payment pending'],
-  'quot.status.closed':['مغلق','Closed'],
-  'quot.editBtn':['✎ تعديل بيانات العرض','✎ Edit quotation'],
-  'quot.printOne':['🖶 طباعة تفاصيل العرض','🖶 Print quotation details'],
-  'quot.deleteBtn':['حذف عرض السعر نهائيًا','Delete quotation permanently'],
-  'quot.convertToDebtor':['➜ تحويل إلى ملف تحصيل','➜ Convert to collection file'],
-  'quot.addStatusUpdate':['إضافة تحديث يومي للحالة','Add daily status update'],
-  'quot.updateNotePh':['ملاحظة التحديث اليومي...','Daily update note...'],
-  'quot.statusLog':['سجل تحديثات الحالة','Status update log'],
-  'quot.reportTitle':['التقرير اليومي لعروض الأسعار','Daily quotations report'],
-  'quot.fromDate':['من تاريخ','From date'],
-  'quot.toDate':['إلى تاريخ','To date'],
-  'quot.generate':['إنشاء التقرير','Generate report'],
-  'quot.reportEmpty':['لا توجد تحديثات حالة مسجّلة خلال هذه الفترة.','No status updates recorded in this period.'],
-  'quot.confirmDelete':['هل أنت متأكد من حذف عرض السعر هذا نهائيًا؟','Delete this quotation permanently?'],
-  'quot.needCompany':['الرجاء إدخال اسم الشركة','Enter the company name'],
-  'quot.added':['تمت إضافة عرض السعر بنجاح','Quotation added'],
-  'quot.updated':['تم تحديث عرض السعر','Quotation updated'],
-  'quot.deleted':['تم حذف عرض السعر','Quotation deleted'],
-  'quot.updateAdded':['تم تسجيل تحديث الحالة','Status update recorded'],
-  'quot.needUpdateNote':['الرجاء إدخال ملاحظة أو اختيار حالة للتحديث','Enter a note or choose a status to log'],
-  'quot.noLog':['لا توجد تحديثات مسجّلة بعد.','No updates recorded yet.'],
-  'quot.imported':['تم استيراد بيانات عروض الأسعار','Quotation data imported'],
-  'quot.importFailed':['تعذّرت قراءة ملف Excel','Could not read the Excel file'],
-  'quot.importDoc':['⭱ استيراد مستند (PDF / صورة / Word)','⭱ Import document (PDF / image / Word)'],
-  'quot.reading':['جارٍ قراءة المستند واستخراج البيانات…','Reading the document and extracting data…'],
-  'quot.extracted':['تم استخراج البيانات — راجعها ثم احفظ','Data extracted — review it and save'],
-  'quot.readFailed':['تعذّر استخراج البيانات من المستند','Could not extract data from the document'],
-  'quot.reviewTitle':['مراجعة البيانات المستخرجة من المستند','Review data extracted from the document'],
-  'quot.extractedFrom':['تم استخراج البيانات تلقائيًا من الملف:','Data extracted automatically from:'],
-  'quot.uploading':['جارٍ رفع الملف إلى التخزين السحابي…','Uploading the file to cloud storage…'],
-  'quot.fileSaved':['تم حفظ عرض السعر والملف سحابيًا','Quotation and file saved to the cloud'],
-  'quot.fileFailed':['تعذّر رفع الملف إلى التخزين السحابي','Could not upload the file to cloud storage'],
-  'quot.attachments':['الملفات المرفقة','Attached files'],
-  'quot.attachFile':['⭱ إرفاق ملف','⭱ Attach file'],
-  'quot.noFiles':['لا توجد ملفات مرفقة بهذا العرض.','No files attached to this quotation.'],
-  'quot.viewFile':['👁 عرض','👁 View'],
-  'quot.printFile':['🖶 طباعة','🖶 Print'],
-  'quot.printOptions':['⚙ خيارات الطباعة','⚙ Print options'],
-  'quot.printOptionsTitle':['خيارات طباعة قائمة عروض الأسعار','Quotation list print options'],
-  'quot.printOptionsHint':['اختر الأعمدة التي تريد ظهورها في النسخة المطبوعة أو PDF. عمود "م." يظهر دائمًا.','Choose which columns appear in the printed/PDF version. The "No." column always shows.'],
-  'quot.selectAll':['تحديد الكل','Select all'],
-  'quot.selectNone':['إلغاء الكل','Select none'],
-  'quot.printNow':['🖶 طباعة الآن','🖶 Print now'],
-  'quot.visitReportTitle':['تقرير الزيارات اليومي للعملاء','Daily client visit report'],
-  'quot.visitReportDate':['تاريخ التقرير','Report date'],
-  'quot.salesInCharge':['مسؤول المبيعات','Sales in-charge'],
-  'quot.salesInChargePh':['اسم مسؤول المبيعات','Sales representative name'],
-  'quot.areaRoute':['المنطقة / خط السير','Area / route'],
-  'quot.areaRoutePh':['مثال: الدوحة','e.g. Doha'],
-  'quot.visitReportEmpty':['لا توجد زيارات مسجّلة في هذا التاريخ.','No visits recorded on this date.'],
-  'quot.reportPeriod':['الفترة','Period'],
-  'quot.reportDate':['التاريخ','Date'],
-  'quot.reportAreaRoute':['المنطقة / خط السير','Area / route'],
-  'quot.reportSalesInCharge':['مسؤول المبيعات','Sales in-charge'],
-  'quot.visitSummaryTitle':['ملخص الزيارات اليومي','Daily visit summary'],
-  'quot.totalVisits':['إجمالي عدد الزيارات','Total client visits'],
-  'quot.preparedBy':['إعداد / التوقيع','Prepared by / signature'],
-  'quot.reviewedBy':['مراجعة / مدير المبيعات','Reviewed by / sales manager'],
-  'quot.discussion':['النقاش / متطلبات العميل','Discussion / client requirement'],
-  'quot.statusRemarks':['الحالة / الملاحظات','Status / remarks'],
-  'quot.visitPurpose':['غرض الزيارة','Visit purpose'],
-  'audit.add_quotation':['إضافة عرض سعر','Add quotation'],
-  'audit.update_quotation':['تعديل عرض سعر','Update quotation'],
-  'audit.delete_quotation':['حذف عرض سعر','Delete quotation'],
-  'audit.quotation_status_update':['تحديث حالة عرض سعر','Quotation status update'],
-});
+
 function t(key){ const value=translations[key]; return value ? value[currentLang==='en'?1:0] : key; }
 // escape any user-supplied string before it is inserted into innerHTML, to avoid
 // broken layouts or script injection when names/notes/imported data contain HTML.
@@ -226,13 +60,13 @@ function applyLanguage(){
   document.getElementById('themeToggleBtn').setAttribute('aria-label',currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode'));
   renderNotifications();
 }
-document.getElementById('langArBtn').addEventListener('click',()=>{currentLang='ar';localStorage.setItem('daftar_language',currentLang);appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
-document.getElementById('langEnBtn').addEventListener('click',()=>{currentLang='en';localStorage.setItem('daftar_language',currentLang);appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
+document.getElementById('langArBtn').addEventListener('click',()=>{currentLang='ar';appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
+document.getElementById('langEnBtn').addEventListener('click',()=>{currentLang='en';appSettings.language=currentLang;saveSettings();applyLanguage();renderAll();});
 document.querySelectorAll('[data-login-lang]').forEach(button=>button.addEventListener('click',()=>{
-  currentLang=button.dataset.loginLang; localStorage.setItem('daftar_language',currentLang); appSettings.language=currentLang; saveSettings(); applyLanguage();
+  currentLang=button.dataset.loginLang;  appSettings.language=currentLang; saveSettings(); applyLanguage();
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
 }));
-let currentMode=localStorage.getItem('daftar_mode')||'dark';
+let currentMode='dark';
 let notifications=[];
 function getNotifications(){
   return scopedDebtors().filter(d=>remaining(d)>0).map(d=>{const diff=daysBetween(todayISO(),d.due);return diff<0?{type:'overdue',name:d.name,date:d.due}:diff===0?{type:'dueToday',name:d.name,date:d.due}:diff<=7?{type:'dueSoon',name:d.name,date:d.due}:null;}).filter(Boolean);
@@ -242,12 +76,11 @@ function renderNotifications(){
   count.textContent=list.length; count.style.display=list.length?'block':'none';
   panel.innerHTML=list.length?list.map(item=>`<div class="notification-item"><b>${esc(item.name)}</b> · ${t(`notifications.${item.type}`)}<small>${esc(item.date)}</small></div>`).join(''):`<div class="empty">${t('notifications.none')}</div>`;
 }
-function applyMode(){document.documentElement.dataset.mode=currentMode;document.getElementById('themeToggleBtn').textContent=currentMode==='dark'?'☼':'◐';document.getElementById('themeToggleBtn').title=currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode');localStorage.setItem('daftar_mode',currentMode);if(typeof appSettings!=='undefined'){appSettings.mode=currentMode;saveSettings();}}
+function applyMode(){document.documentElement.dataset.mode=currentMode;const tb=document.getElementById('themeToggleBtn');tb.innerHTML=`<svg class="i" aria-hidden="true"><use href="#i-${currentMode==='dark'?'sun':'moon'}"/></svg>`;const lbl=currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode');tb.title=lbl;tb.setAttribute('aria-label',lbl);if(typeof appSettings!=='undefined'){appSettings.mode=currentMode;saveSettings();}}
 document.getElementById('themeToggleBtn').addEventListener('click',()=>{currentMode=currentMode==='dark'?'light':'dark';applyMode();});
 document.getElementById('notificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('show'));
 document.getElementById('clearNotificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.remove('show'));
 
-const USERS_KEY = 'daftar_users_v1';
 const AUDIT_KEY = 'daftar_audit_v1';
 // Every page the sidebar can navigate to, used to build the per-user permission
 // checklist and to decide which nav links a signed-in user actually sees.
@@ -289,16 +122,35 @@ function loadUsers(){
 function loadAudit(){
   return [];
 }
-async function saveUsers(){
-  if (!supabaseClient) throw new Error('Supabase is not available');
-  const {error} = await supabaseClient.from('users').upsert(
-    users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null,permissions:user.permissions||null})),
-    {onConflict:'id'}
-  );
-  if(error) throw error;
+// ---- Supabase Auth helpers (usernames map to an internal e-mail; passwords never touch our tables) ----
+const AUTH_EMAIL_DOMAIN = (typeof SUPABASE_CONFIG!=='undefined' && SUPABASE_CONFIG.emailDomain) || 'daftar-auth.app';
+function usernameToEmail(username){   // MUST match the Edge Function
+  const u=String(username||'').trim().toLowerCase();
+  if(/^[a-z0-9._-]{1,48}$/.test(u)) return `${u}@${AUTH_EMAIL_DOMAIN}`;
+  const hex=[...new TextEncoder().encode(u)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `x-${hex}@${AUTH_EMAIL_DOMAIN}`;
+}
+function profileToUser(p){ return {id:p.id, username:p.username, role:p.role, repId:p.rep_id==null?undefined:p.rep_id, permissions:p.permissions||null}; }
+async function adminUsersCall(action, payload={}){
+  if(!supabaseClient) throw new Error('Supabase is not available');
+  const {data,error} = await supabaseClient.functions.invoke('admin-users',{body:{action,...payload}});
+  if(error){
+    let msg=error.message;
+    try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){}
+    throw new Error(msg);
+  }
+  if(data&&data.error) throw new Error(data.error);
+  return data;
+}
+function userErrToast(err){
+  const m=String(err&&err.message||'');
+  if(/already taken/i.test(m)) return toast(currentLang==='en'?'That username is already taken':'اسم المستخدم مستخدم بالفعل');
+  if(/Admins only|Forbidden/i.test(m)) return toast(currentLang==='en'?'Only an admin can do this':'هذا الإجراء للمدير فقط');
+  if(/last admin/i.test(m)) return toast(currentLang==='en'?'You cannot remove the last admin':'لا يمكن إزالة آخر مدير');
+  toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
 }
 async function addAudit(action,details=''){
-  auditLog.unshift({id:Date.now(),date:new Date().toISOString(),user:currentUser?.username||'system',action,details});
+  auditLog.unshift({id:Date.now()*1000+Math.floor(Math.random()*1000),date:new Date().toISOString(),user:currentUser?.username||'system',action,details});
   auditLog=auditLog.slice(0,500);
   if (!supabaseClient) throw new Error('Supabase is not available');
   const {error} = await supabaseClient.from('audit_log').insert({
@@ -329,65 +181,96 @@ function getAuth(){
 }
 function updateAuthUI(){
   const auth=getAuth(); document.getElementById('s_authUser').value=auth.username;
-  document.getElementById('loginScreen').style.display=sessionStorage.getItem('daftar_logged_in')==='1'?'none':'flex';
-  document.getElementById('sidebarUserLine').textContent=sessionStorage.getItem('daftar_logged_in')==='1' ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
+  document.getElementById('loginScreen').style.display=currentUser?'none':'flex';
+  document.getElementById('sidebarUserLine').textContent=currentUser ? `${currentLang==='en'?'Signed in as':'مسجل الدخول باسم'}: ${auth.username}` : '';
   document.querySelectorAll('[data-login-lang]').forEach(item=>item.classList.toggle('active',item.dataset.loginLang===currentLang));
-  // Restore the session by the SPECIFIC account id that logged in — not a fixed
-  // account name. Restoring "whoever is named X" regardless of who actually signed
-  // in is exactly what let every account collapse into one shared login before.
-  if(sessionStorage.getItem('daftar_logged_in')==='1' && !currentUser){
-    const savedId = sessionStorage.getItem('daftar_user_id');
-    currentUser = savedId ? (users.find(user=>String(user.id)===savedId) || null) : null;
-    if(!currentUser){ sessionStorage.removeItem('daftar_logged_in'); sessionStorage.removeItem('daftar_user_id'); }
-  }
 }
+const PREF_KEYS=['language','mode','theme','themeCustom','palette','paletteCustom','savedSearch'];
+const SECRET_KEYS=['smsApiKey','emailApiKey'];
+const DEFAULT_PREFS={language:'ar',mode:'dark',theme:'brand',themeCustom:'',palette:'brand',paletteCustom:'',savedSearch:null};
+function sharedSettings(){ const s={...appSettings}; PREF_KEYS.concat(SECRET_KEYS).forEach(k=>delete s[k]); return s; }
+function secretSettings(){ const s={}; SECRET_KEYS.forEach(k=>{ s[k]=appSettings[k]||''; }); return s; }
+function applyThemeFromSettings(){
+  applyTheme(appSettings.theme==='custom'&&appSettings.themeCustom?appSettings.themeCustom:(appSettings.theme||'brand'));
+  applyPalette(appSettings.palette==='custom'&&appSettings.paletteCustom?appSettings.paletteCustom:(appSettings.palette||'brand'));
+}
+function applyUserPrefs(prefs){
+  _suppressPrefSave=true;
+  try{
+    PREF_KEYS.forEach(k=>{ if(prefs&&prefs[k]!==undefined) appSettings[k]=prefs[k]; });
+    if(appSettings.language) currentLang=appSettings.language;
+    if(appSettings.mode) currentMode=appSettings.mode;
+    applyThemeFromSettings();
+  } finally { _suppressPrefSave=false; }
+}
+// Loads the signed-in user's profile, then ALL data (RLS decides what this user may see).
+async function startSession(userId){
+  const {data:profile,error}=await supabaseClient.from('profiles').select('id,username,role,rep_id,permissions,prefs').eq('id',userId).maybeSingle();
+  if(error||!profile) return false;
+  currentUser=profileToUser(profile);
+  const loaded=await loadState();
+  applyUserPrefs(profile.prefs||{});
+  applyLanguage(); applyMode(); updateAuthUI(); applyPermissions();
+  loadSavedSearch(); renderUsers(); renderAudit(); renderAll();
+  if(!loaded) toast(currentLang==='en'?'Could not load data from the cloud':'تعذّر تحميل البيانات من السحابة');
+  addAudit('login').catch(()=>{});
+  resetSessionTimer(); maybeSendDueNotifications();
+  return true;
+}
+let failedLogins=0, loginLockedUntil=0;
 document.getElementById('loginBtn').addEventListener('click',async()=>{
-  const user=document.getElementById('login_user').value.trim(); const pass=document.getElementById('login_pass').value; 
-  const {data:account,error} = supabaseClient ? await supabaseClient.from('users').select('id,username,password,role,rep_id,permissions').eq('username',user).eq('password',pass).maybeSingle() : {data:null,error:new Error('Supabase is not available')};
-  // Any matched account may sign in — not only one specific hardcoded username.
-  if(account){
-    currentUser={id:account.id,username:account.username,password:account.password,role:account.role,repId:account.rep_id,permissions:account.permissions||null};
-    sessionStorage.setItem('daftar_logged_in','1');
-    sessionStorage.setItem('daftar_user_id',String(currentUser.id));
-    document.getElementById('loginError').textContent='';
-    await addAudit('login');
-    updateAuthUI();
-    applyPermissions();
-    renderAll();
-  } else {
-    document.getElementById('loginError').textContent=error ? (currentLang==='en'?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة') : (currentLang==='en'?'Invalid username or password':'اسم المستخدم أو كلمة المرور غير صحيحة');
-  }
+  const errEl=document.getElementById('loginError'); const en=currentLang==='en';
+  const user=document.getElementById('login_user').value.trim(); const pass=document.getElementById('login_pass').value;
+  const wait=Math.ceil((loginLockedUntil-Date.now())/1000);
+  if(wait>0){ errEl.textContent=en?`Too many attempts. Try again in ${wait}s`:`محاولات كثيرة. حاول بعد ${wait} ثانية`; return; }
+  if(!user||!pass){ errEl.textContent=en?'Enter username and password':'أدخل اسم المستخدم وكلمة المرور'; return; }
+  if(!supabaseClient){ errEl.textContent=en?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة'; return; }
+  const btn=document.getElementById('loginBtn'); btn.disabled=true;
+  try{
+    const {data,error}=await supabaseClient.auth.signInWithPassword({email:usernameToEmail(user),password:pass});
+    if(error){
+      const network=!error.status||error.status>=500;
+      if(!network){ failedLogins++; if(failedLogins>=5){ loginLockedUntil=Date.now()+30000; failedLogins=0; } }
+      errEl.textContent=network?(en?'Cloud database is unavailable':'قاعدة البيانات السحابية غير متاحة'):(en?'Invalid username or password':'اسم المستخدم أو كلمة المرور غير صحيحة');
+      return;
+    }
+    failedLogins=0;
+    const ok=await startSession(data.user.id);
+    if(!ok){ await supabaseClient.auth.signOut(); errEl.textContent=en?'This account is not set up yet — contact the admin':'هذا الحساب غير مهيّأ بعد — تواصل مع المدير'; return; }
+    errEl.textContent=''; document.getElementById('login_pass').value='';
+  } finally { btn.disabled=false; }
 });
 document.getElementById('login_pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
-document.getElementById('logoutBtn').addEventListener('click',()=>{addAudit('logout');sessionStorage.removeItem('daftar_logged_in');sessionStorage.removeItem('daftar_user_id');currentUser=null;updateAuthUI();});
-// Self-service: change MY OWN username/password — works for any signed-in account,
-// admin included. (Previously this silently refused any value that didn't match one
-// hardcoded account, so nobody — not even the admin — could actually change it here.)
+// Sign out and reload so no data stays in memory or in the DOM.
+async function doLogout(){
+  try{ await addAudit('logout'); }catch(_){}
+  try{ await supabaseClient.auth.signOut(); }catch(_){}
+  location.reload();
+}
+document.getElementById('logoutBtn').addEventListener('click',doLogout);
+if(supabaseClient) supabaseClient.auth.onAuthStateChange(event=>{ if(event==='SIGNED_OUT' && currentUser) location.reload(); });
+// Self-service: change MY OWN username/password.
 document.getElementById('saveAuthBtn').addEventListener('click', async ()=>{
   if(!currentUser){ toast(currentLang==='en'?'You are not signed in':'لست مسجلًا للدخول'); return; }
   const username = document.getElementById('s_authUser').value.trim();
   const password = document.getElementById('s_authPass').value;
   if(!username){ toast(currentLang==='en'?'Username is required':'اسم المستخدم مطلوب'); return; }
-  if(password && password.length < (appSettings.passwordMinLength||6)){
-    toast(currentLang==='en'?`Password must be at least ${appSettings.passwordMinLength} characters`:`يجب ألا تقل كلمة المرور عن ${appSettings.passwordMinLength} أحرف`);
+  if(password && password.length < Math.max(8,appSettings.passwordMinLength||8)){
+    const n=Math.max(8,appSettings.passwordMinLength||8);
+    toast(currentLang==='en'?`Password must be at least ${n} characters`:`يجب ألا تقل كلمة المرور عن ${n} أحرف`);
     return;
   }
-  const usernameTaken = users.some(u=>u.id!==currentUser.id && u.username.toLowerCase()===username.toLowerCase());
-  if(usernameTaken){ toast(currentLang==='en'?'That username is already used by another account':'اسم المستخدم مستخدم بالفعل لحساب آخر'); return; }
-  const user = users.find(u=>u.id===currentUser.id);
-  if(!user){ toast(currentLang==='en'?'Account not found':'الحساب غير موجود'); return; }
-  user.username = username; if(password) user.password = password;
-  currentUser.username = username; if(password) currentUser.password = password;
   try{
-    await saveUsers();
+    if(username!==currentUser.username){
+      await adminUsersCall('update_profile',{user_id:currentUser.id,username});
+      currentUser.username=username; const u=users.find(x=>x.id===currentUser.id); if(u) u.username=username;
+    }
+    if(password) await adminUsersCall('set_password',{user_id:currentUser.id,password});
     document.getElementById('s_authPass').value='';
-    updateAuthUI();
+    updateAuthUI(); renderUsers();
     addAudit('save_auth', currentLang==='en'?'Own login credentials updated':'تحديث بيانات الدخول الخاصة');
     toast(currentLang==='en'?'Login details updated':'تم تحديث بيانات تسجيل الدخول');
-  }catch(err){
-    console.warn('Saving own credentials failed:', err);
-    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
-  }
+  }catch(err){ console.warn('Saving own credentials failed:', err); userErrToast(err); }
 });
 function applyPermissions(){
   const locked=!can('write');
@@ -401,6 +284,7 @@ function applyPermissions(){
   document.querySelectorAll('.nav-item[data-page]').forEach(item=>{
     item.style.display = canSeePage(item.dataset.page) ? 'flex' : 'none';
   });
+  document.querySelectorAll('.bnav-item[data-page]').forEach(b=>{ b.style.display = canSeePage(b.dataset.page) ? 'flex' : 'none'; });
   const assignBox=document.getElementById('dr_assignRepBox');
   if(assignBox) assignBox.style.display=(currentUser?.role==='admin')?'':'none';
   const assignTitle=document.getElementById('dr_assignRepTitle');
@@ -409,9 +293,8 @@ function applyPermissions(){
 // returns the subset of debtors the logged-in user is allowed to see.
 // Admins and viewers see everything; a collector only sees cases assigned to
 // the collector profile linked to their account (see renderUsers' rep-link control).
-// NOTE: this only filters what is *rendered* — since all data lives in the
-// browser's localStorage, a determined user could still inspect it via devtools.
-// Real access control requires a server (see the Supabase suggestion in README).
+// UX filter only. The real enforcement is Row Level Security in the database
+// (supabase/secure-auth-migration.sql) — a collector's session simply cannot read other rows.
 function scopedDebtors(){
   if(currentUser?.role==='collector'){
     if(!currentUser.repId) return [];
@@ -445,9 +328,10 @@ document.getElementById('addUserBtn').addEventListener('click',async()=>{
   const username=document.getElementById('u_name').value.trim();
   const password=document.getElementById('u_password').value;
   const role=document.getElementById('u_role').value;
+  const minLen=Math.max(8,appSettings.passwordMinLength||8);
   if(!username||!password){toast(currentLang==='en'?'Username and password are required':'اسم المستخدم وكلمة المرور مطلوبان');return;}
-  if(password.length < (appSettings.passwordMinLength||6)){
-    toast(currentLang==='en'?`Password must be at least ${appSettings.passwordMinLength} characters`:`يجب ألا تقل كلمة المرور عن ${appSettings.passwordMinLength} أحرف`);
+  if(password.length < minLen){
+    toast(currentLang==='en'?`Password must be at least ${minLen} characters`:`يجب ألا تقل كلمة المرور عن ${minLen} أحرف`);
     return;
   }
   if(users.some(u=>u.username.toLowerCase()===username.toLowerCase())){
@@ -456,19 +340,15 @@ document.getElementById('addUserBtn').addEventListener('click',async()=>{
   }
   const permsBox = document.getElementById('newUserPermsBox');
   const permissions = permsBox ? readPermsFromBox(permsBox) : ROLE_DEFAULT_PERMISSIONS[role];
-  users.push({id:Date.now(),username,password,role,permissions});
   try{
-    await saveUsers();
+    const res=await adminUsersCall('create',{username,password,role,permissions});
+    users.push(profileToUser(res.user));
     addAudit('add_user',`${username} (${roleLabel(role)})`);
     renderUsers();
     document.getElementById('u_name').value='';
     document.getElementById('u_password').value='';
     toast(currentLang==='en'?'User added':'تمت إضافة المستخدم');
-  }catch(err){
-    users.pop();
-    console.warn('Adding user failed:', err);
-    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
-  }
+  }catch(err){ console.warn('Adding user failed:', err); userErrToast(err); }
 });
 renderNewUserPermsBox();
 
@@ -485,17 +365,15 @@ function openEditUserPerms(userId){
 document.getElementById('editUserPermsSaveBtn')?.addEventListener('click', async ()=>{
   const user = users.find(u=>u.id===editingUserPermsId);
   if(!user) return;
-  user.permissions = readPermsFromBox(document.getElementById('editUserPermsBox'));
+  const permissions = readPermsFromBox(document.getElementById('editUserPermsBox'));
   try{
-    await saveUsers();
+    await adminUsersCall('update_profile',{user_id:user.id,permissions});
+    user.permissions = permissions;
     addAudit('edit_user_perms', user.username);
     document.getElementById('editUserPermsModal').classList.remove('show');
     toast(currentLang==='en'?'Permissions updated':'تم تحديث الصلاحيات');
     if(currentUser && currentUser.id===user.id){ currentUser.permissions = user.permissions; applyPermissions(); renderAll(); }
-  }catch(err){
-    console.warn('Saving user permissions failed:', err);
-    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
-  }
+  }catch(err){ console.warn('Saving user permissions failed:', err); userErrToast(err); }
 });
 
 function renderUsers(){const el=document.getElementById('usersList');if(!el)return;el.innerHTML=users.map(user=>{
@@ -504,15 +382,15 @@ function renderUsers(){const el=document.getElementById('usersList');if(!el)retu
       <option value="">${t('settings.noLink')}</option>
       ${reps.map(r=>`<option value="${r.id}" ${r.id===user.repId?'selected':''}>${esc(r.name)}</option>`).join('')}
     </select>` : '';
-  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}<button class="icon-btn" data-edit-user-perms="${user.id}" title="${t('settings.editPermsTitle')}">⚙</button>${user.id!==1?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}">✕</button>`:''}</div>`;
+  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}<button class="icon-btn" data-edit-user-perms="${user.id}" title="${t('settings.editPermsTitle')}">⚙</button>${user.id!==currentUser?.id?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}">✕</button>`:''}</div>`;
 }).join('');
   el.querySelectorAll('[data-remove-user]').forEach(button=>button.addEventListener('click',async ()=>{
-    const removedId = Number(button.dataset.removeUser);
+    const removedId = button.dataset.removeUser;
     const removed=users.find(u=>u.id===removedId);
     const prevUsers = users;
     users=users.filter(user=>user.id!==removedId);
     try{
-      if(supabaseClient){ const {error} = await supabaseClient.from('users').delete().eq('id', removedId); if(error) throw error; }
+      await adminUsersCall('delete',{user_id:removedId});
       addAudit('delete_user',removed?removed.username:button.dataset.removeUser);
       renderUsers();
     }catch(err){
@@ -522,20 +400,19 @@ function renderUsers(){const el=document.getElementById('usersList');if(!el)retu
     }
   }));
   el.querySelectorAll('[data-link-user]').forEach(select=>select.addEventListener('change', async ()=>{
-    const user=users.find(u=>u.id===Number(select.dataset.linkUser)); if(!user) return;
+    const user=users.find(u=>u.id===select.dataset.linkUser); if(!user) return;
     const repId=select.value?Number(select.value):null; const rep=reps.find(r=>r.id===repId);
-    user.repId=repId||undefined;
+    const prevRep=user.repId; user.repId=repId||undefined;
     try{
-      await saveUsers();
+      await adminUsersCall('update_profile',{user_id:user.id,rep_id:repId});
       addAudit('link_user_rep', `${user.username} → ${rep?rep.name:t('settings.noLink')}`);
       if(currentUser && currentUser.id===user.id) renderAll();
       toast(currentLang==='en'?'Collector link updated':'تم تحديث ربط المندوب');
     }catch(err){
-      console.warn('Linking user to rep failed:', err);
-      toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+      user.repId=prevRep; console.warn('Linking user to rep failed:', err); userErrToast(err);
     }
   }));
-  el.querySelectorAll('[data-edit-user-perms]').forEach(button=>button.addEventListener('click', ()=>openEditUserPerms(Number(button.dataset.editUserPerms))));
+  el.querySelectorAll('[data-edit-user-perms]').forEach(button=>button.addEventListener('click', ()=>openEditUserPerms(button.dataset.editUserPerms)));
 }
 function renderAudit(){
   const el=document.getElementById('auditList');if(!el)return;
@@ -545,51 +422,22 @@ function renderAudit(){
   el.innerHTML=filtered.slice(0,80).map(item=>`<div class="audit-row"><b>${esc(auditLabel(item.action))}</b><span>${esc(item.user)}</span>${item.details?`<small class="audit-detail">${esc(item.details)}</small>`:''}<time>${new Date(item.date).toLocaleString(currentLang==='en'?'en-US':'ar-QA')}</time></div>`).join('') || `<div class="empty">${q?t('settings.auditEmpty'):(currentLang==='en'?'No audit events yet.':'لا توجد أحداث بعد.')}</div>`;
 }
 
-let debtors = [
-  {id:1, name:"محمد عبدالله السويدي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5511 2233", total:45000, paid:15000, due:"2026-09-10", notes:"عميل تجاري - قسط شهري", log:[
-    {type:"follow", date:"2026-08-01", method:"اتصال هاتفي", note:"وعد بالسداد نهاية الشهر"},
-    {type:"payment", date:"2026-07-15", amount:5000, method:"تحويل بنكي"}
-  ]},
-  {id:2, name:"فاطمة أحمد المهندي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 5522 8891", total:12000, paid:12000, due:"2026-07-01", notes:"تم السداد بالكامل", log:[
-    {type:"payment", date:"2026-06-30", amount:12000, method:"نقدًا"}
-  ]},
-  {id:3, name:"يوسف خالد النعيمي", type:"individual", companyNumber:"", crNumber:"", phone:"+974 3344 5566", total:80000, paid:10000, due:"2026-06-01", notes:"متعثر - متابعة قانونية قيد الدرس", log:[
-    {type:"follow", date:"2026-08-10", method:"زيارة ميدانية", note:"لم يتم الوصول للعميل"},
-    {type:"follow", date:"2026-07-20", method:"اتصال هاتفي", note:"رفض الرد"}
-  ]},
-  {id:4, name:"شركة الخليج للمقاولات", type:"company", companyNumber:"CO-10452", crNumber:"128734", phone:"+974 4433 7788", total:220000, paid:120000, due:"2026-10-05", notes:"سداد على دفعات ربع سنوية", log:[
-    {type:"payment", date:"2026-08-01", amount:60000, method:"شيك"},
-    {type:"follow", date:"2026-07-25", method:"بريد إلكتروني", note:"تأكيد جدول السداد"}
-  ]},
-];
-let nextId = 5;
+let debtors = [];
+let nextId = 1;
 let activeDebtorId = null;
 let lastStatementHtml = '';
 
-let reps = [
-  {id:1, name:"أحمد سالم الكواري", phone:"+974 5566 1122", area:"الدوحة - الوسط"},
-  {id:2, name:"سارة محمد آل ثاني", phone:"+974 5577 3344", area:"الريان"},
-];
-let nextRepId = 3;
+let reps = [];
+let nextRepId = 1;
 let activeRepId = null;
 
-// assign existing sample debtors to reps
-debtors[0].repId = 1;
-debtors[2].repId = 1;
-debtors[3].repId = 2;
-
 // ============== QUOTATIONS (عروض الأسعار) ==============
-let quotations = [
-  {id:1, date:"2026-08-25", visitTime:"12:00", companyName:"شركة الخليج للمقاولات", companyScope:"mainContractor", contactPerson:"م. أحمد", mobile:"+974 5511 2233", email:"purchase@gulf-example.com", amount:85000, quotationNo:"QTN-2026-00123", invoiceNo:"", projectNo:"", subject:"quoteFollowup", nextFollowup:"2026-09-08", status:"submitted", requirement:"طلبوا عرض سعر لتوريد مواد المشروع الجديد.", followupAction:"الاتصال لتأكيد استلام العرض ومناقشة الأسعار.", notes:"", log:[
-    {id:1, date:"2026-08-25", status:"submitted", note:"تم إرسال عرض السعر عبر البريد الإلكتروني."}
-  ]},
-];
-let nextQuotationId = 2;
-let nextQuotationLogId = 2;
+let quotations = [];
+let nextQuotationId = 1;
+let nextQuotationLogId = 1;
 let activeQuotationId = null;
 
 // ============== PERSISTENCE ==============
-const STORAGE_KEY = 'daftar_debt_system_v1';
 
 // Supabase sync functions
 let syncInProgress = null;
@@ -611,7 +459,7 @@ let _saveDebounceTimer = null;
 // fingerprint differs from the last successful sync there is nothing to upload.
 let lastSyncedSignature = null;
 function dataSignature(){
-  try{ return JSON.stringify([debtors, quotations, reps, users, auditLog, appSettings]); }
+  try{ return JSON.stringify([debtors, quotations, reps, sharedSettings(), secretSettings()]); }
   catch(e){ return String(Date.now()); }   // unserialisable -> always treat as dirty
 }
 function hasUnsyncedChanges(){ return dataSignature() !== lastSyncedSignature; }
@@ -642,27 +490,46 @@ function debounce(fn, delay = 200){
 // cascade would silently wipe its attachments even though the quotation itself looks
 // unchanged afterwards. Callers that already delete explicitly (see deleteQuotation)
 // should pass pruneOrphans=false.
+// ---- Row-level sync ---------------------------------------------------------------
+// The old version re-uploaded every row and deleted any server row missing from the local
+// list — so a stale session could overwrite or DELETE rows another user had just added.
+// Now we remember what this session loaded / last saved (per table, per id) and send only:
+//   • rows that are new or changed since then (upsert), and
+//   • rows this session itself removed (delete by id).
+// Rows we never saw are never touched.
+const _synced = {};   // table -> Map(idString -> {json, id})
+function snapshotRows(table, rows, key='id'){
+  _synced[table] = new Map(rows.map(r=>[String(r[key]), {json:JSON.stringify(r), id:r[key]}]));
+}
+function buildSyncRows(){
+  return {
+    debtors: debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null})),
+    debtors_activity: debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null}))),
+    reps: reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})),
+    quotations: quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''})),
+    quotations_activity: quotations.flatMap(q=>(q.log||[]).map(entry=>({id:entry.id,quotation_id:q.id,log_date:entry.date,status:entry.status||'',note:entry.note||''})))
+  };
+}
+function snapshotAllFromMemory(){ const r=buildSyncRows(); Object.keys(r).forEach(tbl=>snapshotRows(tbl,r[tbl])); }
+// pruneOrphans=true also deletes rows THIS session removed. Pass false for tables with their own
+// delete path (quotations: cascade to attachments).
 async function replaceTable(table, rows, key='id', pruneOrphans=true) {
-  if(pruneOrphans){
-    const { data: existing, error: readError } = await supabaseClient.from(table).select(key);
-    if(readError){ readError.message = `[${table}] ${readError.message||''}`; throw readError; }
-    const ids = new Set(rows.map(row=>String(row[key])));
-    // Bulk-delete every orphan in ONE request instead of one DELETE per row.
-    // The previous per-row loop meant a sync with, say, 40 removed debtors fired
-    // 40 sequential network round-trips just for pruning — this does it in one.
-    const orphanIds = (existing || [])
-      .filter(row=>!ids.has(String(row[key])))
-      .map(row=>row[key]);
-    if(orphanIds.length){
-      console.info(`replaceTable: pruning ${orphanIds.length} row(s) from ${table} (not present in the current local list)`);
-      const { error } = await supabaseClient.from(table).delete().in(key, orphanIds);
-      if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
-    }
-  }
-  if(rows.length) {
-    const { error } = await supabaseClient.from(table).upsert(rows, {onConflict:key});
+  const prev = _synced[table] || new Map();
+  const changed = rows.filter(r=>{ const p=prev.get(String(r[key])); return !p || p.json!==JSON.stringify(r); });
+  const current = new Set(rows.map(r=>String(r[key])));
+  const removed = pruneOrphans ? [...prev.entries()].filter(([id])=>!current.has(id)).map(([,v])=>v.id) : [];
+  if(removed.length){
+    const { error } = await supabaseClient.from(table).delete().in(key, removed);
     if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
   }
+  if(changed.length){
+    const { error } = await supabaseClient.from(table).upsert(changed, {onConflict:key});
+    if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
+  }
+  const next = new Map(prev);
+  removed.forEach(id=>next.delete(String(id)));
+  changed.forEach(r=>next.set(String(r[key]), {json:JSON.stringify(r), id:r[key]}));
+  _synced[table] = next;
 }
 async function syncToSupabase() {
   if (!supabaseClient) {
@@ -670,25 +537,29 @@ async function syncToSupabase() {
     setSaveStatus('offline');
     return false;
   }
+  if (!currentUser || !dataLoaded) return false;     // never write before a successful load (could wipe server data)
+  const isAdmin = currentUser.role==='admin';
+  if (!can('write') && !isAdmin) { lastSyncedSignature = dataSignature(); setSaveStatus('saved'); return true; }
   if (syncInProgress) { syncQueued = true; return syncInProgress; }
   syncInProgress = (async()=>{
     const signatureAtStart = dataSignature();
     setSaveStatus('saving');
     try {
       console.info('Starting Supabase sync', { debtors: debtors.length, quotations: quotations.length, reps: reps.length });
-      const debtorRows = debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null}));
-      const activityRows = debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null})));
-      await replaceTable('debtors', debtorRows);
-      await replaceTable('debtors_activity', activityRows);
-      await replaceTable('reps', reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})));
-      const quotationRows = quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''}));
-      const quotationLogRows = quotations.flatMap(q=>(q.log||[]).map(entry=>({id:entry.id,quotation_id:q.id,log_date:entry.date,status:entry.status||'',note:entry.note||''})));
-      await replaceTable('quotations', quotationRows, 'id', false);
-      await replaceTable('quotations_activity', quotationLogRows, 'id', false);
-      await replaceTable('users', users.map(user=>({id:user.id,username:user.username,password:user.password,role:user.role,rep_id:user.repId||null})));
-      await replaceTable('audit_log', auditLog.map(audit=>({id:audit.id,date:audit.date,user:audit.user,action:audit.action,details:audit.details||''})));
-      const { error: settingsError } = await supabaseClient.from('app_settings').upsert({id:1,settings:appSettings,updated_at:new Date().toISOString()},{onConflict:'id'});
-      if(settingsError) throw settingsError;
+      const built = buildSyncRows();
+      await replaceTable('debtors', built.debtors, 'id', can('delete'));
+      await replaceTable('debtors_activity', built.debtors_activity, 'id', can('write'));
+      if(isAdmin) await replaceTable('reps', built.reps);
+      await replaceTable('quotations', built.quotations, 'id', false);
+      await replaceTable('quotations_activity', built.quotations_activity, 'id', false);
+      if(isAdmin){
+        const now = new Date().toISOString();
+        const { error: settingsError } = await supabaseClient.from('app_settings').upsert([
+          {id:1,settings:sharedSettings(),updated_at:now},
+          {id:2,settings:secretSettings(),updated_at:now}   // API keys: row readable by admins only (RLS)
+        ],{onConflict:'id'});
+        if(settingsError) throw settingsError;
+      }
       console.info('Supabase sync succeeded');
       lastSyncError = null;
       lastSyncedSignature = signatureAtStart;
@@ -741,37 +612,12 @@ async function loadFromSupabase() {
       .select('*');
     if (quotationsActivityError) throw quotationsActivityError;
     
-    // One-time safety net: if the users table is completely empty (a fresh install),
-    // create a single admin account so the system isn't locked out. This runs only
-    // when there are truly zero users, and it never touches an existing account.
-    // The PREVIOUS version of this code force-reset one specific hardcoded username's
-    // password back to a fixed value on every single page load, regardless of any
-    // change made in Settings — combined with that same password being shown in plain
-    // text on the public login screen, this was a serious, unintentional backdoor.
-    const { count: usersCount, error: usersCountError } = await supabaseClient
-      .from('users')
-      .select('id', {count:'exact', head:true});
-    if(usersCountError) throw usersCountError;
-    if(!usersCount){
-      const bootstrapPassword = 'Admin' + Math.random().toString(36).slice(2,8) + '!';
-      const { error } = await supabaseClient.from('users').insert({
-        id:1, username:'admin', password:bootstrapPassword, role:'admin', permissions:ROLE_DEFAULT_PERMISSIONS.admin
-      });
-      if(error) throw error;
-      setTimeout(()=>alert(
-        (currentLang==='en'
-          ? `First run: an admin account was created.\nUsername: admin\nPassword: ${bootstrapPassword}\n\nPlease sign in and change this password immediately from Settings — this message will not be shown again.`
-          : `أول تشغيل: تم إنشاء حساب مدير.\nاسم المستخدم: admin\nكلمة المرور: ${bootstrapPassword}\n\nالرجاء تسجيل الدخول وتغيير كلمة المرور فورًا من الإعدادات — لن تظهر هذه الرسالة مرة أخرى.`)
-      ), 300);
-    }
-
-    // Load users from the cloud
+    // Profiles: an admin sees everyone, anyone else sees only their own row (RLS).
     const { data: usersData, error: usersError } = await supabaseClient
-      .from('users')
-      .select('*');
-    
+      .from('profiles')
+      .select('id,username,role,rep_id,permissions');
     if (usersError) throw usersError;
-    
+
     // Load audit log
     const { data: auditData, error: auditError } = await supabaseClient
       .from('audit_log')
@@ -836,15 +682,8 @@ async function loadFromSupabase() {
     nextQuotationLogId = Math.max(0, ...quotations.flatMap(q => (q.log||[]).map(l => Number(l.id)||0))) + 1;
     
     // Map users
-    users = (usersData || []).map(u => ({
-        id: u.id,
-        username: u.username,
-        password: u.password,
-        role: u.role,
-        repId: u.rep_id,
-        permissions: u.permissions || null
-      }));
-    
+    users = (usersData || []).map(profileToUser);
+
     // Map audit log
     auditLog = (auditData || []).map(a => ({
         id: a.id,
@@ -854,17 +693,22 @@ async function loadFromSupabase() {
         details: a.details
       }));
 
+    snapshotAllFromMemory();   // baseline = exactly what the server returned
+
     // Attachments are loaded separately and never wiped by replaceTable().
     await loadQuotationFiles();
 
-    const { data: settingsData, error: settingsError } = await supabaseClient
-      .from('app_settings').select('settings').eq('id',1).maybeSingle();
+    const { data: settingsRows, error: settingsError } = await supabaseClient
+      .from('app_settings').select('id,settings').in('id',[1,2]);
     if(settingsError) throw settingsError;
-    if(settingsData?.settings) appSettings = {...appSettings,...settingsData.settings};
-    
+    (settingsRows||[]).forEach(row=>{ if(row.settings) appSettings = {...appSettings,...row.settings}; });
+    // Appearance is per-user (profiles.prefs); ignore any legacy shared values.
+    ['language','mode','theme','themeCustom','palette','paletteCustom','savedSearch'].forEach(k=>{ appSettings[k]=DEFAULT_PREFS[k]; });
+
     // Make sure every paid amount has an entry in the payments register.
-    const unlogged = reconcileAllPaymentLogs();
+    const unlogged = can('write') ? reconcileAllPaymentLogs() : 0;
     if(unlogged) console.info(`Payment log: recorded missing payments for ${unlogged} debtor(s)`);
+    dataLoaded = true;
     return true;
   } catch (e) {
     console.warn('Supabase load failed:', e);
@@ -998,13 +842,7 @@ ensureLogIds();
 // (Excel import with a "paid" column, hand-editing the paid total, data saved
 // before payments were logged). Those amounts never showed in the payments
 // register. These helpers keep: sum(log payments) === debtor.paid.
-Object.assign(translations,{
-  'method.opening':['رصيد سابق','Previous balance'],
-  'method.adjust':['تسوية','Adjustment'],
-  'payments.autoNote':['سُجّل تلقائيًا: مبلغ مسدد سابقًا دون قيد في السجل','Auto-recorded: amount previously paid with no log entry'],
-  'payments.importNote':['مسدد عند الاستيراد من Excel','Paid at Excel import'],
-  'payments.adjustNote':['تسوية يدوية للمبلغ المسدد','Manual adjustment of the paid total'],
-});
+
 const money2 = n => Math.round((Number(n)||0)*100)/100;
 function loggedPaymentsTotal(d){
   return money2((d.log||[]).filter(e=>e.type==='payment').reduce((s,e)=>s+(Number(e.amount)||0),0));
@@ -1060,18 +898,7 @@ function toast(msg){
 }
 
 // ============== UI DIALOGS, UNDO TOAST, SAVE STATUS ==============
-Object.assign(translations,{
-  'ui.ok':['تأكيد','Confirm'],'ui.cancel':['إلغاء','Cancel'],'ui.undo':['تراجع','Undo'],'ui.delete':['حذف','Delete'],'ui.save':['حفظ','Save'],
-  'save.pending':['تعديلات بانتظار الحفظ…','Unsaved changes…'],'save.saving':['جارٍ الحفظ…','Saving…'],
-  'save.saved':['تم الحفظ','All changes saved'],'save.error':['فشل الحفظ — اضغط لإعادة المحاولة','Save failed — click to retry'],
-  'save.offline':['غير متصل بالسحابة','Not connected to the cloud'],
-  'drawer.editPaymentTitle':['تعديل دفعة','Edit payment'],'drawer.editFollowTitle':['تعديل المتابعة','Edit follow-up'],
-  'drawer.editPaidTitle':['تعديل إجمالي المسدد','Adjust total paid'],'quick.contactTitle':['تسجيل تواصل','Log a contact'],
-  'ui.invalidDate':['تاريخ غير صالح','Invalid date'],
-  'paid.lowerWarn':['خفض المسدد سيُنقص مبالغ أحدث الدفعات المسجلة بمقدار {n} ر.ق. الدفعات المتأثرة:','Lowering the paid total will reduce your most recent logged payments by {n} QAR. Affected payments:'],
-  'audit.import_debtors':['استيراد مدينين من Excel','Debtors imported from Excel'],'audit.restore_debtor':['استرجاع مدين','Debtor restored'],'audit.restore_quotation':['استرجاع عرض سعر','Quotation restored'],
-  'audit.restore_payment':['استرجاع دفعة','Payment restored'],'audit.restore_followup':['استرجاع متابعة','Follow-up restored'],
-});
+
 
 // Promise-based replacement for window.prompt()/confirm(). Resolves to the entered values
 // ({} for a plain confirmation) or null if cancelled. `validate(values)` may return an
@@ -1326,6 +1153,8 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
     item.classList.add('active');
     const page = item.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(i=>{ if(i===item) i.setAttribute('aria-current','page'); else i.removeAttribute('aria-current'); });
+    document.querySelectorAll('.bnav-item').forEach(b=>{ const on=b.dataset.page===page; b.classList.toggle('active',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
     
@@ -1583,16 +1412,15 @@ document.getElementById('saveSearchBtn').addEventListener('click', () => {
     collector: document.getElementById('collectorFilter').value,
     risk: document.getElementById('riskFilter').value
   };
-  localStorage.setItem('daftar_saved_search', JSON.stringify(searchConfig));
+  appSettings.savedSearch = searchConfig; saveSettings();
   toast(currentLang === 'en' ? 'Search saved' : 'تم حفظ البحث');
 });
 
 // Load saved search on startup
 function loadSavedSearch() {
   try {
-    const saved = localStorage.getItem('daftar_saved_search');
-    if (saved) {
-      const config = JSON.parse(saved);
+    const config = appSettings.savedSearch;
+    if (config) {
       document.getElementById('globalSearch').value = config.query || '';
       document.getElementById('statusFilter').value = config.status || 'all';
       document.getElementById('typeFilter').value = config.type || 'all';
@@ -1605,24 +1433,7 @@ function loadSavedSearch() {
     }
   } catch (e) {}
 }
-Object.assign(translations,{
-  'th.lastPayment':['آخر دفعة','Last payment'],'th.daysSincePayment':['أيام منذ آخر دفعة','Days since payment'],
-  'dup.title':['احتمال تكرار','Possible duplicate'],
-  'dup.debtorMsg':['يوجد مدين مشابه بالفعل. هل تريد الحفظ على أي حال؟','A similar debtor already exists. Save anyway?'],
-  'dup.quotMsg':['يوجد عرض سعر مشابه بالفعل. هل تريد الحفظ على أي حال؟','A similar quotation already exists. Save anyway?'],
-  'dup.saveAnyway':['حفظ على أي حال','Save anyway'],
-  'dup.byName':['الاسم','name'],'dup.byPhone':['الهاتف','phone'],'dup.byCompanyNo':['رقم الشركة','company no.'],'dup.byCr':['السجل التجاري','CR no.'],
-  'dup.byQuotNo':['رقم عرض السعر','quotation no.'],'dup.byCompanyDate':['نفس الشركة والتاريخ','same company & date'],
-  'imp.title':['معاينة الاستيراد','Import preview'],
-  'imp.summary':['{total} صف في الملف — صالح: {valid} · مرفوض: {bad} · مكرر: {dup}','{total} rows in file — valid: {valid} · rejected: {bad} · duplicates: {dup}'],
-  'imp.rejected':['صفوف مرفوضة','Rejected rows'],'imp.duplicates':['صفوف مكررة','Duplicate rows'],
-  'imp.row':['سطر','Row'],'imp.noName':['اسم فارغ','empty name'],'imp.badTotal':['إجمالي الدين صفر أو غير صالح','total is zero or invalid'],
-  'imp.dupExisting':['موجود مسبقًا','already exists'],'imp.dupInFile':['مكرر داخل الملف','repeated in the file'],
-  'imp.dupMode':['عند وجود مكررات','When duplicates exist'],'imp.skipDup':['تخطي المكررات','Skip duplicates'],'imp.keepDup':['استيرادها أيضًا','Import them too'],
-  'imp.confirm':['استيراد {n}','Import {n}'],'imp.nothing':['لا توجد صفوف صالحة للاستيراد','There are no valid rows to import'],
-  'imp.paidOver':['المسدد أكبر من إجمالي الدين','paid exceeds the total debt'],'imp.warnings':['تنبيهات (ستُستورد مع ذلك)','Warnings (still imported)'],
-  'imp.done':['تم استيراد {n} مدين','{n} debtors imported'],
-});
+
 const normName = v => String(v||'').toLowerCase().replace(/\s+/g,' ').trim();
 const digitsOnly = v => String(v||'').replace(/\D/g,'');
 // Compare phones by their last 8 digits so "+974 6661-1111" and "66611111" are the same number.
@@ -1739,8 +1550,8 @@ document.getElementById('downloadExcelTemplateBtn').addEventListener('click',()=
 });
 function printThemeVars(){
   const cs=getComputedStyle(document.documentElement);
-  const accent=(cs.getPropertyValue('--gold')||'#C9A227').trim()||'#C9A227';
-  const accentDim=(cs.getPropertyValue('--gold-dim')||'#8A7327').trim()||'#8A7327';
+  const accent=(cs.getPropertyValue('--accent')||'#C9A227').trim()||'#C9A227';
+  const accentDim=(cs.getPropertyValue('--accent-dim')||'#8A7327').trim()||'#8A7327';
   const rgb=hexToRgbArr(accent);
   const ink=readableInk(rgb);
   return {accent, accentDim, ink, rgb:rgb.join(',')};
@@ -1773,7 +1584,7 @@ function printSharedStyle(opts={}){
   return `
   @page{ size:A4 ${orientation}; margin:${orientation==='landscape'?'10mm':'16mm'}; }
   *{box-sizing:border-box;}
-  body{font-family:'Tajawal','IBM Plex Sans Arabic','Tahoma','Arial',sans-serif; color:#20242c; direction:${currentLang==='en'?'ltr':'rtl'}; margin:0; padding:0; ${printBackgroundCss()} print-color-adjust:exact; -webkit-print-color-adjust:exact; font-size:13px;}
+  body{font-family:'IBM Plex Sans Arabic','Tahoma','Arial',sans-serif; color:#20242c; direction:${currentLang==='en'?'ltr':'rtl'}; margin:0; padding:0; ${printBackgroundCss()} print-color-adjust:exact; -webkit-print-color-adjust:exact; font-size:13px;}
   .doc-brand{display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; margin-bottom:22px; border-bottom:3px solid ${accent};}
   .doc-brand-left{display:flex; align-items:center; gap:12px;}
   .doc-seal{width:46px; height:46px; border-radius:50%; border:2px solid ${accent}; color:${accent}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:19px;}
@@ -1804,7 +1615,7 @@ function printSharedStyle(opts={}){
 function currentPageDocument(){
   const page=document.querySelector('.page.active'); const title=document.getElementById('pageTitle').textContent;
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>${printSharedStyle()}</style></head><body>
 ${printBrandHeader(title)}
 ${page.innerHTML}
@@ -1823,6 +1634,18 @@ function openDrawer(id){
   const d = d0;
   document.getElementById('dr_seal').textContent = initials(d.name);
   document.getElementById('dr_phone').textContent = d.phone || '—';
+  {
+    const wa=document.getElementById('dr_whatsapp');
+    let digits=String(d.phone||'').replace(/[^\d+]/g,'').replace(/^\+/,'').replace(/^00/,'');
+    if(digits.length===8) digits='974'+digits;                  // local Qatari number
+    if(digits.length>=10 && remaining(d)>0){
+      const en=currentLang==='en'; const co=appSettings.companyName||'';
+      const msg=en
+        ? `Hello ${d.name}, a friendly reminder that an outstanding balance of ${currency(remaining(d))} was due on ${d.due||'-'}. Please contact us to arrange payment. ${co}`
+        : `السلام عليكم ${d.name}، نذكّركم بوجود مبلغ مستحق قدره ${currency(remaining(d))} بتاريخ ${d.due||'-'}. نرجو التواصل معنا لترتيب السداد. ${co}`;
+      wa.href=`https://wa.me/${digits}?text=${encodeURIComponent(msg.trim())}`; wa.hidden=false;
+    } else { wa.hidden=true; wa.removeAttribute('href'); }
+  }
   document.getElementById('dr_name').textContent = d.name;
   const isCompany = d.type==='company';
   document.getElementById('dr_type').innerHTML = `<span class="badge ${isCompany?'type-company':'type-individual'}">${isCompany?t('debtors.company'):t('debtors.individual')}</span>`;
@@ -2017,15 +1840,7 @@ function scopedQuotations(){
     return true;
   }).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
 }
-Object.assign(translations,{
-  'quot.dayValue':['قيمة العروض','Quotations value'],'quot.closedRatio':['مغلق','Closed'],
-  'quot.inlineStatusNote':['تغيير الحالة من القائمة','Status changed from the list'],
-  'quot.sortFollowup':['⏰ فرز حسب المتابعة القادمة','⏰ Sort by next follow-up'],
-  'quot.sortByDay':['↩ الترتيب العادي','↩ Normal order'],
-  'quot.overdueWord':['متأخرة','overdue'],'quot.followupToday':['المتابعة اليوم','Follow-up today'],'quot.followupOverdue':['متابعة متأخرة','Follow-up overdue'],
-  'quot.daySheet':['ملخص الأيام','Daily summary'],'quot.daySheetHeaders':['التاريخ|عدد العروض|إجمالي القيمة|المغلقة','Date|Quotations|Total value|Closed'],
-  'sr.debtors':['المدينون','Debtors'],'sr.quotations':['عروض الأسعار','Quotations'],'sr.none':['لا توجد نتائج مطابقة','No matching results'],'sr.more':['+ {n} نتيجة أخرى','+ {n} more'],
-});
+
 const QUOT_STATUSES = ['open','followup','submitted','paymentPending','closed'];
 let quotSortFollowup = false;
 function quotFollowupState(q){
@@ -2116,13 +1931,7 @@ function renderQuotationsTable(){
   }
 }
 document.getElementById('quotSearch')?.addEventListener('input', debounce(renderQuotationsTable, 200));
-Object.assign(translations,{
-  'quot.showAll':['🗂 عرض جميع عروض الأسعار','🗂 Show all quotations'],
-  'quot.showByDay':['↩ العودة إلى عرض يوم محدد','↩ Back to single day'],
-  'quot.allSummary':['إجمالي العروض المعروضة','Quotations shown'],
-  'quot.daysWord':['يوم','day(s)'],
-  'quot.noDate':['بدون تاريخ','No date'],
-});
+
 document.getElementById('quotDateFilter')?.addEventListener('change', ()=>{ quotShowAll = false; renderQuotationsTable(); });
 document.getElementById('quotShowAllBtn')?.addEventListener('click', ()=>{ quotShowAll = !quotShowAll; renderQuotationsTable(); });
 document.getElementById('quotSortFollowupBtn')?.addEventListener('click', ()=>{ quotSortFollowup = !quotSortFollowup; renderQuotationsTable(); });
@@ -2132,13 +1941,7 @@ document.getElementById('quotSortFollowupBtn')?.addEventListener('click', ()=>{ 
 // now a readonly text input (still holding "YYYY-MM-DD" in .value, so every other
 // piece of code that reads/sets it keeps working) that opens this small calendar.
 // Any day that has at least one quotation is painted green; hover shows how many.
-Object.assign(translations,{
-  'qcal.today':['اليوم','Today'],
-  'qcal.legend':['أيام بها عروض أسعار','Days with quotations'],
-  'qcal.count':['عرض سعر','quotation(s)'],
-  'qcal.prev':['الشهر السابق','Previous month'],
-  'qcal.next':['الشهر التالي','Next month'],
-});
+
 function attachQuotationCalendar(input){
   if(!input) return;
   const pad = n => String(n).padStart(2,'0');
@@ -2544,6 +2347,22 @@ function safeStorageName(name){
   return `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
 }
 
+async function getQuotationFileUrl(entry, seconds=300){
+  const { data, error } = await supabaseClient.storage.from(QUOT_BUCKET).createSignedUrl(entry.storagePath, seconds);
+  if(error) throw error;
+  return data.signedUrl;
+}
+async function openQuotationFile(entry){
+  const w = window.open('about:blank','_blank');   // opened synchronously so popup blockers allow it
+  try{
+    const url = await getQuotationFileUrl(entry);
+    if(w) w.location.href = url; else window.open(url,'_blank');
+  }catch(err){
+    if(w) w.close();
+    console.warn('Opening attachment failed:', err);
+    toast(currentLang==='en'?'Could not open the file':'تعذّر فتح الملف');
+  }
+}
 async function loadQuotationFiles(){
   if(!supabaseClient) return;
   const { data, error } = await supabaseClient.from('quotation_files').select('*');
@@ -2623,14 +2442,13 @@ async function uploadQuotationFile(file, quotationId, extractedText=''){
     .from(QUOT_BUCKET)
     .upload(storagePath, file, { cacheControl:'3600', upsert:false, contentType:file.type || 'application/octet-stream' });
   if(uploadError) throw uploadError;
-  const { data: urlData } = supabaseClient.storage.from(QUOT_BUCKET).getPublicUrl(storagePath);
   const row = {
     quotation_id: quotationId,
     file_name: file.name,
     file_type: file.type || '',
     file_size: file.size || 0,
     storage_path: storagePath,
-    public_url: urlData?.publicUrl || '',
+    public_url: '',
     extracted_text: (extractedText||'').slice(0, 20000)
   };
   const { data, error } = await supabaseClient.from('quotation_files').insert(row).select().single();
@@ -2694,12 +2512,12 @@ async function printQuotationFile(fileId){
   const ext = String(entry.fileName).split('.').pop().toLowerCase();
   if(ext==='doc' || ext==='docx'){
     toast(currentLang==='en'?'Word files open in Word for printing':'ملفات Word تُفتح في برنامج Word للطباعة');
-    window.open(entry.publicUrl, '_blank');
+    openQuotationFile(entry);
     return;
   }
   try{
     toast(currentLang==='en'?'Preparing the file for printing…':'جارٍ تجهيز الملف للطباعة…');
-    const res = await fetch(entry.publicUrl);
+    const res = await fetch(await getQuotationFileUrl(entry));
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
@@ -2724,7 +2542,7 @@ ${printBrandHeader(esc(entry.fileName))}
     document.body.appendChild(frame);
   }catch(err){
     console.warn('Printing attachment failed:', err);
-    window.open(entry.publicUrl, '_blank');
+    openQuotationFile(entry);
   }
 }
 
@@ -2734,7 +2552,7 @@ document.getElementById('qd_files')?.addEventListener('click', ev=>{
   const delBtn = ev.target.closest('[data-delete-file]');
   if(openBtn){
     const entry = quotationFiles.find(f=>Number(f.id)===Number(openBtn.dataset.openFile));
-    if(entry) window.open(entry.publicUrl, '_blank');
+    if(entry) openQuotationFile(entry);
     return;
   }
   if(printBtn){ printQuotationFile(Number(printBtn.dataset.printFile)); return; }
@@ -2778,9 +2596,9 @@ function loadScriptOnce(src){
 }
 
 async function extractTextFromPdf(file){
-  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  await loadScriptOnce('vendor/pdfjs/pdf.min.js');
   const pdfjs = window.pdfjsLib;
-  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjs.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js';
   const buffer = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({data:buffer}).promise;
   let text = '';
@@ -2803,8 +2621,11 @@ async function extractTextFromPdf(file){
 }
 
 async function extractTextFromImage(file){
-  await loadScriptOnce('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-  const worker = await window.Tesseract.createWorker(['eng','ara']);
+  await loadScriptOnce('vendor/tesseract/tesseract.min.js');
+  const base = new URL('vendor/tesseract/', location.href).href;   // absolute: the worker resolves paths itself
+  const worker = await window.Tesseract.createWorker(['eng','ara'], 1, {
+    workerPath: base+'worker.min.js', corePath: base, langPath: base+'lang', workerBlobURL: false   // no blob worker: CSP forbids it
+  });
   try{
     const { data } = await worker.recognize(file);
     return data?.text || '';
@@ -2818,7 +2639,7 @@ async function extractTextFromWord(file){
   if(ext === 'doc') throw new Error(currentLang==='en'
     ? 'Legacy .doc files are not supported — save as .docx'
     : 'صيغة .doc القديمة غير مدعومة — احفظ الملف بصيغة .docx');
-  await loadScriptOnce('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
+  await loadScriptOnce('vendor/mammoth.browser.min.js');
   const buffer = await file.arrayBuffer();
   const result = await window.mammoth.extractRawText({arrayBuffer:buffer});
   return result?.value || '';
@@ -3214,7 +3035,7 @@ function quotationsListDocumentHtml(rows, selectedKeys, opts={}){
   // ("wide") table instead of forcing all columns to the same width — that equal-width
   // forcing is what previously squeezed every field down to one letter per line.
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>${printSharedStyle({orientation:'landscape', dense:true})} tr.grp td{background:#eef1f6; font-weight:800; border-top:2px solid #cbd2dd;}</style></head><body>
 ${printBrandHeader(title)}
 <table class="wide"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${bodyRows || `<tr><td colspan="${cols.length+1}" class="empty">${t('quot.empty')}</td></tr>`}</tbody></table>
@@ -3224,7 +3045,7 @@ ${printBrandHeader(title)}
 function quotationDetailDocumentHtml(q){
   const title = `${t('quot.title')} — ${q.companyName}`;
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>${printSharedStyle()}</style></head><body>
 ${printBrandHeader(title)}
 <table>
@@ -3288,7 +3109,7 @@ function quotationsReportDocumentHtml(){
   const title = t('quot.reportTitle');
   const headers = currentLang==='en' ? ['Date','Company','Subject','Status','Note'] : ['التاريخ','الشركة','الموضوع','الحالة','ملاحظة'];
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>${printSharedStyle()}</style></head><body>
 ${printBrandHeader(title)}
 <p>${currentLang==='en'?'Period':'الفترة'}: ${esc(from)} — ${esc(to)}</p>
@@ -3358,7 +3179,7 @@ function quotVisitReportDocumentHtml(){
     <td>${esc(q.nextFollowup)||'—'}</td><td>${quotStatusLabel(q.status)}</td>
   </tr>`).join('') || `<tr><td colspan="15" class="empty">${t('quot.visitReportEmpty')}</td></tr>`;
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>${printSharedStyle()}
 .visit-info{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:16px; font-size:12.5px;}
 .visit-info b{color:#20242c;}
@@ -3694,16 +3515,21 @@ function renderStats(){
   document.getElementById('statCollectionRate').textContent = collectionRate + '%';
   document.getElementById('statAvgDays').textContent = avgDays;
   
-  // Set trends (simplified for demo)
-  setTrendIndicator('statTotalTrend', 0);
-  setTrendIndicator('statCollectedTrend', 5); // 5% increase
-  setTrendIndicator('statOverdueTrend', -2); // 2% decrease
-  setTrendIndicator('statActiveTrend', 0);
+  // Trends computed from real payment history (this month vs previous month).
+  const monthKey=(offset)=>{ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+offset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+  const paidIn=(key)=>scoped.flatMap(d=>d.log||[]).filter(e=>e.type==='payment'&&String(e.date||'').slice(0,7)===key).reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const thisM=paidIn(monthKey(0)), prevM=paidIn(monthKey(-1));
+  setTrendIndicator('statCollectedTrend', prevM>0 ? Math.round((thisM-prevM)/prevM*100) : null);
+  setTrendIndicator('statTotalTrend', null);
+  setTrendIndicator('statOverdueTrend', null);
+  setTrendIndicator('statActiveTrend', null);
+  const rateBar=document.getElementById('statRateBar'); if(rateBar) rateBar.style.width=Math.min(100,collectionRate)+'%';
 }
 
 function setTrendIndicator(elementId, percentage) {
   const element = document.getElementById(elementId);
   if (!element) return;
+  if (percentage === null || percentage === undefined) { element.textContent=''; element.className='trend'; return; }
   
   if (percentage > 0) {
     element.textContent = `↑ ${percentage}%`;
@@ -4129,19 +3955,7 @@ function renderDebtorsTable(){
 }
 
 // ---- Payments register ------------------------------------------------------
-Object.assign(translations,{
-  'pay.search':['بحث باسم الشركة...','Search by company...'],
-  'pay.from':['من','From'],'pay.to':['إلى','To'],
-  'pay.allMethods':['كل الطرق','All methods'],
-  'pay.autoOnly':['القيود التلقائية فقط','Auto-recorded only'],
-  'pay.groupBy':['🏢 تجميع حسب الشركة','🏢 Group by company'],
-  'pay.ungroup':['↩ عرض كقائمة واحدة','↩ Show as one list'],
-  'pay.exportExcel':['⭳ تصدير إكسل','⭳ Export Excel'],
-  'pay.count':['عدد الدفعات','Payments'],'pay.total':['إجمالي المسدد','Total paid'],'pay.companies':['عدد الشركات','Companies'],
-  'pay.auto':['تلقائي','Auto'],
-  'pay.autoTip':['قيد سُجّل تلقائيًا (رصيد سابق أو تسوية) — راجع تاريخه الفعلي وصحّحه عند الحاجة','Auto-recorded entry (previous balance / adjustment) — check its real date and correct it if needed'],
-  'pay.summarySheet':['ملخص الشركات','Company summary'],'pay.sheet':['سجل السداد','Payments'],
-});
+
 let payGroupByCompany = false;
 const AUTO_PAYMENT_METHODS = ['رصيد سابق','تسوية'];
 const isAutoPayment = e => AUTO_PAYMENT_METHODS.includes(e.method);
@@ -4308,51 +4122,22 @@ function renderReports(){
   }
 }
 
-// ============== DEBUGGING & TROUBLESHOOTING ==============
-function debugAuthSystem() {
-  console.log('=== AUTH SYSTEM DEBUG ===');
-  console.log('User count:', users.length);
-  console.log('Session logged in:', sessionStorage.getItem('daftar_logged_in'));
-  console.log('Session user ID:', sessionStorage.getItem('daftar_user_id'));
-  console.log('Current user:', currentUser ? {id:currentUser.id, username:currentUser.username, role:currentUser.role} : null);
-  console.log('========================');
-}
-
-// Reset the LOCAL session only (for troubleshooting a stuck login screen on this
-// device) — does not touch the cloud database. The next reload re-fetches the real
-// user list from Supabase.
-function resetLoginSystem() {
-  sessionStorage.removeItem('daftar_logged_in');
-  sessionStorage.removeItem('daftar_user_id');
-  currentUser = null;
-  updateAuthUI();
-  console.log('Local session cleared. Reloading the page will fetch the current account list from the cloud.');
-}
-
-// Add debug functions to window for manual testing
-window.debugAuth = debugAuthSystem;
-window.resetLogin = resetLoginSystem;
-
 // ============== SECURITY FUNCTIONS ==============
 function resetSessionTimer() {
   if (sessionTimer) clearTimeout(sessionTimer);
-  if (appSettings.autoLogout && sessionStorage.getItem('daftar_logged_in') === '1') {
+  if (appSettings.autoLogout && currentUser) {
     sessionTimer = setTimeout(() => {
-      addAudit('logout');
-      sessionStorage.removeItem('daftar_logged_in');
-      sessionStorage.removeItem('daftar_user_id');
-      currentUser = null;
-      updateAuthUI();
+      doLogout();
       toast(currentLang === 'en' ? 'Auto-logged out due to inactivity' : 'تم تسجيل الخروج تلقائيًا بسبب عدم النشاط');
     }, 30 * 60 * 1000); // 30 minutes
   }
 }
 
 function showSessionWarning() {
-  if (appSettings.sessionTimeout && !sessionWarningShown && sessionStorage.getItem('daftar_logged_in') === '1') {
+  if (appSettings.sessionTimeout && !sessionWarningShown && currentUser) {
     sessionWarningShown = true;
     setTimeout(() => {
-      if (sessionStorage.getItem('daftar_logged_in') === '1') {
+      if (currentUser) {
         toast(currentLang === 'en' ? 'Session will expire in 5 minutes' : 'ستنتهي الجلسة خلال 5 دقائق');
       }
     }, 25 * 60 * 1000); // 25 minutes (5 minutes before 30)
@@ -4536,12 +4321,12 @@ function scheduleAutomatedReports() {
   // Check if weekly report is due (every Sunday)
   const today = new Date();
   if (today.getDay() === 0) { // Sunday
-    const lastReportDate = localStorage.getItem('daftar_last_weekly_report');
+    const lastReportDate = lastWeeklyReport;
     const thisWeek = today.toISOString().slice(0, 10);
     
     if (lastReportDate !== thisWeek) {
       // Generate weekly report
-      localStorage.setItem('daftar_last_weekly_report', thisWeek);
+      lastWeeklyReport = thisWeek;
       addAudit('automation_rules_applied', 'Weekly report generated');
       // In a real implementation, this would generate and send the report
     }
@@ -4560,14 +4345,12 @@ document.getElementById('changeAdminPasswordBtn').addEventListener('click', asyn
     toast(currentLang === 'en' ? `Password must be at least ${appSettings.passwordMinLength} characters` : `يجب أن تكون كلمة المرور ${appSettings.passwordMinLength} أحرف على الأقل`);
     return;
   }
-  target.password = newPassword;
   try{
-    await saveUsers();
+    await adminUsersCall('set_password',{user_id:target.id,password:newPassword});
     addAudit('save_auth', `${currentLang==='en'?'Password reset for':'إعادة تعيين كلمة مرور'}: ${target.username}`);
     toast(currentLang === 'en' ? 'Password changed successfully' : 'تم تغيير كلمة المرور بنجاح');
   }catch(err){
-    console.warn('Resetting user password failed:', err);
-    toast(currentLang==='en'?'Could not save — check your connection':'تعذّر الحفظ — تحقق من الاتصال');
+    console.warn('Resetting user password failed:', err); userErrToast(err);
   }
 });
 
@@ -4581,15 +4364,24 @@ function validatePassword(password) {
 
 // ============== REMINDER SETTINGS ==============
 const SETTINGS_KEY = 'daftar_settings_v1';
-let appSettings = {language:'ar',mode:'dark',theme:'gold',themeCustom:'',palette:'navy',paletteCustom:'',reminderDays:7, watermarkEnabled:true, soundAlerts:true, emailAlerts:false, notificationEmail:'', autoLogout:false, sessionTimeout:false, passwordMinLength:8, smsProvider:'none', emailProvider:'none', smsApiKey:'', emailApiKey:'', autoFollowups:false, autoReports:false, smartReminders:false, followupFrequency:7, dataRetention:false, gdprCompliance:false, auditTrail:true, companyName:'', companyTaxId:''};
+let appSettings = {language:'ar',mode:'dark',theme:'brand',themeCustom:'',palette:'brand',paletteCustom:'',savedSearch:null,reminderDays:7, watermarkEnabled:true, soundAlerts:true, emailAlerts:false, notificationEmail:'', autoLogout:false, sessionTimeout:false, passwordMinLength:8, smsProvider:'none', emailProvider:'none', smsApiKey:'', emailApiKey:'', autoFollowups:false, autoReports:false, smartReminders:false, followupFrequency:7, dataRetention:false, gdprCompliance:false, auditTrail:true, companyName:'', companyTaxId:''};
 let sessionTimer = null;
 let sessionWarningShown = false;
 function loadSettings(){
   if(appSettings.language) currentLang=appSettings.language;
   if(appSettings.mode) currentMode=appSettings.mode;
 }
+// Appearance (language/mode/theme/palette/saved search) is saved per user in the database;
+// shared settings are saved by admins only. Nothing is written to the browser.
+let _prefsTimer=null;
 function saveSettings(){
-  syncToSupabase();
+  if(!currentUser || _suppressPrefSave) return;
+  clearTimeout(_prefsTimer);
+  _prefsTimer=setTimeout(()=>{
+    const prefs={}; PREF_KEYS.forEach(k=>{ prefs[k]=appSettings[k]; });
+    supabaseClient.rpc('set_my_prefs',{p:prefs}).then(({error})=>{ if(error) console.warn('Saving preferences failed:',error); });
+  },400);
+  if(currentUser.role==='admin') syncToSupabase();
 }
 // ---- color helpers (used by the custom theme picker and by print/PDF templates) ----
 function hexToRgbArr(hex){
@@ -4662,24 +4454,23 @@ function generateCustomPalette(hex){
 }
 // active preset accent colors (kept in sync with style.css so JS can restore them)
 const THEME_PRESETS={
-  gold:'#C9A227', teal:'#2BB3A3', blue:'#5EA9E8', rose:'#E28A9A', orange:'#FF8C42', purple:'#9C6ADE', green:'#6BCB77'
+  brand:'#D01020', gold:'#C9A227', teal:'#2BB3A3', blue:'#5EA9E8', rose:'#E28A9A', orange:'#FF8C42', purple:'#9C6ADE', green:'#6BCB77'
 };
+let _themeApplied=null, _paletteApplied=null;
 function applyTheme(theme){
-  theme=theme||'gold';
-  const prev=localStorage.getItem('daftar_theme');
-  if(THEME_PRESETS[theme]){
+  theme=theme||'brand';
+  const prev=_themeApplied;
+  const isPreset=!!THEME_PRESETS[theme];
+  if(isPreset){
     // preset: let the stylesheet rules (html[data-theme="..."]) take over, clear any custom inline overrides
     document.documentElement.dataset.theme=theme;
-    ['--gold','--gold-dim','--gold-rgb','--gold-ink'].forEach(v=>document.documentElement.style.removeProperty(v));
-    localStorage.setItem('daftar_theme',theme);
-    localStorage.removeItem('daftar_theme_custom');
+    ['--accent','--accent-dim','--accent-rgb','--accent-ink'].forEach(v=>document.documentElement.style.removeProperty(v));
+    appSettings.theme=theme; appSettings.themeCustom='';
   } else {
-    // custom hex color chosen from the color picker
-    applyCustomTheme(theme);
+    applyCustomTheme(theme);   // custom hex from the color picker (sets appSettings.theme='custom')
   }
-  if(prev!==null && prev!==theme && typeof addAudit==='function' && currentUser){ addAudit('theme_change', THEME_PRESETS[theme]?t(`theme.${theme}`):theme); }
-  appSettings.theme=theme;
-  appSettings.themeCustom=theme==='custom' ? localStorage.getItem('daftar_theme_custom')||'' : '';
+  _themeApplied=isPreset?theme:'custom';
+  if(prev!==null && prev!==_themeApplied && !_suppressPrefSave && typeof addAudit==='function' && currentUser){ addAudit('theme_change', isPreset?t(`theme.${theme}`):theme); }
   saveSettings();
   updateThemeSwatchesUI();
 }
@@ -4687,19 +4478,16 @@ function applyCustomTheme(hex){
   const rgb=hexToRgbArr(hex);
   const dim=rgbToHex(darkenRgb(rgb,0.35));
   document.documentElement.dataset.theme='custom';
-  document.documentElement.style.setProperty('--gold',hex);
-  document.documentElement.style.setProperty('--gold-dim',dim);
-  document.documentElement.style.setProperty('--gold-rgb',rgb.join(','));
-  document.documentElement.style.setProperty('--gold-ink',readableInk(rgb));
-  localStorage.setItem('daftar_theme','custom');
-  localStorage.setItem('daftar_theme_custom',hex);
+  document.documentElement.style.setProperty('--accent',hex);
+  document.documentElement.style.setProperty('--accent-dim',dim);
+  document.documentElement.style.setProperty('--accent-rgb',rgb.join(','));
+  document.documentElement.style.setProperty('--accent-ink',readableInk(rgb));
   appSettings.theme='custom';
   appSettings.themeCustom=hex;
-  saveSettings();
 }
 function updateThemeSwatchesUI(){
-  const theme=localStorage.getItem('daftar_theme')||'gold';
-  const customHex=localStorage.getItem('daftar_theme_custom');
+  const theme=appSettings.theme||'brand';
+  const customHex=appSettings.themeCustom;
   document.querySelectorAll('[data-theme-preset]').forEach(btn=>btn.classList.toggle('active',btn.dataset.themePreset===theme));
   const customSwatch=document.getElementById('themeSwatchCustom');
   const customInput=document.getElementById('s_customColor');
@@ -4707,34 +4495,34 @@ function updateThemeSwatchesUI(){
   if(customInput && customHex) customInput.value=customHex;
   const label=document.getElementById('themeCurrentLabel');
   if(label) label.textContent = theme==='custom' ? t('theme.currentCustom') : t(`theme.${theme}`);
-  const palette=localStorage.getItem('daftar_palette')||'navy';
+  const palette=appSettings.palette||'brand';
   document.querySelectorAll('[data-palette-preset]').forEach(btn=>btn.classList.toggle('active',btn.dataset.palettePreset===palette));
   const paletteCustomSwatch=document.getElementById('paletteSwatchCustom');
   const paletteCustomInput=document.getElementById('s_customPalette');
-  const paletteCustomHex=localStorage.getItem('daftar_palette_custom');
+  const paletteCustomHex=appSettings.paletteCustom;
   if(paletteCustomSwatch) paletteCustomSwatch.classList.toggle('active',palette==='custom');
   if(paletteCustomInput && paletteCustomHex) paletteCustomInput.value=paletteCustomHex;
   const paletteLabel=document.getElementById('paletteCurrentLabel');
   if(paletteLabel) paletteLabel.textContent = palette==='custom' ? t('palette.currentCustom') : t(`palette.${palette}`);
 }
-const PALETTE_PRESETS=['navy','forest','burgundy','charcoal','purple','teal','midnight','sunset','light-navy','light-forest','light-rose','light-lavender','light-peach'];
+// Trimmed from 13 presets (several duplicated or had poor contrast) to a tested core set.
+// Light/dark is the separate mode toggle, so the old "light-*" palettes are gone.
+const PALETTE_PRESETS=['brand','navy','forest','charcoal','burgundy'];
 function applyPalette(palette){
-  palette=palette||'navy';
-  const prev=localStorage.getItem('daftar_palette');
+  palette=palette||'brand';
+  const isHex=/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(palette);
+  if(!PALETTE_PRESETS.includes(palette) && !isHex) palette='brand';   // legacy/removed palette names fall back
+  const prev=_paletteApplied;
   if(PALETTE_PRESETS.includes(palette)){
-    // preset: let the stylesheet rules (html[data-palette="..."]) take over, clear any custom inline overrides
     document.documentElement.dataset.palette=palette;
     ['--bg','--surface','--surface-2','--surface-3','--ink','--muted','--border'].forEach(v=>document.documentElement.style.removeProperty(v));
-    localStorage.setItem('daftar_palette',palette);
-    localStorage.removeItem('daftar_palette_custom');
+    appSettings.palette=palette; appSettings.paletteCustom='';
+    _paletteApplied=palette;
   } else {
-    // custom hex color chosen from the color picker
     applyCustomPalette(palette);
-    palette='custom';
+    _paletteApplied='custom';
   }
-  if(prev!==null && prev!==palette && typeof addAudit==='function' && currentUser) addAudit('palette_change', palette==='custom' ? t('palette.currentCustom') : t(`palette.${palette}`));
-  appSettings.palette=palette;
-  appSettings.paletteCustom=palette==='custom' ? localStorage.getItem('daftar_palette_custom')||'' : '';
+  if(prev!==null && prev!==_paletteApplied && !_suppressPrefSave && typeof addAudit==='function' && currentUser) addAudit('palette_change', _paletteApplied==='custom' ? t('palette.currentCustom') : t(`palette.${palette}`));
   saveSettings();
   updateThemeSwatchesUI();
 }
@@ -4748,11 +4536,8 @@ function applyCustomPalette(hex){
   document.documentElement.style.setProperty('--ink',p.ink);
   document.documentElement.style.setProperty('--muted',p.muted);
   document.documentElement.style.setProperty('--border',p.border);
-  localStorage.setItem('daftar_palette','custom');
-  localStorage.setItem('daftar_palette_custom',hex);
   appSettings.palette='custom';
   appSettings.paletteCustom=hex;
-  saveSettings();
 }
 document.querySelectorAll('[data-theme-preset]').forEach(btn=>btn.addEventListener('click',()=>applyTheme(btn.dataset.themePreset)));
 document.querySelectorAll('[data-palette-preset]').forEach(btn=>btn.addEventListener('click',()=>applyPalette(btn.dataset.palettePreset)));
@@ -4830,9 +4615,9 @@ function maybeSendDueNotifications(){
   const list = getUpcomingDue(appSettings.reminderDays);
   const quotList = getDueQuotationFollowups();
   if(!list.length && !quotList.length) return;
-  const already = sessionStorage.getItem('daftar_notified');
+  const already = (dueNotified?'1':null);
   if(already) return;
-  sessionStorage.setItem('daftar_notified','1');
+  dueNotified=true;
   
   // Play sound if enabled
   if(appSettings.soundAlerts) {
@@ -4882,7 +4667,7 @@ document.getElementById('enableNotifBtn').addEventListener('click', ()=>{
     document.getElementById('notifStatus').textContent = perm==='granted'
       ? (currentLang==='en'?'Browser alerts enabled.':'تم تفعيل تنبيهات المتصفح — ستظهر تنبيهات عند فتح النظام إن وجدت ديون مستحقة قريبًا.')
       : (currentLang==='en'?'Notification permission was denied in browser settings.':'تم رفض إذن التنبيهات من إعدادات المتصفح.');
-    if(perm==='granted'){ sessionStorage.removeItem('daftar_notified'); maybeSendDueNotifications(); }
+    if(perm==='granted'){ dueNotified=false; maybeSendDueNotifications(); }
   });
 });
 
@@ -4914,7 +4699,7 @@ function printStatement(id, skipPrint=false){
   const docHtml = `<!DOCTYPE html>
 <html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="UTF-8">
 <title>${esc(L.title)} — ${esc(d.name)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>
 ${printSharedStyle()}
   .party{display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap;}
@@ -5027,7 +4812,7 @@ function agingDocumentHtml(){
   const riskColors={b1:'#d9b34a',b2:'#d68a3c',b3:'#c8562f',b4:'#B33A3A'};
   const totalRemaining = rows.reduce((s,d)=>s+remaining(d),0);
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>
 ${printSharedStyle()}
   .summary-strip{display:flex; gap:12px; margin-bottom:18px;}
@@ -5136,7 +4921,7 @@ function reportsDocumentHtml(){
   const months={}; debtors.forEach(d=>(d.installments||[]).forEach(item=>{const month=item.date.slice(0,7);months[month]??={due:0,paid:0};months[month].due+=Number(item.amount)||0;if(item.paid)months[month].paid+=Number(item.amount)||0;}));
   const rows = Object.entries(months).sort();
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
 <style>
 ${printSharedStyle()}
   .summary-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:20px;}
@@ -5234,10 +5019,10 @@ function showKeyboardShortcutsHelp() {
 
   const helpHtml = `
     <div class="overlay show" id="keyboardHelpOverlay">
-      <div class="modal" style="width:400px;">
+      <div class="modal" style="width:400px;" role="dialog" aria-modal="true">
         <div class="modal-head">
           <h3>${currentLang === 'en' ? 'Keyboard Shortcuts' : 'اختصارات لوحة المفاتيح'}</h3>
-          <button class="modal-close" onclick="document.getElementById('keyboardHelpOverlay').classList.remove('show')">✕</button>
+          <button class="modal-close" data-help-close aria-label="Close">✕</button>
         </div>
         <div class="modal-body">
           ${helpContent}
@@ -5247,6 +5032,7 @@ function showKeyboardShortcutsHelp() {
   `;
 
   document.body.insertAdjacentHTML('beforeend', helpHtml);
+  document.querySelector('#keyboardHelpOverlay [data-help-close]').addEventListener('click',()=>document.getElementById('keyboardHelpOverlay').classList.remove('show'));
 }
 
 // Add keyboard help button to settings
@@ -5400,15 +5186,7 @@ function getCollectorPerformance(repId) {
 }
 
 loadSettings();
-loadSavedSearch();
-{
-  const savedTheme=localStorage.getItem('daftar_theme')||'gold';
-  const savedCustom=localStorage.getItem('daftar_theme_custom');
-  applyTheme(savedTheme==='custom' && savedCustom ? savedCustom : savedTheme);
-  const savedPalette=localStorage.getItem('daftar_palette')||'navy';
-  const savedPaletteCustom=localStorage.getItem('daftar_palette_custom');
-  applyPalette(savedPalette==='custom' && savedPaletteCustom ? savedPaletteCustom : savedPalette);
-}
+applyThemeFromSettings();
 document.getElementById('s_reminderDays').value = appSettings.reminderDays;
 document.getElementById('s_watermarkEnabled').checked = appSettings.watermarkEnabled !== false;
 document.getElementById('s_soundAlerts').checked = appSettings.soundAlerts !== false;
@@ -5421,11 +5199,51 @@ document.getElementById('s_passwordMinLength').value = appSettings.passwordMinLe
 document.getElementById('s_autoFollowups').checked = appSettings.autoFollowups || false;
 document.getElementById('s_autoReports').checked = appSettings.autoReports || false;
 document.getElementById('s_smartReminders').checked = appSettings.smartReminders || false;
+
+// ============== UI EXTRAS (accessibility, mobile bar, login) ==============
+document.getElementById('pwToggle')?.addEventListener('click',()=>{
+  const input=document.getElementById('login_pass'); const show=input.type==='password';
+  input.type=show?'text':'password';
+  document.getElementById('pwToggle').setAttribute('aria-pressed',String(show));
+});
+document.querySelectorAll('.bnav-item[data-page]').forEach(b=>b.addEventListener('click',()=>{
+  const item=document.querySelector(`.nav-item[data-page="${b.dataset.page}"]`); if(item) item.click();
+}));
+document.getElementById('bnavMore')?.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('mobile-open'));
+
+// Dialog semantics + focus management (role, aria-modal, labelled, focus trap, restore focus)
+(function setupDialogA11y(){
+  const containers=()=>[...document.querySelectorAll('.overlay .modal, .drawer')];
+  containers().forEach((el,idx)=>{
+    el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');
+    const h=el.querySelector('h2,h3'); if(h){ if(!h.id) h.id=`dlg_title_${idx}`; el.setAttribute('aria-labelledby',h.id); }
+  });
+  const openState=new WeakMap();
+  const isOpen=el=>{ const host=el.classList.contains('drawer')?el:el.closest('.overlay'); return host&&host.classList.contains('show'); };
+  const focusables=el=>[...el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(n=>n.offsetParent!==null);
+  const obs=new MutationObserver(muts=>{
+    muts.forEach(m=>{
+      const host=m.target; const el=host.classList.contains('drawer')?host:host.querySelector('.modal'); if(!el) return;
+      const open=host.classList.contains('show'); const was=openState.get(el)||false;
+      if(open&&!was){ openState.set(el,{prev:document.activeElement}); setTimeout(()=>{ const f=focusables(el); (f[0]||el).focus(); },30); }
+      if(!open&&was){ const prev=was.prev; openState.set(el,false); if(prev&&prev.focus) prev.focus(); }
+    });
+  });
+  document.querySelectorAll('.overlay, .drawer').forEach(n=>obs.observe(n,{attributes:true,attributeFilter:['class']}));
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Tab') return;
+    const open=containers().filter(isOpen).pop(); if(!open) return;
+    const f=focusables(open); if(!f.length) return;
+    const first=f[0], last=f[f.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+  });
+})();
+
 // Initialize application
 async function initializeApp() {
   try {
     clearLegacyBrowserState();
-    await loadState();
     loadSettings();
     // Initialize settings UI values
     if (document.getElementById('s_reminderDays')) {
@@ -5462,8 +5280,6 @@ async function initializeApp() {
     applyLanguage();
     applyMode();
     updateAuthUI();
-    const savedUserId=sessionStorage.getItem('daftar_user_id'); 
-    if(savedUserId) currentUser=users.find(user=>String(user.id)===savedUserId)||null;
     applyPermissions(); 
     renderUsers(); 
     renderAudit();
@@ -5479,8 +5295,6 @@ async function initializeApp() {
     }
 
     renderAll();
-    maybeSendDueNotifications();
-    
     console.log('Application initialized successfully');
   } catch (e) {
     console.error('Error initializing application:', e);

@@ -4,27 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>دفتر — نظام إدارة تحصيل الديون</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
-  const SUPABASE_CONFIG = {
-    url: 'https://jmwkkpiddnlfucgejmpd.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptd2trcGlkZG5sZnVjZ2VqbXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNjUwNjksImV4cCI6MjEwMzc0MTA2OX0.wgPv9jx05jAj4p1eNx6-_p23EqIDc04PNRWHQ83CK0A'
-  };
-</script>
+<meta name="description" content="دفتر — نظام إدارة تحصيل الديون">
+<meta name="theme-color" content="#12141A">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="vendor/xlsx.full.min.js" defer></script>
+<script src="vendor/jspdf.umd.min.js" defer></script>
+<script src="vendor/html2canvas.min.js" defer></script>
+<script src="vendor/chart.umd.js" defer></script>
+<script src="vendor/supabase.js"></script>
+<script src="supabase-config.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol>
+  <symbol id="i-debtors" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-reps" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></symbol>
+  <symbol id="i-payments" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+  <symbol id="i-followups" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-quotations" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></symbol>
+  <symbol id="i-aging" viewBox="0 0 24 24"><path d="M5 22h14M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>
+  <symbol id="i-reports" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
 
 <!-- ===== Login Screen ===== -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <div class="seal">د</div>
+    <img class="login-logo" src="305922021_523349173131481_1401793005313797692_n.jpg" alt="UltraCrete">
     <div class="lang-switch">
       <button type="button" data-login-lang="ar">AR</button>
       <button type="button" data-login-lang="en">EN</button>
@@ -37,34 +52,34 @@
     </div>
     <div class="field">
       <label data-i18n="login.pass">كلمة المرور</label>
-      <input id="login_pass" type="password" autocomplete="current-password" title="كلمة المرور" placeholder="كلمة المرور" aria-label="كلمة المرور">
+      <div class="pw-wrap"><input id="login_pass" type="password" autocomplete="current-password" title="كلمة المرور" placeholder="كلمة المرور" aria-label="كلمة المرور"><button type="button" class="pw-toggle" id="pwToggle" aria-label="إظهار/إخفاء كلمة المرور"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg></button></div>
     </div>
     <button class="btn" id="loginBtn" data-i18n="login.btn">دخول</button>
-    <div class="login-error" id="loginError"></div>
+    <div class="login-error" id="loginError" role="alert" aria-live="assertive"></div>
   </div>
 </div>
 
-<button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+<button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="القائمة"><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="seal">د</div>
     <div class="brand-text"><b>دفتر</b><span data-i18n="brand.subtitle">نظام تحصيل الديون</span></div>
   </div>
-  <nav class="nav">
-    <div class="nav-item active" data-page="dashboard"><span class="ic">◈</span> <span data-i18n="nav.dashboard">لوحة التحكم</span></div>
-    <div class="nav-item" data-page="debtors"><span class="ic">☰</span> <span data-i18n="nav.debtors">المدينون</span></div>
-    <div class="nav-item" data-page="reps"><span class="ic">☺</span> <span data-i18n="nav.reps">المندوبون</span></div>
-    <div class="nav-item" data-page="payments"><span class="ic">﷼</span> <span data-i18n="nav.payments">سجل السداد</span></div>
-    <div class="nav-item" data-page="followups"><span class="ic">☏</span> <span data-i18n="nav.followups">المتابعات</span></div>
-    <div class="nav-item" data-page="quotations"><span class="ic">🧾</span> <span data-i18n="nav.quotations">عروض الأسعار</span></div>
-    <div class="nav-item" data-page="aging"><span class="ic">⧗</span> <span data-i18n="nav.aging">أعمار الديون</span></div>
-    <div class="nav-item" data-page="reports"><span class="ic">▤</span> <span data-i18n="nav.reports">التقارير</span></div>
-    <div class="nav-item" data-page="settings"><span class="ic">⚙</span> <span data-i18n="nav.settings">الإعدادات</span></div>
+  <nav class="nav" aria-label="القائمة الرئيسية">
+    <button type="button" class="nav-item active" data-page="dashboard" aria-current="page"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-dashboard"/></svg></span> <span data-i18n="nav.dashboard">لوحة التحكم</span></button>
+    <button type="button" class="nav-item" data-page="debtors"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-debtors"/></svg></span> <span data-i18n="nav.debtors">المدينون</span></button>
+    <button type="button" class="nav-item" data-page="reps"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-reps"/></svg></span> <span data-i18n="nav.reps">المندوبون</span></button>
+    <button type="button" class="nav-item" data-page="payments"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-payments"/></svg></span> <span data-i18n="nav.payments">سجل السداد</span></button>
+    <button type="button" class="nav-item" data-page="followups"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-followups"/></svg></span> <span data-i18n="nav.followups">المتابعات</span></button>
+    <button type="button" class="nav-item" data-page="quotations"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-quotations"/></svg></span> <span data-i18n="nav.quotations">عروض الأسعار</span></button>
+    <button type="button" class="nav-item" data-page="aging"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-aging"/></svg></span> <span data-i18n="nav.aging">أعمار الديون</span></button>
+    <button type="button" class="nav-item" data-page="reports"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-reports"/></svg></span> <span data-i18n="nav.reports">التقارير</span></button>
+    <button type="button" class="nav-item" data-page="settings"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></span> <span data-i18n="nav.settings">الإعدادات</span></button>
   </nav>
   <div class="sidebar-foot">
     <div id="sidebarUserLine"></div>
-    <div data-i18n="nav.footnote">يعمل هذا النظام بالكامل داخل المتصفح — البيانات محفوظة تلقائيًا في هذا الجهاز فقط.</div>
-    <button class="btn secondary small" id="logoutBtn" data-i18n="nav.logout">🚪 تسجيل الخروج</button>
+    <div data-i18n="nav.footnote">البيانات محفوظة في قاعدة بيانات سحابية آمنة ولا يُخزَّن شيء على هذا الجهاز.</div>
+    <button class="btn secondary small" id="logoutBtn"><svg class="i" aria-hidden="true"><use href="#i-logout"/></svg> <span data-i18n="nav.logout">تسجيل الخروج</span></button>
   </div>
 </aside>
 
@@ -80,14 +95,14 @@
         <button id="langArBtn" class="active" data-lang="ar">AR</button>
         <button id="langEnBtn" data-lang="en">EN</button>
       </div>
-      <button class="icon-btn notification-btn" id="notificationsBtn" title="الإشعارات" aria-label="الإشعارات">🔔<span id="notificationCount" class="notification-count">0</span></button>
-      <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي" aria-label="الوضع الليلي">◐</button>
+      <button class="icon-btn notification-btn" id="notificationsBtn" title="الإشعارات" aria-label="الإشعارات"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span id="notificationCount" class="notification-count">0</span></button>
+      <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي" aria-label="الوضع الليلي"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
       <div class="search-wrap"><input class="search" id="globalSearch" data-i18n-ph="topbar.search" placeholder="بحث عن مدين، هاتف..." autocomplete="off" aria-controls="globalSearchResults"><div class="search-results" id="globalSearchResults" role="listbox" hidden></div></div>
       <button class="btn" id="addDebtorBtn" data-i18n="topbar.addDebtor">+ إضافة مدين</button>
     </div>
   </div>
 
-  <div class="content">
+  <div class="content" id="main" role="main" tabindex="-1">
     <div id="quotSyncErrorBanner" class="sync-error-banner" style="display:none">
       <div class="sync-error-text"></div>
       <div class="sync-error-actions">
@@ -98,34 +113,53 @@
 
     <!-- ================= DASHBOARD ================= -->
     <section class="page active" id="page-dashboard">
-      <div class="stat-grid">
+      <!-- 1) What needs attention today -->
+      <div class="today-grid">
+        <div class="panel today-panel">
+          <div class="panel-head">
+            <h3 data-i18n="dash.upcomingDue">تنبيهات الاستحقاق القادمة</h3>
+            <span id="reminderWindowLabel">خلال 7 أيام</span>
+          </div>
+          <div class="panel-body" id="dueReminders"></div>
+        </div>
+        <div class="panel today-panel">
+          <div class="panel-head">
+            <h3 data-i18n="dash.quotFollowups">متابعات عروض الأسعار (اليوم والمتأخرة)</h3>
+          </div>
+          <div class="panel-body" id="quotFollowupReminders"></div>
+        </div>
+      </div>
+
+      <!-- 2) Headline KPIs -->
+      <div class="stat-grid kpi-primary">
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.totalDebts">إجمالي الديون المسجلة</div>
           <div class="val figures" id="statTotal">0</div>
           <div class="delta"><span data-i18n="dash.via">عبر</span> <span id="statCount">0</span> <span data-i18n="dash.file">ملف تحصيل</span></div>
-          <div class="trend" id="statTotalTrend">—</div>
+          <div class="trend" id="statTotalTrend"></div>
         </div>
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.collected">المبلغ المحصَّل</div>
           <div class="val figures" id="statCollected">0</div>
           <div class="delta" id="statCollectedPct">0% <span data-i18n="dash.ofTotal">من الإجمالي</span></div>
-          <div class="trend" id="statCollectedTrend">—</div>
+          <div class="trend" id="statCollectedTrend"></div>
         </div>
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.overdueTotal">متأخرات قائمة</div>
           <div class="val figures" id="statOverdue">0</div>
           <div class="delta"><span id="statOverdueCount">0</span> <span data-i18n="dash.overdueCase">حالة متأخرة</span></div>
-          <div class="trend" id="statOverdueTrend">—</div>
+          <div class="trend" id="statOverdueTrend"></div>
         </div>
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.activeCases">حالات نشطة قيد المتابعة</div>
           <div class="val figures" id="statActive">0</div>
           <div class="delta" data-i18n="dash.needsFollow">تحتاج متابعة مستمرة</div>
-          <div class="trend" id="statActiveTrend">—</div>
+          <div class="trend" id="statActiveTrend"></div>
         </div>
       </div>
 
-      <div class="stat-grid">
+      <!-- 3) Secondary metrics (compact) -->
+      <div class="stat-grid kpi-secondary">
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.companyDebts">ديون الشركات</div>
           <div class="val figures" id="statCompanyTotal">0</div>
@@ -136,23 +170,18 @@
           <div class="val figures" id="statIndividualTotal">0</div>
           <div class="delta"><span id="statIndividualCount">0</span> <span data-i18n="dash.individualUnit">فرد مدين</span></div>
         </div>
-      </div>
-      
-      <div class="stat-grid">
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.monthlyTarget">المستهدف الشهري</div>
           <div class="val figures" id="statMonthlyTarget">0</div>
-          <div class="delta" data-i18n="dash.targetProgress">تقدم الهدف</div>
         </div>
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.collectionRate">نسبة التحصيل</div>
           <div class="val figures" id="statCollectionRate">0%</div>
-          <div class="delta" data-i18n="dash.rateComparison">مقارنة بالشهر الماضي</div>
+          <div class="meter" aria-hidden="true"><i id="statRateBar"></i></div>
         </div>
         <div class="stat-card">
           <div class="lbl" data-i18n="dash.avgDaysToCollect">متوسط أيام التحصيل</div>
           <div class="val figures" id="statAvgDays">0</div>
-          <div class="delta" data-i18n="dash.daysTrend">اتجاه الأيام</div>
         </div>
       </div>
 
@@ -168,30 +197,16 @@
           <div class="panel-body" id="recentActivity"></div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-head"><h3 data-i18n="analytics.collectionTrend">اتجاه التحصيل الشهري</h3></div>
-        <div class="panel-body">
-          <canvas id="collectionChart"></canvas>
+
+      <div class="chart-cols">
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="analytics.collectionTrend">اتجاه التحصيل الشهري</h3></div>
+          <div class="panel-body"><canvas id="collectionChart"></canvas></div>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><h3 data-i18n="analytics.collectorPerformance">أداء المندوبين</h3></div>
-        <div class="panel-body">
-          <canvas id="collectorChart"></canvas>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="analytics.collectorPerformance">أداء المندوبين</h3></div>
+          <div class="panel-body"><canvas id="collectorChart"></canvas></div>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head">
-          <h3 data-i18n="dash.upcomingDue">⏰ تنبيهات الاستحقاق القادمة</h3>
-          <span id="reminderWindowLabel">خلال 7 أيام</span>
-        </div>
-        <div class="panel-body" id="dueReminders"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head">
-          <h3 data-i18n="dash.quotFollowups">📋 متابعات عروض الأسعار (اليوم والمتأخرة)</h3>
-        </div>
-        <div class="panel-body" id="quotFollowupReminders"></div>
       </div>
     </section>
 
@@ -712,20 +727,11 @@
           <div class="field">
             <label data-i18n="settings.palette">لون الواجهة</label>
             <div class="theme-swatches" id="paletteSwatches">
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="brand" title="علامة التراكريت" data-i18n-title="palette.brand" aria-label="علامة التراكريت"></button>
               <button type="button" class="theme-swatch palette-swatch" data-palette-preset="navy" title="أزرق بحري" data-i18n-title="palette.navy" aria-label="أزرق بحري"></button>
               <button type="button" class="theme-swatch palette-swatch" data-palette-preset="forest" title="أخضر غامق" data-i18n-title="palette.forest" aria-label="أخضر غامق"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="burgundy" title="عنابي" data-i18n-title="palette.burgundy" aria-label="عنابي"></button>
               <button type="button" class="theme-swatch palette-swatch" data-palette-preset="charcoal" title="رمادي فحمي" data-i18n-title="palette.charcoal" aria-label="رمادي فحمي"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="purple" title="بنفسجي" data-i18n-title="palette.purple" aria-label="بنفسجي"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="teal" title="زيتي" data-i18n-title="palette.teal" aria-label="زيتي"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="midnight" title="منتصف الليل" data-i18n-title="palette.midnight" aria-label="منتصف الليل"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="sunset" title="غروب" data-i18n-title="palette.sunset" aria-label="غروب"></button>
-              <div></div>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-navy" title="أزرق فاتح" data-i18n-title="palette.lightNavy" aria-label="أزرق فاتح"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-forest" title="أخضر فاتح" data-i18n-title="palette.lightForest" aria-label="أخضر فاتح"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-rose" title="وردي فاتح" data-i18n-title="palette.lightRose" aria-label="وردي فاتح"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-lavender" title="بنفسجي فاتح" data-i18n-title="palette.lightLavender" aria-label="بنفسجي فاتح"></button>
-              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="light-peach" title="خوخي فاتح" data-i18n-title="palette.lightPeach" aria-label="خوخي فاتح"></button>
+              <button type="button" class="theme-swatch palette-swatch" data-palette-preset="burgundy" title="عنابي" data-i18n-title="palette.burgundy" aria-label="عنابي"></button>
               <label class="theme-swatch theme-swatch-custom" id="paletteSwatchCustom" title="لون مخصص" data-i18n-title="palette.custom">
                 🎨<input type="color" id="s_customPalette" value="#16213A">
               </label>
@@ -735,6 +741,7 @@
           <div class="field">
             <label data-i18n="settings.theme">لون التمييز</label>
             <div class="theme-swatches" id="themeSwatches">
+              <button type="button" class="theme-swatch" data-theme-preset="brand" title="أحمر التراكريت" data-i18n-title="theme.brand" aria-label="أحمر التراكريت"></button>
               <button type="button" class="theme-swatch" data-theme-preset="gold" title="ذهبي" data-i18n-title="theme.gold" aria-label="ذهبي"></button>
               <button type="button" class="theme-swatch" data-theme-preset="teal" title="فيروزي" data-i18n-title="theme.teal" aria-label="فيروزي"></button>
               <button type="button" class="theme-swatch" data-theme-preset="blue" title="أزرق" data-i18n-title="theme.blue" aria-label="أزرق"></button>
@@ -1107,6 +1114,7 @@
       <div>
         <div id="dr_name">—</div>
         <div id="dr_phone">—</div>
+        <a class="btn small wa-btn" id="dr_whatsapp" target="_blank" rel="noopener noreferrer" hidden data-i18n="dash.sendWhatsapp">تذكير واتساب</a>
       </div>
     </div>
     <button class="modal-close" id="drawerClose">✕</button>
@@ -1268,6 +1276,8 @@
   </div>
 </div>
 
+<nav class="bottom-nav" aria-label="تنقل سريع"><button type="button" class="bnav-item active" data-page="dashboard"><svg class="i" aria-hidden="true"><use href="#i-dashboard"/></svg><span data-i18n="nav.dashboard">لوحة التحكم</span></button><button type="button" class="bnav-item" data-page="debtors"><svg class="i" aria-hidden="true"><use href="#i-debtors"/></svg><span data-i18n="nav.debtors">المدينون</span></button><button type="button" class="bnav-item" data-page="followups"><svg class="i" aria-hidden="true"><use href="#i-followups"/></svg><span data-i18n="nav.followups">المتابعات</span></button><button type="button" class="bnav-item" data-page="payments"><svg class="i" aria-hidden="true"><use href="#i-payments"/></svg><span data-i18n="nav.payments">سجل السداد</span></button><button type="button" class="bnav-item" id="bnavMore"><svg class="i" aria-hidden="true"><use href="#i-more"/></svg><span data-i18n="nav.more">المزيد</span></button></nav>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 
 </body>
