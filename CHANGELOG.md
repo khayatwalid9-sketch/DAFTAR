@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.3 — Edit-conflict detection + live refresh
+- Each debtor/quotation row carries a server-maintained `updated_at`. Before overwriting a row, the app compares it with what the server has; if another user changed it, saving stops and the user chooses: load the latest version, overwrite, or keep editing. Nothing is overwritten silently any more.
+- Live refresh every 30 s (and when the tab regains focus), only when this session has no unsaved edits and no drawer/modal is open.
+- **Run `supabase/conflict-detection-migration.sql` BEFORE deploying v3.3.** Without it the app behaves as in v3.2 (no conflict check).
+- Tested in headless Chromium against a mocked Supabase (17 checks: promise-to-pay, backup, conflict scenarios, live refresh). Not tested against a real Supabase project. Quotation conflicts use the same code path but had no dedicated check.
+- Still not done: ES-module split of `app.js`, integer-money storage, scheduled reports (needs an email service).
+
 ## v3.2 — Promise to pay + backup
 - Promise to pay (وعد الدفع): one open promise per debtor (date + amount) in the debtor drawer; badge in the debtors table/cards (upcoming / today / broken); bell notifications for promises due today and broken ones. A promise stops counting once the debtor is fully paid.
 - Admin-only full backup: Settings › Backup downloads every table as one JSON file (API-key row excluded). Nothing is stored in the browser.

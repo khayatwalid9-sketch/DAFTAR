@@ -532,24 +532,72 @@ function buildSyncRows(){
 function snapshotAllFromMemory(){ const r=buildSyncRows(); Object.keys(r).forEach(tbl=>snapshotRows(tbl,r[tbl])); }
 // pruneOrphans=true also deletes rows THIS session removed. Pass false for tables with their own
 // delete path (quotations: cascade to attachments).
+// Edit-conflict detection: debtors/quotations carry a server-maintained updated_at (trigger).
+// We remember the value we loaded/saved per row; before overwriting a row we compare it with the server's.
+const _ver = {debtors:new Map(), quotations:new Map()};
 async function replaceTable(table, rows, key='id', pruneOrphans=true) {
   const prev = _synced[table] || new Map();
   const changed = rows.filter(r=>{ const p=prev.get(String(r[key])); return !p || p.json!==JSON.stringify(r); });
   const current = new Set(rows.map(r=>String(r[key])));
   const removed = pruneOrphans ? [...prev.entries()].filter(([id])=>!current.has(id)).map(([,v])=>v.id) : [];
+  const ver = _ver[table];
+  if(ver){
+    const known = changed.filter(r=>ver.has(String(r[key])));
+    if(known.length){
+      const { data:cur, error:vErr } = await supabaseClient.from(table).select(`${key},updated_at`).in(key, known.map(r=>r[key]));
+      if(vErr){ vErr.message = `[${table}] ${vErr.message||''}`; throw vErr; }
+      const curMap = new Map((cur||[]).map(c=>[String(c[key]), c.updated_at]));
+      const stale = known.filter(r=>curMap.get(String(r[key]))!==ver.get(String(r[key])));
+      if(stale.length){ const e=new Error(`[${table}] edit conflict`); e.conflict={table,stale,curMap}; throw e; }
+    }
+  }
   if(removed.length){
     const { error } = await supabaseClient.from(table).delete().in(key, removed);
     if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
+    if(ver) removed.forEach(id=>ver.delete(String(id)));
   }
   if(changed.length){
-    const { error } = await supabaseClient.from(table).upsert(changed, {onConflict:key});
+    const { data:saved, error } = await supabaseClient.from(table).upsert(changed, {onConflict:key}).select();
     if(error){ error.message = `[${table}] ${error.message||''}`; throw error; }
+    if(ver) (saved||[]).forEach(r=>{ if(r.updated_at) ver.set(String(r[key]), r.updated_at); });
   }
   const next = new Map(prev);
   removed.forEach(id=>next.delete(String(id)));
   changed.forEach(r=>next.set(String(r[key]), {json:JSON.stringify(r), id:r[key]}));
   _synced[table] = next;
 }
+async function resolveConflict({table, stale, curMap}){
+  const en=currentLang==='en';
+  const names=stale.map(r=>r.name||r.company_name||r.id).slice(0,5).join(', ');
+  if(confirm(en?`Another user changed: ${names}\n\nOK = load the latest version (your edits to these records are discarded).\nCancel = keep your version.`
+               :`عدّل مستخدم آخر: ${names}\n\nموافق = تحميل أحدث نسخة (تُتجاهل تعديلاتك على هذه السجلات).\nإلغاء = الإبقاء على نسختك.`)){
+    await refreshFromServer(); toast(en?'Latest version loaded':'تم تحميل أحدث نسخة'); return;
+  }
+  if(confirm(en?"Overwrite the other user's changes with yours?":'هل تريد استبدال تعديلات المستخدم الآخر بتعديلاتك؟')){
+    stale.forEach(r=>{ const v=curMap.get(String(r.id)); if(v) _ver[table].set(String(r.id), v); else _ver[table].delete(String(r.id)); });
+    syncToSupabase();
+  }
+}
+async function refreshFromServer(){
+  const id=activeDebtorId;
+  if(!(await loadFromSupabase())) return false;
+  lastSyncedSignature=dataSignature(); setSaveStatus('saved'); renderAll();
+  if(document.getElementById('drawer').classList.contains('show') && debtors.some(d=>d.id===id)) openDrawer(id);
+  return true;
+}
+// Live refresh: every 30s (and when the tab regains focus) pull the latest data — but only when
+// this session has nothing unsaved and nothing is open for editing, so it never disturbs anyone.
+let _refreshing=false;
+async function liveRefresh(){
+  if(_refreshing||!supabaseClient||!currentUser||!dataLoaded||syncInProgress||syncQueued||document.hidden) return;
+  if(hasUnsyncedChanges()||document.querySelector('.overlay.show, .drawer.show')) return;
+  _refreshing=true;
+  try{ const before=dataSignature(); if(await loadFromSupabase()){ lastSyncedSignature=dataSignature(); if(dataSignature()!==before) renderAll(); } }
+  catch(e){ console.warn('Live refresh skipped:',e); }
+  finally{ _refreshing=false; }
+}
+setInterval(liveRefresh,30000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) liveRefresh(); });
 async function syncToSupabase() {
   if (!supabaseClient) {
     console.warn('Supabase sync skipped: client not initialized');
@@ -585,6 +633,10 @@ async function syncToSupabase() {
       setSaveStatus(hasUnsyncedChanges() ? 'pending' : 'saved');
       return true;
     } catch (e) {
+      if(e && e.conflict){
+        lastSyncError = currentLang==='en' ? 'Edit conflict: another user changed the same record' : 'تعارض: عدّل مستخدم آخر السجل نفسه';
+        setSaveStatus('error', lastSyncError); setTimeout(()=>resolveConflict(e.conflict),0); return false;
+      }
       const parts = [e?.code, e?.message, e?.details, e?.hint].filter(Boolean);
       lastSyncError = parts.length ? parts.join(' — ') : String(e);
       console.warn('Supabase sync failed:', e);
@@ -625,6 +677,8 @@ async function loadFromSupabase() {
       .from('quotations')
       .select('*');
     if (quotationsError) throw quotationsError;
+    _ver.debtors = new Map((debtorsData||[]).filter(r=>r.updated_at).map(r=>[String(r.id), r.updated_at]));
+    _ver.quotations = new Map((quotationsData||[]).filter(r=>r.updated_at).map(r=>[String(r.id), r.updated_at]));
 
     const { data: quotationsActivityData, error: quotationsActivityError } = await supabaseClient
       .from('quotations_activity')
