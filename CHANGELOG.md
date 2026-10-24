@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.5 — Mobile, column chooser, "Call today" (no DB changes)
+- Dashboard: new top panel "Call today" (broken promises → promises due today → overdue by balance; Call / Open buttons).
+- Debtors table: column chooser (Notes / Last contact / Days since payment hidden by default). Choice is kept for the session only.
+- Mobile: one-row header, filters in a bottom sheet (tap outside or Apply to close), floating + button, table reduced to Name / Remaining / Status / Actions.
+- Verified in headless Chromium (17 functional checks + layout measurements). Not done: remembering column choice across reloads; Arabic/dark visual check.
+
+## v3.4 — Design pass (no DB changes)
+- Fixed: advanced-search panel was open by default and its button hid it; now collapsed by default, laid out as a grid (date range no longer overlaps).
+- Fixed: hard-coded Arabic placeholders (من / إلى) are now translated; native selects restyled and toolbar controls aligned.
+- Debtors table: phone no longer wraps; actions column stays visible while the table scrolls; status badges no longer wrap.
+- Dashboard: red kept for danger only (neutral card accents, overdue card highlighted); tabular figures for amounts.
+- Debtor drawer: sticky summary (remaining amount, progress bar, status, jump buttons to Record payment / Promise to pay).
+- Verified in headless Chromium (17 functional checks + screenshots). Not done: mobile header compaction, column chooser, bottom-sheet filters, floating add button.
+
 ## v3.3 — Edit-conflict detection + live refresh
 - Each debtor/quotation row carries a server-maintained `updated_at`. Before overwriting a row, the app compares it with what the server has; if another user changed it, saving stops and the user chooses: load the latest version, overwrite, or keep editing. Nothing is overwritten silently any more.
 - Live refresh every 30 s (and when the tab regains focus), only when this session has no unsaved edits and no drawer/modal is open.

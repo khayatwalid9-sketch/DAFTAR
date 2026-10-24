@@ -777,3 +777,89 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 
 .wa-btn{display:inline-block;margin-top:6px;text-decoration:none;background:#1FA855;color:#fff}
 .wa-btn[hidden]{display:none}
+
+
+/* ===== v3.4 design pass ===== */
+:root{--ln:rgba(128,128,128,.22)}
+/* debtors: advanced filters hidden by default, laid out as a grid; toolbar controls aligned */
+.advanced-search-panel{display:none;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px 16px;padding:16px 20px;border-bottom:1px solid var(--ln);align-items:end}
+.advanced-search-panel.show{display:grid}
+.advanced-search-panel>div{display:contents}
+.advanced-search-panel .field{margin-bottom:0}
+.advanced-search-panel .field>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.panel-head>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.panel-head .btn,.panel-head select.field{height:36px;margin:0}
+select.field,.advanced-search-panel select{appearance:none;-webkit-appearance:none;padding:0 34px 0 12px;border:1px solid var(--ln);border-radius:8px;color:inherit;font:inherit;background-color:transparent;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+[dir=rtl] select.field,[dir=rtl] .advanced-search-panel select{padding:0 12px 0 34px;background-position:12px 50%,17px 50%}
+/* dashboard: red is reserved for danger; amounts use tabular figures */
+.stat-card::before{background:var(--muted)!important;opacity:.3}
+.kpi-primary .stat-card:nth-child(3)::before{background:var(--danger-text)!important;opacity:1}
+.kpi-primary .stat-card:nth-child(3) .val{color:var(--danger-text)}
+.stat-card .val,td.figures,.dr-summary{font-variant-numeric:tabular-nums}
+/* debtor drawer summary */
+.dr-summary{position:sticky;top:0;z-index:3;padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--ln)}
+.dr-summary .lbl{font-size:12px;color:var(--muted);font-weight:600}
+.dr-summary .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
+.dr-summary .rem{font-size:28px;font-weight:800;line-height:1.15}
+.dr-summary .bar{height:6px;border-radius:99px;background:var(--ln);margin:10px 0;overflow:hidden}
+.dr-summary .bar>i{display:block;height:100%;background:var(--success-text,#16a34a);border-radius:99px}
+.dr-summary .acts{display:flex;gap:8px;flex-wrap:wrap}
+/* v3.4 fixes: filter actions row, date range width, phone/badge wrapping */
+.advanced-search-panel>div:last-child{display:flex;gap:8px;grid-column:1/-1}
+.advanced-search-panel input,.advanced-search-panel select{min-width:0;width:100%}
+.advanced-search-panel>div:first-child>.field:nth-child(2){grid-column:span 2}
+@media(max-width:700px){.advanced-search-panel>div:first-child>.field:nth-child(2){grid-column:auto}}
+#debtorsTableBody td:nth-child(3){white-space:nowrap}
+.badge{white-space:nowrap}
+td .badge+.badge{display:flex;width:max-content;margin:4px 0 0!important}
+/* actions column stays visible while the wide table scrolls */
+table:has(#debtorsTableBody) th:last-child,#debtorsTableBody td:last-child{position:sticky;inset-inline-end:0;background:var(--surface);border-inline-start:1px solid var(--ln)}
+
+/* ===== v3.5: call-today, column chooser, mobile ===== */
+.cols-wrap{position:relative}
+.cols-pop{position:absolute;inset-inline-start:0;top:calc(100% + 6px);z-index:30;min-width:210px;max-height:340px;overflow:auto;padding:10px 12px;background:var(--surface);border:1px solid var(--ln);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.cols-pop[hidden]{display:none}
+.cols-pop label{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:13px;cursor:pointer}
+.call-today{margin-bottom:14px}
+.call-list{padding:6px 18px 10px}
+.call-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--ln);flex-wrap:wrap}
+.call-row:last-child{border-bottom:0}
+.call-row .who{flex:1 1 200px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.call-row .amt{font-weight:700;font-variant-numeric:tabular-nums}
+.call-empty{padding:14px 2px;color:var(--muted)}
+.fab{display:none}
+@media(max-width:700px){
+  .topbar{padding:10px 14px;gap:8px}
+  .topbar .sub,#addDebtorBtn{display:none}
+  .topbar-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
+  .topbar-actions .search-wrap{order:9;flex:1 1 100%}
+  .panel-head>div{overflow-x:auto;flex-wrap:nowrap;width:100%;padding-bottom:4px}
+  .panel-head .btn{width:auto;white-space:nowrap;flex:none}
+  .panel-head select.field{flex:none}
+  .advanced-search-panel{position:fixed;inset-inline:0;bottom:0;z-index:60;max-height:78vh;overflow:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -12px 32px rgba(0,0,0,.28);padding:18px 18px calc(18px + env(safe-area-inset-bottom));grid-template-columns:1fr}
+  .advanced-search-panel>div:first-child>.field:nth-child(2){grid-column:auto}
+  body.filters-open::before{content:'';position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55}
+  body:has(#page-debtors.active) .fab,body:has(#page-dashboard.active) .fab{display:flex}
+  body:has(.overlay.show) .fab,body:has(.drawer.show) .fab,body.filters-open .fab{display:none}
+  .fab{position:fixed;inset-inline-end:16px;bottom:calc(78px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.3);z-index:40}
+  .fab:disabled{opacity:.4}
+}
+
+/* mobile debtors table: Name, Remaining, Status, Actions only; no sticky column */
+@media(max-width:700px){
+  table:has(#debtorsTableBody) th:nth-child(2),#debtorsTableBody td:nth-child(2),
+  table:has(#debtorsTableBody) th:nth-child(3),#debtorsTableBody td:nth-child(3),
+  table:has(#debtorsTableBody) th:nth-child(4),#debtorsTableBody td:nth-child(4),
+  table:has(#debtorsTableBody) th:nth-child(5),#debtorsTableBody td:nth-child(5),
+  table:has(#debtorsTableBody) th:nth-child(8),#debtorsTableBody td:nth-child(8),
+  table:has(#debtorsTableBody) th:nth-child(10),#debtorsTableBody td:nth-child(10),
+  table:has(#debtorsTableBody) th:nth-child(12),#debtorsTableBody td:nth-child(12){display:none}
+  table:has(#debtorsTableBody) th:last-child,#debtorsTableBody td:last-child{position:static;border-inline-start:0}
+}
+@media(max-width:700px){
+  table:has(#debtorsTableBody){min-width:0!important;width:100%}
+  table:has(#debtorsTableBody) th,#debtorsTableBody td{padding-inline:8px}
+}
+@media(max-width:700px){ #debtorsTableBody td:last-child{white-space:normal;max-width:96px} #debtorsTableBody td:last-child>*{margin:2px} }
+@media(max-width:700px){ body.filters-open .bottom-nav{display:none!important} }

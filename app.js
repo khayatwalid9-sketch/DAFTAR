@@ -1457,7 +1457,8 @@ document.getElementById('typeFilter').addEventListener('change', renderAll);
 // Advanced Search
 document.getElementById('advancedSearchBtn').addEventListener('click', () => {
   const panel = document.getElementById('advancedSearchPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  panel.classList.toggle('show');
+  document.body.classList.toggle('filters-open', panel.classList.contains('show'));
   // Populate collector filter
   const collectorSelect = document.getElementById('collectorFilter');
   collectorSelect.innerHTML = '<option value="all" data-i18n="debtors.allStatuses">الكل</option>' +
@@ -1785,7 +1786,16 @@ document.getElementById('dr_assignRep').addEventListener('click', ()=>{
 });
 
 // ---- Promise to pay (وعد الدفع): one open promise per debtor (date + amount) ----
+function renderDrawerSummary(d){
+  const head=document.querySelector('#drawer .drawer-head'); if(!head) return;
+  let el=document.getElementById('dr_summary');
+  if(!el){ el=document.createElement('div'); el.id='dr_summary'; el.className='dr-summary'; head.insertAdjacentElement('afterend',el); }
+  const pct=d.total>0?Math.min(100,Math.round(d.paid/d.total*100)):0;
+  el.innerHTML=`<div class="lbl">${t('dsum.remaining')}</div><div class="row"><span class="rem">${currency(remaining(d))}</span><span class="badge ${statusOf(d)}">${statusLabel(statusOf(d))}</span>${promiseBadge(d)}</div><div class="bar" title="${pct}%"><i style="width:${pct}%"></i></div><div class="acts"><button class="btn small" data-jump="dr_addPayment">${t('dsum.payment')}</button><button class="btn secondary small" data-jump="dr_promiseDate">${t('dsum.promise')}</button></div>`;
+  el.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>{ const target=document.getElementById(b.dataset.jump); target?.scrollIntoView({behavior:'smooth',block:'center'}); target?.focus?.(); });
+}
 function renderPromiseBox(d){
+  renderDrawerSummary(d);
   document.getElementById('dr_promiseDate').value=d.promiseDate||'';
   document.getElementById('dr_promiseAmount').value=d.promiseAmount||'';
   const p=promiseState(d); const el=document.getElementById('dr_promiseStatus');
@@ -1835,6 +1845,47 @@ document.getElementById('backupBtn').addEventListener('click', async ()=>{
   }catch(err){ console.warn('Backup failed:',err); toast(t('backup.failed')); }
   finally{ btn.disabled=false; }
 });
+
+// ---- Dashboard "Call today": broken promises first, then promises due today, then overdue (largest balance first) ----
+function renderCallToday(){
+  const page=document.getElementById('page-dashboard'); if(!page) return;
+  let el=document.getElementById('callToday');
+  if(!el){ el=document.createElement('section'); el.id='callToday'; el.className='panel call-today'; page.insertBefore(el,page.firstChild); }
+  const rank=d=>{ const p=promiseState(d); return p&&p.type==='broken'?3:p&&p.type==='today'?2:statusOf(d)==='overdue'?1:0; };
+  const why=d=>{ const p=promiseState(d); return p&&p.type!=='upcoming'?`<span class="badge ${p.type==='broken'?'overdue':'active'}">${t(p.type==='broken'?'promise.broken':'promise.today')}</span>`:`<span class="badge overdue">${statusLabel('overdue')}</span>`; };
+  const list=scopedDebtors().filter(d=>remaining(d)>0&&rank(d)>0).sort((x,y)=>rank(y)-rank(x)||remaining(y)-remaining(x)).slice(0,6);
+  el.innerHTML=`<div class="panel-head"><h3>${t('call.title')}</h3></div><div class="call-list">`+(list.length?list.map(d=>`<div class="call-row"><div class="who"><b>${esc(d.name)}</b>${why(d)}</div><span class="amt">${currency(remaining(d))}</span>${d.phone?`<a class="btn small" href="tel:${esc(String(d.phone).replace(/[^+\d]/g,''))}">${t('call.call')}</a>`:''}<button class="btn secondary small" data-open="${esc(String(d.id))}">${t('call.open')}</button></div>`).join(''):`<div class="call-empty">${t('call.empty')}</div>`)+`</div>`;
+  el.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ const d=debtors.find(x=>String(x.id)===b.dataset.open); if(d) openDrawer(d.id); });
+}
+// ---- Debtors table column chooser (kept for the session; Notes / Last contact / Days since payment hidden by default) ----
+const _hiddenCols=new Set([9,11,13]);
+function applyColumnVisibility(){
+  let st=document.getElementById('colStyle'); if(!st){ st=document.createElement('style'); st.id='colStyle'; document.head.appendChild(st); }
+  st.textContent=[..._hiddenCols].map(n=>`table:has(#debtorsTableBody) th:nth-child(${n}),#debtorsTableBody td:nth-child(${n}){display:none}`).join('\n');
+}
+(function setupColumnChooser(){
+  const bar=document.getElementById('advancedSearchBtn')?.parentElement; if(!bar) return;
+  const wrap=document.createElement('div'); wrap.className='cols-wrap';
+  wrap.innerHTML=`<button class="btn secondary small" id="colsBtn" type="button" data-i18n="cols.btn">${t('cols.btn')}</button><div class="cols-pop" id="colsPop" hidden></div>`;
+  bar.insertBefore(wrap,bar.children[1]);
+  const pop=wrap.querySelector('#colsPop');
+  wrap.querySelector('#colsBtn').onclick=e=>{
+    e.stopPropagation();
+    if(pop.hidden){
+      const ths=[...document.querySelectorAll('table:has(#debtorsTableBody) thead th')];
+      pop.innerHTML=ths.map((th,i)=>(i===0||i===ths.length-1)?'':`<label><input type="checkbox" data-col="${i+1}" ${_hiddenCols.has(i+1)?'':'checked'}> ${esc(th.textContent.trim())}</label>`).join('');
+      pop.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{ const n=Number(cb.dataset.col); cb.checked?_hiddenCols.delete(n):_hiddenCols.add(n); applyColumnVisibility(); });
+    }
+    pop.hidden=!pop.hidden;
+  };
+  document.addEventListener('click',e=>{ if(!wrap.contains(e.target)) pop.hidden=true; });
+  applyColumnVisibility();
+})();
+// ---- Mobile: filters live in a bottom sheet; floating add-debtor button ----
+function closeFilterSheet(){ document.getElementById('advancedSearchPanel').classList.remove('show'); document.body.classList.remove('filters-open'); }
+document.getElementById('applyAdvancedSearch').addEventListener('click',()=>{ if(window.matchMedia('(max-width:700px)').matches) closeFilterSheet(); });
+document.body.addEventListener('click',e=>{ if(e.target===document.body) closeFilterSheet(); });
+(function(){ const fab=document.createElement('button'); fab.id='fabAddDebtor'; fab.className='fab'; fab.type='button'; fab.setAttribute('data-write',''); fab.setAttribute('aria-label',t('topbar.addDebtor')); fab.textContent='+'; fab.onclick=()=>document.getElementById('addDebtorBtn').click(); document.body.appendChild(fab); })();
 document.getElementById('dr_addPayment').addEventListener('click', ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
   const d = debtors.find(x=>x.id===activeDebtorId);
@@ -3560,6 +3611,7 @@ function renderReps(){
 function renderAll(){
   scheduleSave();
   renderStats();
+  renderCallToday();
   renderDebtorsTable();
   renderReps();
   renderPayments();
@@ -3594,7 +3646,7 @@ function renderAging(){
     document.getElementById(`aging_${key}_cnt`).textContent=groups[key].length+(currentLang==='en'?' cases':' حالة');
   });
   const body=document.getElementById('agingTableBody'); const rows=getAgingRows();  document.getElementById('agingEmpty').style.display=rows.length?'none':'block';
-  body.innerHTML=rows.map(d=>`<tr data-id="${d.id}"><td>${esc(d.name)}</td><td>${d.type==='company'?t('debtors.company'):t('debtors.individual')}</td><td>${esc(d.phone)||'—'}</td><td>${esc(d.due)}</td><td class="figures">${d.daysLate}</td><td><span class="badge overdue">${d.bucket.label}</span></td><td class="figures">${fmt(remaining(d))}</td><td>${esc((reps.find(r=>r.id===d.repId)||{}).name)||t('drawer.noRep')}</td>${notesTd(d)}</tr>`).join('');
+  body.innerHTML=rows.map(d=>`<tr data-id="${d.id}"><td>${esc(d.name)}</td><td>${d.type==='company'?t('debtors.company'):t('debtors.individual')}</td><td style="white-space:nowrap">${esc(d.phone)||'—'}</td><td>${esc(d.due)}</td><td class="figures">${d.daysLate}</td><td><span class="badge overdue">${d.bucket.label}</span></td><td class="figures">${fmt(remaining(d))}</td><td>${esc((reps.find(r=>r.id===d.repId)||{}).name)||t('drawer.noRep')}</td>${notesTd(d)}</tr>`).join('');
   body.querySelectorAll('tr').forEach(row=>row.addEventListener('click',()=>openDrawer(Number(row.dataset.id))));
 }
 

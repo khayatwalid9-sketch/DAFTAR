@@ -260,4 +260,7 @@ Object.assign(translations,{
   'audit.promise':['وعد دفع','Payment promise'],'audit.promise_clear':['إلغاء وعد دفع','Promise cleared'],'audit.backup':['نسخة احتياطية','Backup'],
   'backup.title':['نسخة احتياطية','Backup'],'backup.desc':['تنزيل كل بيانات النظام في ملف واحد (JSON). احتفظ به في مكان آمن؛ لا يتضمن مفاتيح API.','Download all system data as one JSON file. Keep it somewhere safe; it does not include API keys.'],
   'backup.btn':['تنزيل نسخة احتياطية كاملة','Download full backup'],'backup.done':['تم تنزيل النسخة الاحتياطية','Backup downloaded'],'backup.failed':['تعذّر إنشاء النسخة — تحقق من الاتصال','Backup failed — check your connection'],
+  'filter.from':['من','From'],'filter.to':['إلى','To'],
+  'dsum.remaining':['المتبقي','Remaining'],'dsum.payment':['تسجيل دفعة','Record payment'],'dsum.promise':['وعد دفع','Promise to pay'],
+  'call.title':['اتصل اليوم','Call today'],'call.call':['اتصال','Call'],'call.open':['فتح','Open'],'call.empty':['لا توجد حالات عاجلة اليوم','Nothing urgent today'],'cols.btn':['الأعمدة','Columns'],
 });
