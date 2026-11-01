@@ -863,3 +863,38 @@ table:has(#debtorsTableBody) th:last-child,#debtorsTableBody td:last-child{posit
 }
 @media(max-width:700px){ #debtorsTableBody td:last-child{white-space:normal;max-width:96px} #debtorsTableBody td:last-child>*{margin:2px} }
 @media(max-width:700px){ body.filters-open .bottom-nav{display:none!important} }
+
+/* ===== v4.0 "Ledger" identity: formwork grid, red survey markers, confident numerals, new mark ===== */
+:root{--rule:color-mix(in srgb,var(--ink) 6%,transparent)}
+body{background-image:radial-gradient(900px 420px at 88% -8%,rgba(var(--accent-rgb),.13),transparent 65%)}
+.content{background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:56px 56px;background-position:-1px -1px}
+.seal{display:none}
+.seal-img{width:38px;height:38px;border-radius:11px;box-shadow:0 6px 16px rgba(var(--accent-rgb),.35)}
+.brand-text b{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.nav-item{position:relative;border-radius:10px;transition:background .15s,color .15s}
+.nav-item.active::before{content:'';position:absolute;inset-block:9px;inset-inline-start:0;width:3px;border-radius:3px;background:var(--accent)}
+.panel{border-radius:16px;box-shadow:inset 0 1px 0 var(--rule)}
+.panel-head h3::before{content:'';display:inline-block;width:3px;height:15px;border-radius:2px;background:var(--accent);margin-inline-end:10px;vertical-align:-2px}
+#pageTitle{font-size:30px;font-weight:700;letter-spacing:-.015em}
+.stat-card{border-radius:16px}
+.stat-card .val{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.kpi-secondary .stat-card .val{font-size:24px}
+.btn{border-radius:10px;font-weight:600}
+.btn:not(.secondary){box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 6px 14px -6px rgba(var(--accent-rgb),.6)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+th{font-size:12px;font-weight:600;color:var(--muted)}
+tbody tr{transition:background .12s}
+.badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-inline-end:6px;vertical-align:1px}
+.call-row a.btn{text-decoration:none}
+.login-screen{background-image:radial-gradient(700px 380px at 50% 0,rgba(var(--accent-rgb),.18),transparent 70%),linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:auto,56px 56px,56px 56px}
+.login-box{border-radius:20px;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
+.login-box .lang-switch{display:flex;width:max-content;margin:12px auto}
+#loginBtn{width:100%;height:44px}
+@media (prefers-reduced-motion:no-preference){.panel,.stat-card{animation:rise .35s ease both}@keyframes rise{from{opacity:0;transform:translateY(6px)}}}
+
+/* ===== v4.1: data-viz tokens, status semantics, small icons ===== */
+:root{--steel:#5B8FB9;--violet:#8E7CC3}
+.badge.active{color:color-mix(in srgb,var(--steel) 60%,var(--ink));background:color-mix(in srgb,var(--steel) 16%,transparent);border-color:color-mix(in srgb,var(--steel) 45%,transparent)}
+.badge.paid{color:var(--success-text);background:color-mix(in srgb,var(--teal) 16%,transparent);border-color:color-mix(in srgb,var(--teal) 45%,transparent)}
+.badge.promise{color:var(--warn-text);background:color-mix(in srgb,var(--amber) 16%,transparent);border-color:color-mix(in srgb,var(--amber) 45%,transparent)}
+.icon-btn .i{width:16px;height:16px}

@@ -14,6 +14,7 @@
 <script src="vendor/supabase.js"></script>
 <script src="supabase-config.js"></script>
 <link rel="stylesheet" href="style.css">
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
 </head>
 <body>
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -33,7 +34,7 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L18 10l-4-4L4 16v4zM13 7l4 4"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></symbol>
 </svg>
 
 <!-- ===== Login Screen ===== -->
@@ -62,7 +63,7 @@
 <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="القائمة"><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <div class="seal">د</div>
+    <img class="seal-img" src="logo-mark.svg" alt="" width="38" height="38">
     <div class="brand-text"><b>دفتر</b><span data-i18n="brand.subtitle">نظام تحصيل الديون</span></div>
   </div>
   <nav class="nav" aria-label="القائمة الرئيسية">
@@ -216,7 +217,7 @@
         <div class="panel-head">
           <h3 data-i18n="debtors.title">قائمة المدينين</h3>
           <div>
-            <button class="btn secondary small" id="advancedSearchBtn" data-i18n="filter.advancedSearch">🔍 بحث متقدم</button>
+            <button class="btn secondary small" id="advancedSearchBtn" data-i18n="filter.advancedSearch">بحث متقدم</button>
             <select id="typeFilter" class="field" title="فلترة حسب النوع" aria-label="فلترة حسب النوع">
               <option value="all" data-i18n="debtors.allTypes">كل الأنواع</option>
               <option value="individual" data-i18n="debtors.individuals">أفراد</option>
@@ -233,7 +234,7 @@
               <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" title="استيراد ملف Excel" aria-label="استيراد ملف Excel">
             </div>
             <button class="btn secondary small" id="downloadExcelTemplateBtn" data-i18n="debtors.downloadTemplate">⭳ نموذج الاستيراد</button>
-            <button class="btn secondary small" id="saveSearchBtn" data-i18n="filter.saveSearch">💾 حفظ البحث</button>
+            <button class="btn secondary small" id="saveSearchBtn" data-i18n="filter.saveSearch">حفظ البحث</button>
           </div>
         </div>
         <div class="advanced-search-panel" id="advancedSearchPanel">
@@ -355,7 +356,7 @@
               <option value="تسوية" data-i18n="method.adjust">تسوية</option>
             </select>
             <label class="pay-filter"><input type="checkbox" id="payAutoOnly"><span data-i18n="pay.autoOnly">القيود التلقائية فقط</span></label>
-            <button type="button" class="btn secondary small" id="payGroupBtn" aria-pressed="false" data-i18n="pay.groupBy">🏢 تجميع حسب الشركة</button>
+            <button type="button" class="btn secondary small" id="payGroupBtn" aria-pressed="false" data-i18n="pay.groupBy">تجميع حسب الشركة</button>
             <button type="button" class="btn secondary small" id="payExcelBtn" data-i18n="pay.exportExcel">⭳ تصدير إكسل</button>
           </div>
         </div>
@@ -398,7 +399,7 @@
           <div>
             <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول..." title="بحث عروض الأسعار" aria-label="بحث عروض الأسعار">
             <input type="text" id="quotDateFilter" class="field qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
-            <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">🗂 عرض جميع عروض الأسعار</button>
+            <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">عرض جميع عروض الأسعار</button>
             <button type="button" class="btn secondary small" id="quotSortFollowupBtn" aria-pressed="false">⏰ فرز حسب المتابعة القادمة</button>
             <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
@@ -431,8 +432,8 @@
               <input type="file" id="importQuotationDocFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" multiple title="استيراد عرض سعر من ملف PDF أو صورة أو Word" aria-label="استيراد عرض سعر من ملف PDF أو صورة أو Word">
             </div>
             <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">⭳ نموذج الاستيراد</button>
-            <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">🖶 طباعة القائمة</button>
-            <button class="btn secondary small" id="quotPrintOptionsBtn" data-i18n="quot.printOptions">⚙ خيارات الطباعة</button>
+            <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">طباعة القائمة</button>
+            <button class="btn secondary small" id="quotPrintOptionsBtn" data-i18n="quot.printOptions">خيارات الطباعة</button>
             <button class="btn secondary small" id="quotExcelBtn" data-i18n="quot.exportExcel">⭳ تصدير إكسل</button>
             <button class="btn small" id="addQuotationBtn" data-i18n="quot.add">+ إضافة عرض سعر</button>
           </div>
@@ -471,7 +472,7 @@
               <button class="btn secondary small" id="quotVisitReportGenBtn" data-i18n="quot.generate">إنشاء التقرير</button>
             </div>
             <div class="field">
-              <button class="btn secondary small" id="quotVisitReportPrintBtn" data-i18n="quot.print">🖶 طباعة التقرير</button>
+              <button class="btn secondary small" id="quotVisitReportPrintBtn" data-i18n="quot.print">طباعة التقرير</button>
               <button class="btn secondary small" id="quotVisitReportExcelBtn" data-i18n="quot.exportExcel">⭳ تصدير إكسل</button>
               <button class="btn small" id="quotVisitReportPdfBtn" data-i18n="quot.pdf">⭳ تحميل PDF</button>
             </div>
@@ -520,7 +521,7 @@
               <button class="btn secondary small" id="quotReportGenBtn" data-i18n="quot.generate">إنشاء التقرير</button>
             </div>
             <div class="field">
-              <button class="btn secondary small" id="quotReportPrintBtn" data-i18n="quot.print">🖶 طباعة التقرير</button>
+              <button class="btn secondary small" id="quotReportPrintBtn" data-i18n="quot.print">طباعة التقرير</button>
               <button class="btn small" id="quotReportPdfBtn" data-i18n="quot.pdf">⭳ تحميل PDF</button>
             </div>
           </div>
@@ -569,7 +570,7 @@
         <div class="panel-head">
           <h3 data-i18n="aging.title">تقرير أعمار الديون التفصيلي</h3>
           <div>
-            <button class="btn secondary small" id="agingPrintBtn" data-i18n="aging.print">🖶 طباعة التقرير</button>
+            <button class="btn secondary small" id="agingPrintBtn" data-i18n="aging.print">طباعة التقرير</button>
             <button class="btn small" id="agingPdfBtn" data-i18n="aging.pdf">⭳ تحميل PDF</button>
           </div>
         </div>
@@ -597,7 +598,7 @@
       <div class="panel-head report-toolbar">
         <h3 data-i18n="reports.title">التقارير المالية</h3>
         <div>
-          <button class="btn secondary small" id="reportPrintBtn" data-i18n="reports.print">🖶 طباعة التقرير</button>
+          <button class="btn secondary small" id="reportPrintBtn" data-i18n="reports.print">طباعة التقرير</button>
           <button class="btn small" id="reportPdfBtn" data-i18n="reports.pdf">⭳ تحميل PDF</button>
         </div>
       </div>
@@ -845,7 +846,7 @@
               <input type="number" id="s_reminderDays" min="1" max="60" value="7" title="أيام التنبيه" aria-label="أيام التنبيه">
             </div>
             <div class="field">
-              <button class="btn secondary" id="enableNotifBtn" data-i18n="settings.enableNotif">🔔 تفعيل تنبيهات المتصفح</button>
+              <button class="btn secondary" id="enableNotifBtn" data-i18n="settings.enableNotif">تفعيل تنبيهات المتصفح</button>
             </div>
           </div>
           <div id="notifStatus" data-i18n="settings.notifOff">تنبيهات المتصفح غير مفعّلة حاليًا.</div>
@@ -1107,7 +1108,7 @@
     <div id="rd_cases_list"></div>
 
     <div>
-      <button class="btn secondary small" id="rd_edit" data-i18n="drawer.editRep">✎ تعديل بيانات المندوب</button>
+      <button class="btn secondary small" id="rd_edit" data-i18n="drawer.editRep">تعديل بيانات المندوب</button>
       <button class="btn danger small" id="rd_delete" data-i18n="drawer.deleteRep">حذف هذا المندوب</button>
     </div>
   </div>
@@ -1184,8 +1185,8 @@
     <div id="dr_log"></div>
 
     <div>
-      <button class="btn secondary small" id="dr_editDebtor" data-i18n="drawer.editDebtor">✎ تعديل بيانات المدين</button>
-      <button class="btn secondary small" id="dr_print" data-i18n="drawer.printStatement">🖶 طباعة كشف حساب</button>
+      <button class="btn secondary small" id="dr_editDebtor" data-i18n="drawer.editDebtor">تعديل بيانات المدين</button>
+      <button class="btn secondary small" id="dr_print" data-i18n="drawer.printStatement">طباعة كشف حساب</button>
       <button class="btn small" id="dr_downloadPdf" data-i18n="drawer.downloadPdf">⭳ تحميل PDF</button>
       <button class="btn danger small" id="dr_delete" data-i18n="drawer.deleteDebtor">حذف هذا المدين نهائيًا</button>
     </div>
@@ -1246,9 +1247,9 @@
     <div id="qd_log"></div>
 
     <div>
-      <button class="btn secondary small" id="qd_edit" data-i18n="quot.editBtn">✎ تعديل بيانات العرض</button>
-      <button class="btn secondary small" id="qd_print" data-i18n="quot.printOne">🖶 طباعة تفاصيل العرض</button>
-      <button class="btn secondary small" id="qd_convertToDebtor" data-i18n="quot.convertToDebtor">➜ تحويل إلى ملف تحصيل</button>
+      <button class="btn secondary small" id="qd_edit" data-i18n="quot.editBtn">تعديل بيانات العرض</button>
+      <button class="btn secondary small" id="qd_print" data-i18n="quot.printOne">طباعة تفاصيل العرض</button>
+      <button class="btn secondary small" id="qd_convertToDebtor" data-i18n="quot.convertToDebtor">تحويل إلى ملف تحصيل</button>
       <button class="btn danger small" id="qd_delete" data-i18n="quot.deleteBtn">حذف عرض السعر نهائيًا</button>
     </div>
   </div>
@@ -1273,7 +1274,7 @@
       <div id="quotPrintColsList" class="print-cols-grid"></div>
     </div>
     <div class="modal-foot">
-      <button class="btn" id="quotPrintConfirmBtn" data-i18n="quot.printNow">🖶 طباعة الآن</button>
+      <button class="btn" id="quotPrintConfirmBtn" data-i18n="quot.printNow">طباعة الآن</button>
       <button class="btn secondary" data-close="quotPrintOptionsModal" data-i18n="modal.cancel">إلغاء</button>
     </div>
   </div>
