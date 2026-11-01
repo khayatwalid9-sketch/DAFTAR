@@ -76,7 +76,7 @@ function promiseState(d){   // null when there is no open promise
 function promiseBadge(d){
   const p=promiseState(d); if(!p) return '';
   const label=p.type==='broken'?t('promise.broken'):p.type==='today'?t('promise.today'):`${t('promise.upcoming')}: ${esc(d.promiseDate)}`;
-  return ` <span class="badge ${p.type==='broken'?'overdue':'promise'}" style="margin-inline-start:6px" title="${esc(d.promiseDate)}${d.promiseAmount?' · '+fmt(d.promiseAmount):''}">${label}</span>`;
+  return ` <span class="badge ${p.type==='broken'?'overdue':'active'}" style="margin-inline-start:6px" title="${esc(d.promiseDate)}${d.promiseAmount?' · '+fmt(d.promiseAmount):''}">${label}</span>`;
 }
 function getNotifications(){
   return scopedDebtors().filter(d=>remaining(d)>0).flatMap(d=>{
@@ -95,7 +95,7 @@ function renderNotifications(){
   panel.innerHTML=list.length?list.map(item=>`<div class="notification-item"><b>${esc(item.name)}</b> · ${t(`notifications.${item.type}`)}<small>${esc(item.date)}</small></div>`).join(''):`<div class="empty">${t('notifications.none')}</div>`;
 }
 function applyMode(){document.documentElement.dataset.mode=currentMode;const tb=document.getElementById('themeToggleBtn');tb.innerHTML=`<svg class="i" aria-hidden="true"><use href="#i-${currentMode==='dark'?'sun':'moon'}"/></svg>`;const lbl=currentMode==='dark'?t('theme.lightMode'):t('theme.darkMode');tb.title=lbl;tb.setAttribute('aria-label',lbl);if(typeof appSettings!=='undefined'){appSettings.mode=currentMode;saveSettings();}}
-document.getElementById('themeToggleBtn').addEventListener('click',()=>{currentMode=currentMode==='dark'?'light':'dark';applyMode();if(typeof dataLoaded!=='undefined'&&dataLoaded) renderAll();});   // charts read theme colours when drawn, so redraw
+document.getElementById('themeToggleBtn').addEventListener('click',()=>{currentMode=currentMode==='dark'?'light':'dark';applyMode();});
 document.getElementById('notificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('show'));
 document.getElementById('clearNotificationsBtn').addEventListener('click',()=>document.getElementById('notificationPanel').classList.remove('show'));
 
@@ -401,7 +401,7 @@ function renderUsers(){const el=document.getElementById('usersList');if(!el)retu
       <option value="">${t('settings.noLink')}</option>
       ${reps.map(r=>`<option value="${r.id}" ${r.id===user.repId?'selected':''}>${esc(r.name)}</option>`).join('')}
     </select>` : '';
-  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}<button class="icon-btn" data-edit-user-perms="${user.id}" title="${t('settings.editPermsTitle')}"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></button>${user.id!==currentUser?.id?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>`:''}</div>`;
+  return `<div class="audit-row"><b>${esc(user.username)}</b><span>${roleLabel(user.role)}</span>${repControl}<button class="icon-btn" data-edit-user-perms="${user.id}" title="${t('settings.editPermsTitle')}">⚙</button>${user.id!==currentUser?.id?`<button class="icon-btn danger" data-remove-user="${user.id}" title="${t('action.delete')}">✕</button>`:''}</div>`;
 }).join('');
   el.querySelectorAll('[data-remove-user]').forEach(button=>button.addEventListener('click',async ()=>{
     const removedId = button.dataset.removeUser;
@@ -1799,7 +1799,7 @@ function renderPromiseBox(d){
   document.getElementById('dr_promiseDate').value=d.promiseDate||'';
   document.getElementById('dr_promiseAmount').value=d.promiseAmount||'';
   const p=promiseState(d); const el=document.getElementById('dr_promiseStatus');
-  el.innerHTML = p ? `<span class="badge ${p.type==='broken'?'overdue':'promise'}">${p.type==='broken'?t('promise.broken'):p.type==='today'?t('promise.today'):t('promise.upcoming')}</span> ${esc(d.promiseDate)}${d.promiseAmount?' · '+currency(d.promiseAmount):''}` : esc(t('promise.none'));
+  el.innerHTML = p ? `<span class="badge ${p.type==='broken'?'overdue':'active'}">${p.type==='broken'?t('promise.broken'):p.type==='today'?t('promise.today'):t('promise.upcoming')}</span> ${esc(d.promiseDate)}${d.promiseAmount?' · '+currency(d.promiseAmount):''}` : esc(t('promise.none'));
 }
 document.getElementById('dr_savePromise').addEventListener('click', ()=>{
   if(!can('write')){toast(currentLang==='en'?'You do not have permission to edit data':'لا تملك صلاحية تعديل البيانات');return;}
@@ -1852,7 +1852,7 @@ function renderCallToday(){
   let el=document.getElementById('callToday');
   if(!el){ el=document.createElement('section'); el.id='callToday'; el.className='panel call-today'; page.insertBefore(el,page.firstChild); }
   const rank=d=>{ const p=promiseState(d); return p&&p.type==='broken'?3:p&&p.type==='today'?2:statusOf(d)==='overdue'?1:0; };
-  const why=d=>{ const p=promiseState(d); return p&&p.type!=='upcoming'?`<span class="badge ${p.type==='broken'?'overdue':'promise'}">${t(p.type==='broken'?'promise.broken':'promise.today')}</span>`:`<span class="badge overdue">${statusLabel('overdue')}</span>`; };
+  const why=d=>{ const p=promiseState(d); return p&&p.type!=='upcoming'?`<span class="badge ${p.type==='broken'?'overdue':'active'}">${t(p.type==='broken'?'promise.broken':'promise.today')}</span>`:`<span class="badge overdue">${statusLabel('overdue')}</span>`; };
   const list=scopedDebtors().filter(d=>remaining(d)>0&&rank(d)>0).sort((x,y)=>rank(y)-rank(x)||remaining(y)-remaining(x)).slice(0,6);
   el.innerHTML=`<div class="panel-head"><h3>${t('call.title')}</h3></div><div class="call-list">`+(list.length?list.map(d=>`<div class="call-row"><div class="who"><b>${esc(d.name)}</b>${why(d)}</div><span class="amt">${currency(remaining(d))}</span>${d.phone?`<a class="btn small" href="tel:${esc(String(d.phone).replace(/[^+\d]/g,''))}">${t('call.call')}</a>`:''}<button class="btn secondary small" data-open="${esc(String(d.id))}">${t('call.open')}</button></div>`).join(''):`<div class="call-empty">${t('call.empty')}</div>`)+`</div>`;
   el.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ const d=debtors.find(x=>String(x.id)===b.dataset.open); if(d) openDrawer(d.id); });
@@ -3571,9 +3571,9 @@ function renderReps(){
       <td><span class="badge" style="background:${ratingColors[st.rating]}20; color:${ratingColors[st.rating]}; border-color:${ratingColors[st.rating]}40;">${ratingLabels[st.rating]}</span></td>
       <td>
         <div class="row-actions">
-          <button class="icon-btn" data-open="${r.id}" title="${t('action.view')}"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg></button>
-          <button class="icon-btn" data-edit-rep="${r.id}" title="${t('action.edit')}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>
-          <button class="icon-btn danger" data-del="${r.id}" title="${t('action.delete')}"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+          <button class="icon-btn" data-open="${r.id}" title="${t('action.view')}">◎</button>
+          <button class="icon-btn" data-edit-rep="${r.id}" title="${t('action.edit')}">✎</button>
+          <button class="icon-btn danger" data-del="${r.id}" title="${t('action.delete')}">✕</button>
         </div>
       </td>
     </tr>`;
@@ -3729,15 +3729,6 @@ let paymentMethodsChart = null;
 let debtDistributionChart = null;
 let repsMonthlyChart = null;
 
-const chartColor=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const chartCat=()=>['--teal','--amber','--steel','--violet','--muted','--red'].map(chartColor);
-const centerTotal={id:'centerTotal',afterDraw(ch){
-  const {ctx,chartArea:ar}=ch; const total=ch.data.datasets[0].data.reduce((x,y)=>x+y,0), cx=(ar.left+ar.right)/2, cy=(ar.top+ar.bottom)/2, ff=getComputedStyle(document.body).fontFamily;
-  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillStyle=chartColor('--ink'); ctx.font='700 30px '+ff; ctx.fillText(String(total),cx,cy-8);
-  ctx.fillStyle=chartColor('--muted'); ctx.font='12px '+ff; ctx.fillText(t('chart.cases'),cx,cy+16); ctx.restore();
-}};
-const chartGrid=()=>{const c=chartColor('--ink');return /^#[0-9a-f]{6}$/i.test(c)?c+'1f':'rgba(128,128,128,.2)'};
 function renderCharts() {
   const scoped = scopedDebtors();
   const currentLang = document.documentElement.lang;
@@ -3756,19 +3747,16 @@ function renderCharts() {
   if (collectionCtx) {
     if (collectionChart) collectionChart.destroy();
     collectionChart = new Chart(collectionCtx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: sortedMonths,
         datasets: [{
-          type: 'bar',
           label: currentLang === 'en' ? 'Collected Amount' : 'المبلغ المحصّل',
           data: sortedMonths.map(m => months[m] || 0),
-          backgroundColor: chartColor('--teal'), borderRadius: 6, maxBarThickness: 44
-        },{
-          type: 'line',
-          label: currentLang === 'en' ? 'Monthly target' : 'المستهدف الشهري',
-          data: sortedMonths.map(() => Math.round(scoped.reduce((s,d)=>s+d.total,0) * 0.15)),
-          borderColor: chartColor('--amber'), borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false
+          borderColor: '#C9A227',
+          backgroundColor: 'rgba(201, 162, 39, 0.1)',
+          fill: true,
+          tension: 0.4
         }]
       },
       options: {
@@ -3778,7 +3766,7 @@ function renderCharts() {
           legend: {
             display: true,
             labels: {
-              color: chartColor('--ink')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--ink')
             }
           }
         },
@@ -3786,18 +3774,18 @@ function renderCharts() {
           y: {
             beginAtZero: true,
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
-              color: chartGrid()
+              color: getComputedStyle(document.documentElement).getPropertyValue('--border')
             }
           },
           x: {
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
-              color: chartGrid()
+              color: getComputedStyle(document.documentElement).getPropertyValue('--border')
             }
           }
         }
@@ -3823,7 +3811,7 @@ function renderCharts() {
           label: currentLang === 'en' ? 'Collected Amount' : 'المبلغ المحصّل',
           data: collectorData.map(d => d.collected),
           backgroundColor: [
-            ...chartCat()
+            '#C9A227', '#2BB3A3', '#5EA9E8', '#E28A9A', '#FF8C42', '#9C6ADE'
           ],
           borderRadius: 6
         }]
@@ -3840,15 +3828,15 @@ function renderCharts() {
           y: {
             beginAtZero: true,
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
-              color: chartGrid()
+              color: getComputedStyle(document.documentElement).getPropertyValue('--border')
             }
           },
           x: {
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
               display: false
@@ -3878,9 +3866,9 @@ function renderCharts() {
         labels: Object.keys(paymentMethods),
         datasets: [{
           data: Object.values(paymentMethods),
-          backgroundColor: chartCat().slice(0,5),
+          backgroundColor: ['#C9A227', '#2BB3A3', '#5EA9E8', '#E28A9A', '#FF8C42'],
           borderWidth: 2,
-          borderColor: chartColor('--surface')
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface')
         }]
       },
       options: {
@@ -3890,7 +3878,7 @@ function renderCharts() {
           legend: {
             position: 'right',
             labels: {
-              color: chartColor('--ink')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--ink')
             }
           }
         }
@@ -3907,30 +3895,28 @@ function renderCharts() {
     scoped.forEach(d => statusCounts[statusOf(d)]++);
 
     debtDistributionChart = new Chart(debtDistributionCtx, {
-      type: 'doughnut',
+      type: 'pie',
       data: {
         labels: [t('status.active'), t('status.overdue'), t('status.paid')],
         datasets: [{
           data: [statusCounts.active, statusCounts.overdue, statusCounts.paid],
-          backgroundColor: [chartColor('--steel'), chartColor('--red'), chartColor('--teal')],
+          backgroundColor: ['#3E8E7E', '#B33A3A', '#C9A227'],
           borderWidth: 2,
-          borderColor: chartColor('--surface')
+          borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface')
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '68%',
         plugins: {
           legend: {
             position: 'right',
             labels: {
-              color: chartColor('--ink')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--ink')
             }
           }
         }
-      },
-      plugins: [centerTotal]
+      }
     });
   }
 
@@ -3957,7 +3943,7 @@ function renderCharts() {
     const datasets = reps.map((r, index) => ({
       label: r.name,
       data: sortedMonths.map(m => months[m]?.[r.name] || 0),
-      borderColor: chartCat()[index % 6],
+      borderColor: ['#C9A227', '#2BB3A3', '#5EA9E8', '#E28A9A', '#FF8C42', '#9C6ADE'][index % 6],
       backgroundColor: 'transparent',
       tension: 0.4
     }));
@@ -3975,7 +3961,7 @@ function renderCharts() {
           legend: {
             display: true,
             labels: {
-              color: chartColor('--ink')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--ink')
             }
           }
         },
@@ -3983,18 +3969,18 @@ function renderCharts() {
           y: {
             beginAtZero: true,
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
-              color: chartGrid()
+              color: getComputedStyle(document.documentElement).getPropertyValue('--border')
             }
           },
           x: {
             ticks: {
-              color: chartColor('--muted')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--muted')
             },
             grid: {
-              color: chartGrid()
+              color: getComputedStyle(document.documentElement).getPropertyValue('--border')
             }
           }
         }
@@ -4105,10 +4091,10 @@ function renderDebtorsTable(){
       <td class="figures ${daysCls}">${daysSince===null?'—':daysSince}</td>
       <td>
         <div class="row-actions">
-          <button class="icon-btn" data-open="${d.id}" title="${t('action.view')}"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg></button>
-          <button class="icon-btn" data-quick-contact="${d.id}" title="${t('drawer.addFollow')}"><svg class="i" aria-hidden="true"><use href="#i-followups"/></svg></button>
-          <button class="icon-btn" data-edit="${d.id}" title="${t('action.edit')}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>
-          <button class="icon-btn danger" data-del="${d.id}" data-delete title="${t('action.delete')}"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+          <button class="icon-btn" data-open="${d.id}" title="${t('action.view')}">◎</button>
+          <button class="icon-btn" data-quick-contact="${d.id}" title="${t('drawer.addFollow')}">☎</button>
+          <button class="icon-btn" data-edit="${d.id}" title="${t('action.edit')}">✎</button>
+          <button class="icon-btn danger" data-del="${d.id}" data-delete title="${t('action.delete')}">✕</button>
         </div>
       </td>
     </tr>`;
@@ -4173,7 +4159,7 @@ function filteredPaymentRows(){
   return rows.sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (Number(b.id)||0)-(Number(a.id)||0));
 }
 function paymentRowHtml(r, actionsAllowed){
-  const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-pay-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button><button class="icon-btn danger" data-pay-del="${r.debtorId}:${r.id}" title="${t('action.delete')}"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button></div>` : '—';
+  const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-pay-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}">✎</button><button class="icon-btn danger" data-pay-del="${r.debtorId}:${r.id}" title="${t('action.delete')}">✕</button></div>` : '—';
   const badge = isAutoPayment(r) ? `<span class="auto-badge" title="${esc(t('pay.autoTip'))}">${esc(t('pay.auto'))}</span>` : '';
   return `<tr>
     <td>${esc(r.date)}</td><td>${esc(r.debtor)}</td><td class="figures">${currency(r.amount)}</td><td>${translateValue(r.method)}${badge}</td>${notesTd({notes:r.note})}<td>${actions}</td>
@@ -4253,7 +4239,7 @@ function renderFollowups(){
   document.getElementById('followupsEmpty').style.display = rows.length ? 'none' : 'block';
   const actionsAllowed = can('write');
   body.innerHTML = rows.map(r=>{
-    const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-follow-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button><button class="icon-btn danger" data-follow-del="${r.debtorId}:${r.id}" title="${t('action.delete')}"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button></div>` : '—';
+    const actions = actionsAllowed ? `<div class="row-actions"><button class="icon-btn" data-follow-edit="${r.debtorId}:${r.id}" title="${t('action.edit')}">✎</button><button class="icon-btn danger" data-follow-del="${r.debtorId}:${r.id}" title="${t('action.delete')}">✕</button></div>` : '—';
     return `<tr>
     <td>${esc(r.date)}</td><td>${esc(r.debtor)}</td><td>${translateValue(r.method)}</td><td>${esc(r.note)||'—'}</td>${notesTd({notes:r.debtorNotes})}<td>${actions}</td>
   </tr>`;
@@ -4289,7 +4275,7 @@ function renderReports(){
   const counts = {active:0, overdue:0, paid:0};
   debtors.forEach(d=>counts[statusOf(d)]++);
   const totalC = debtors.length || 1;
-  const colors = {active:chartColor('--steel'), overdue:chartColor('--red'), paid:chartColor('--teal')};
+  const colors = {active:'#3E8E7E', overdue:'#B33A3A', paid:'#C9A227'};
   let offset = 0;
   const segs = Object.entries(counts).map(([k,v])=>{
     const pct = v/totalC*100;
@@ -4297,11 +4283,11 @@ function renderReports(){
     offset += pct;
     return seg;
   }).join('');
-  document.getElementById('donutSvg').innerHTML = (segs || '') + `<text x="21" y="22.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${debtors.length}</text><text x="21" y="27.6" text-anchor="middle" font-size="2.8" fill="currentColor" opacity=".65">${t('chart.cases')}</text>`;
+  document.getElementById('donutSvg').innerHTML = segs || '';
   document.getElementById('donutLegend').innerHTML = `
-    <div class="li"><div class="dot" style="background:${colors.active}"></div> ${t('status.active')} — ${counts.active} · <bdi dir="ltr">${Math.round(counts.active/totalC*100)}%</bdi></div>
-    <div class="li"><div class="dot" style="background:${colors.overdue}"></div> ${t('status.overdue')} — ${counts.overdue} · <bdi dir="ltr">${Math.round(counts.overdue/totalC*100)}%</bdi></div>
-    <div class="li"><div class="dot" style="background:${colors.paid}"></div> ${t('status.paid')} — ${counts.paid} · <bdi dir="ltr">${Math.round(counts.paid/totalC*100)}%</bdi></div>
+    <div class="li"><div class="dot" style="background:${colors.active}"></div> ${t('status.active')} — ${counts.active}</div>
+    <div class="li"><div class="dot" style="background:${colors.overdue}"></div> ${t('status.overdue')} — ${counts.overdue}</div>
+    <div class="li"><div class="dot" style="background:${colors.paid}"></div> ${t('status.paid')} — ${counts.paid}</div>
   `;
   document.getElementById('repAverageDebt').textContent = currency(debtors.length ? total/debtors.length : 0);
   document.getElementById('repOverdueRate').textContent = (debtors.length ? Math.round(debtors.filter(d=>statusOf(d)==='overdue').length/debtors.length*100) : 0)+'%';
@@ -4988,14 +4974,7 @@ ${printSharedStyle()}
   };
 }
 
-function withLetterhead(docHtml){
-  if(docHtml.includes('data-letterhead')) return docHtml;
-  const en=currentLang==='en', d=new Date().toISOString().slice(0,10);
-  const block=`<div data-letterhead style="display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:3px solid #D01020;padding:0 0 10px;margin:0 0 18px"><img src="305922021_523349173131481_1401793005313797692_n.jpg" alt="UltraCrete" style="height:54px"><div style="text-align:${en?'right':'left'};font-size:12px;color:#555;line-height:1.7"><b style="font-size:15px;color:#111">${en?'Daftar — Debt collection system':'دفتر — نظام تحصيل الديون'}</b><br>${d}${currentUser?.username?' · '+esc(currentUser.username):''}</div></div>`;
-  return /<body[^>]*>/i.test(docHtml) ? docHtml.replace(/<body[^>]*>/i,m=>m+block) : block+docHtml;
-}
 async function exportDocumentPdf(docHtml, filename){
-  docHtml=withLetterhead(docHtml);
   if(!window.jspdf?.jsPDF || !window.html2canvas){toast(currentLang==='en'?'PDF libraries are unavailable. Print view opened instead.':'مكتبات PDF غير متاحة. تم فتح نافذة الطباعة البديلة.');printDocument(docHtml);return;}
   const iframe=document.createElement('iframe'); iframe.style.cssText='position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;background:#fff'; document.body.appendChild(iframe); iframe.srcdoc=docHtml;
   await new Promise(resolve=>{iframe.onload=()=>setTimeout(resolve,900);});
@@ -5032,8 +5011,7 @@ ${printBrandHeader(title)}
 </body></html>`;
 }
 document.getElementById('dr_downloadPdf').addEventListener('click',()=>{if(activeDebtorId){printStatement(activeDebtorId,true);setTimeout(()=>exportDocumentPdf(lastStatementHtml,`daftar-statement-${activeDebtorId}-${todayISO()}.pdf`),250);}});
-function printDocument(docHtml){
-  docHtml=withLetterhead(docHtml);const iframe=document.createElement('iframe');iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(iframe);iframe.srcdoc=docHtml;iframe.onload=()=>setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();setTimeout(()=>iframe.remove(),1000);},200);}
+function printDocument(docHtml){const iframe=document.createElement('iframe');iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(iframe);iframe.srcdoc=docHtml;iframe.onload=()=>setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();setTimeout(()=>iframe.remove(),1000);},200);}
 
 // ============== SETTINGS: BACKUP / RESET ==============
 document.getElementById('exportDataBtn').addEventListener('click', async ()=>{

@@ -1,12 +1,5 @@
 # Changelog
 
-## v4.1 — Data-viz, icons and letterhead (no DB changes)
-- Charts: palette comes from CSS tokens (new `--steel`, `--violet`); status colours are now consistent everywhere (active = steel, paid = teal, overdue = red, promise = amber); donut shows the total in the centre and percentages; legend/axis text colours fixed (they were invisible on dark); grid softened; charts redraw when switching light/dark.
-- Dashboard trend chart: collected per month as bars + dashed monthly-target line (target rule unchanged: 15% of total debts).
-- Icons: table/row action glyphs (◎ ☎ ✎ ✕ ⚙) replaced with line icons; decorative emoji removed from labels.
-- PDF + print: company letterhead (UltraCrete logo, system name, date, user) on every exported/printed document.
-- Known: the monthly-target KPI uses all-time paid vs 15% of total (pre-existing); some emoji remain in a few HTML strings; vector UltraCrete logo needs the original file.
-
 ## v4.0 — "Ledger" visual identity (CSS/markup only, no DB changes)
 - New product mark (`logo-mark.svg`, a ledger page with a red margin line) in the sidebar and as the browser favicon; UltraCrete logo kept on the login screen.
 - Concrete-formwork grid + soft red glow backgrounds, red survey-marker on every panel title, active-nav marker, status badges with dots, larger tabular numerals, gentler entrance motion (respects reduced-motion).
