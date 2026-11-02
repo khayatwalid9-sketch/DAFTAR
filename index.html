@@ -233,10 +233,10 @@
               <option value="paid" data-i18n="status.paid">مسدد بالكامل</option>
             </select>
             <div class="file-btn-wrap">
-              <button class="btn secondary small" type="button" data-i18n="debtors.importExcel">⭱ استيراد من إكسل</button>
+              <button class="btn secondary small" type="button" data-i18n="debtors.importExcel">استيراد من إكسل</button>
               <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" title="استيراد ملف Excel" aria-label="استيراد ملف Excel">
             </div>
-            <button class="btn secondary small" id="downloadExcelTemplateBtn" data-i18n="debtors.downloadTemplate">⭳ نموذج الاستيراد</button>
+            <button class="btn secondary small" id="downloadExcelTemplateBtn" data-i18n="debtors.downloadTemplate">نموذج الاستيراد</button>
             <button class="btn secondary small" id="saveSearchBtn" data-i18n="filter.saveSearch">حفظ البحث</button>
           </div>
         </div>
@@ -360,7 +360,7 @@
             </select>
             <label class="pay-filter"><input type="checkbox" id="payAutoOnly"><span data-i18n="pay.autoOnly">القيود التلقائية فقط</span></label>
             <button type="button" class="btn secondary small" id="payGroupBtn" aria-pressed="false" data-i18n="pay.groupBy">تجميع حسب الشركة</button>
-            <button type="button" class="btn secondary small" id="payExcelBtn" data-i18n="pay.exportExcel">⭳ تصدير إكسل</button>
+            <button type="button" class="btn secondary small" id="payExcelBtn" data-i18n="pay.exportExcel">تصدير إكسل</button>
           </div>
         </div>
         <div class="quot-all-summary" id="paySummary"></div>
@@ -427,17 +427,17 @@
               <option value="payment" data-i18n="quot.subject.payment">متابعة دفعة</option>
             </select>
             <div class="file-btn-wrap">
-              <button class="btn secondary small" type="button" data-i18n="quot.importExcel">⭱ استيراد من إكسل</button>
+              <button class="btn secondary small" type="button" data-i18n="quot.importExcel">استيراد من إكسل</button>
               <input type="file" id="importQuotationsFile" accept=".xlsx,.xls,.csv" title="استيراد عروض الأسعار من Excel" aria-label="استيراد عروض الأسعار من Excel">
             </div>
             <div class="file-btn-wrap">
-              <button class="btn secondary small" type="button" data-i18n="quot.importDoc">⭱ استيراد مستند (PDF / صورة / Word)</button>
+              <button class="btn secondary small" type="button" data-i18n="quot.importDoc">استيراد مستند (PDF / صورة / Word)</button>
               <input type="file" id="importQuotationDocFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" multiple title="استيراد عرض سعر من ملف PDF أو صورة أو Word" aria-label="استيراد عرض سعر من ملف PDF أو صورة أو Word">
             </div>
-            <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">⭳ نموذج الاستيراد</button>
+            <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">نموذج الاستيراد</button>
             <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">طباعة القائمة</button>
             <button class="btn secondary small" id="quotPrintOptionsBtn" data-i18n="quot.printOptions">خيارات الطباعة</button>
-            <button class="btn secondary small" id="quotExcelBtn" data-i18n="quot.exportExcel">⭳ تصدير إكسل</button>
+            <button class="btn secondary small" id="quotExcelBtn" data-i18n="quot.exportExcel">تصدير إكسل</button>
             <button class="btn small" id="addQuotationBtn" data-i18n="quot.add">+ إضافة عرض سعر</button>
           </div>
         </div>
@@ -476,8 +476,8 @@
             </div>
             <div class="field">
               <button class="btn secondary small" id="quotVisitReportPrintBtn" data-i18n="quot.print">طباعة التقرير</button>
-              <button class="btn secondary small" id="quotVisitReportExcelBtn" data-i18n="quot.exportExcel">⭳ تصدير إكسل</button>
-              <button class="btn small" id="quotVisitReportPdfBtn" data-i18n="quot.pdf">⭳ تحميل PDF</button>
+              <button class="btn secondary small" id="quotVisitReportExcelBtn" data-i18n="quot.exportExcel">تصدير إكسل</button>
+              <button class="btn small" id="quotVisitReportPdfBtn" data-i18n="quot.pdf">تحميل PDF</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -525,7 +525,7 @@
             </div>
             <div class="field">
               <button class="btn secondary small" id="quotReportPrintBtn" data-i18n="quot.print">طباعة التقرير</button>
-              <button class="btn small" id="quotReportPdfBtn" data-i18n="quot.pdf">⭳ تحميل PDF</button>
+              <button class="btn small" id="quotReportPdfBtn" data-i18n="quot.pdf">تحميل PDF</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -574,7 +574,7 @@
           <h3 data-i18n="aging.title">تقرير أعمار الديون التفصيلي</h3>
           <div>
             <button class="btn secondary small" id="agingPrintBtn" data-i18n="aging.print">طباعة التقرير</button>
-            <button class="btn small" id="agingPdfBtn" data-i18n="aging.pdf">⭳ تحميل PDF</button>
+            <button class="btn small" id="agingPdfBtn" data-i18n="aging.pdf">تحميل PDF</button>
           </div>
         </div>
         <div class="table-scroll">
@@ -602,7 +602,7 @@
         <h3 data-i18n="reports.title">التقارير المالية</h3>
         <div>
           <button class="btn secondary small" id="reportPrintBtn" data-i18n="reports.print">طباعة التقرير</button>
-          <button class="btn small" id="reportPdfBtn" data-i18n="reports.pdf">⭳ تحميل PDF</button>
+          <button class="btn small" id="reportPdfBtn" data-i18n="reports.pdf">تحميل PDF</button>
         </div>
       </div>
       <div class="dash-cols">
@@ -884,8 +884,8 @@
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="settings.backup">نسخ احتياطي</h3></div>
         <div class="panel-body">
-          <button class="btn secondary" id="exportDataBtn" data-i18n="settings.exportBackup">⭳ تصدير نسخة احتياطية (JSON)</button>
-          <button class="btn secondary" id="importDataBtn" data-i18n="settings.importBackup">⭱ استيراد نسخة احتياطية</button>
+          <button class="btn secondary" id="exportDataBtn" data-i18n="settings.exportBackup">تصدير نسخة احتياطية (JSON)</button>
+          <button class="btn secondary" id="importDataBtn" data-i18n="settings.importBackup">استيراد نسخة احتياطية</button>
           <input type="file" id="importDataFile" accept="application/json" title="استيراد ملف النسخة الاحتياطية" aria-label="استيراد ملف النسخة الاحتياطية">
         </div>
       </div>
@@ -1190,7 +1190,7 @@
     <div>
       <button class="btn secondary small" id="dr_editDebtor" data-i18n="drawer.editDebtor">تعديل بيانات المدين</button>
       <button class="btn secondary small" id="dr_print" data-i18n="drawer.printStatement">طباعة كشف حساب</button>
-      <button class="btn small" id="dr_downloadPdf" data-i18n="drawer.downloadPdf">⭳ تحميل PDF</button>
+      <button class="btn small" id="dr_downloadPdf" data-i18n="drawer.downloadPdf">تحميل PDF</button>
       <button class="btn danger small" id="dr_delete" data-i18n="drawer.deleteDebtor">حذف هذا المدين نهائيًا</button>
     </div>
   </div>
@@ -1242,7 +1242,7 @@
     <div class="dr-section-title" data-i18n="quot.attachments">الملفات المرفقة</div>
     <div id="qd_files"></div>
     <div class="file-btn-wrap" style="margin:8px 0 4px">
-      <button class="btn secondary small" type="button" data-i18n="quot.attachFile">⭱ إرفاق ملف</button>
+      <button class="btn secondary small" type="button" data-i18n="quot.attachFile">إرفاق ملف</button>
       <input type="file" id="qd_attachFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" title="إرفاق ملف بعرض السعر" aria-label="إرفاق ملف بعرض السعر">
     </div>
 

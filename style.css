@@ -988,3 +988,29 @@ html[lang=en] #debtorsTableBody td:nth-child(n+4):nth-child(-n+6)::after{content
   .cmdk-overlay,.cmdk-trigger{display:none!important}
 }
 .cmdk-input:focus-visible{outline:none}
+
+/* ===== v4.6: watermark visibility, sidebar on short screens ===== */
+:root{--wm-opacity:.17}
+html[data-mode=light]{--wm-opacity:.12}
+.panel,.stat-card,.report-toolbar{background-color:color-mix(in srgb,var(--surface) 80%,transparent)}
+.panel-head,.drawer-head{background:transparent}
+thead th{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
+.sidebar-foot{flex-shrink:0}
+@media(max-height:760px){
+  .sidebar{padding-block:14px}
+  .brand{padding-bottom:12px;margin-bottom:10px}
+  .nav-item{padding-block:8px}
+}
+.cmdk-trigger kbd{direction:ltr}
+#debtorsTableBody td:nth-child(n+4):nth-child(-n+6)::after{font-size:.78em}
+
+/* ===== v4.7: distinct line icons on toolbar buttons (replace text glyphs) ===== */
+[data-i18n="debtors.importExcel"]::before,[data-i18n="quot.importExcel"]::before,[data-i18n="quot.importDoc"]::before,[data-i18n="quot.attachFile"]::before,[data-i18n="settings.importBackup"]::before,[data-i18n$="downloadTemplate"]::before,[data-i18n="topbar.downloadPagePdf"]::before,[data-i18n$=".pdf"]::before,[data-i18n$="exportExcel"]::before,[data-i18n="export.excel"]::before,[data-i18n="settings.exportBackup"]::before,[data-i18n="drawer.downloadPdf"]::before,#colsBtn::before,#advancedSearchBtn::before,#saveSearchBtn::before{content:'';display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-2px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+[data-i18n="debtors.importExcel"]::before,[data-i18n="quot.importExcel"]::before,[data-i18n="quot.importDoc"]::before,[data-i18n="quot.attachFile"]::before,[data-i18n="settings.importBackup"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpath d='m17 8-5-5-5 5'/%3E%3Cpath d='M12 3v12'/%3E%3C/svg%3E")}
+[data-i18n$="downloadTemplate"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 2v6h6'/%3E%3Cpath d='M12 18v-6'/%3E%3Cpath d='m9 15 3 3 3-3'/%3E%3C/svg%3E")}
+[data-i18n="topbar.downloadPagePdf"]::before,[data-i18n$=".pdf"]::before,[data-i18n$="exportExcel"]::before,[data-i18n="export.excel"]::before,[data-i18n="settings.exportBackup"]::before,[data-i18n="drawer.downloadPdf"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3Cpath d='M12 15V3'/%3E%3C/svg%3E")}
+#colsBtn::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3Cpath d='M15 3v18'/%3E%3C/svg%3E")}
+#advancedSearchBtn::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")}
+#saveSearchBtn::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z'/%3E%3Cpath d='M17 21v-8H7v8'/%3E%3Cpath d='M7 3v5h8'/%3E%3C/svg%3E")}
+@media print{.btn::before{display:none}}

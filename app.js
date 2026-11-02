@@ -2101,7 +2101,7 @@ function renderQuotationsTable(){
     const closed = list.filter(q=>q.status==='closed').length;
     const pct = Math.round(closed/list.length*100);
     const meta = `${sum?`${esc(t('quot.dayValue'))}: ${currency(sum)} · `:''}${esc(t('quot.closedRatio'))}: ${closed}/${list.length} (${pct}%)`;
-    return `<tr class="quot-date-group"><td colspan="${cols}">📅 ${esc(day) || t('quot.noDate')}<span class="quot-date-count">${list.length} ${esc(t('qcal.count'))}</span><span class="group-total">${meta}</span></td></tr>`
+    return `<tr class="quot-date-group"><td colspan="${cols}">${esc(day) || t('quot.noDate')}<span class="quot-date-count">${list.length} ${esc(t('qcal.count'))}</span><span class="group-total">${meta}</span></td></tr>`
       + list.map((q,i)=>quotationRowHtml(q, i+1)).join('');
   }).join('');
   if(summary){
@@ -4206,7 +4206,7 @@ function renderPayments(){
     const cols = body.closest('table')?.querySelectorAll('thead th').length || 6;
     body.innerHTML = [...groups.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name), 'ar')).map(g=>{
       const sum = money2(g.list.reduce((s,r)=>s+(Number(r.amount)||0),0));
-      return `<tr class="quot-date-group"><td colspan="${cols}">🏢 ${esc(g.name)}<span class="quot-date-count">${g.list.length}</span><span class="group-total">${esc(t('pay.total'))}: ${currency(sum)}</span></td></tr>`
+      return `<tr class="quot-date-group"><td colspan="${cols}">${esc(g.name)}<span class="quot-date-count">${g.list.length}</span><span class="group-total">${esc(t('pay.total'))}: ${currency(sum)}</span></td></tr>`
         + g.list.map(r=>paymentRowHtml(r, actionsAllowed)).join('');
     }).join('');
   }
@@ -5265,15 +5265,15 @@ const newTranslations = {
   'filter.dateRange': ['نطاق التاريخ', 'Date Range'],
   'filter.amountRange': ['نطاق المبلغ', 'Amount Range'],
   'filter.collector': ['المندوب', 'Collector'],
-  'filter.advancedSearch': ['🔍 بحث متقدم', '🔍 Advanced Search'],
-  'filter.saveSearch': ['💾 حفظ البحث', '💾 Save Search'],
+  'filter.advancedSearch': ['بحث متقدم', 'Advanced Search'],
+  'filter.saveSearch': ['حفظ البحث', 'Save Search'],
   'filter.apply': ['تطبيق', 'Apply'],
   'filter.reset': ['إعادة تعيين', 'Reset'],
   'filter.riskLevel': ['مستوى الخطورة', 'Risk Level'],
   'filter.lowRisk': ['منخفض', 'Low'],
   'filter.mediumRisk': ['متوسط', 'Medium'],
   'filter.highRisk': ['عالي', 'High'],
-  'export.excel': ['⭳ تصدير إلى Excel', '⭳ Export to Excel'],
+  'export.excel': ['تصدير إلى Excel', 'Export to Excel'],
   'export.debtorsTable': ['تصدير جدول المدينين', 'Export Debtors Table'],
   'alerts.soundAlert': ['تنبيهات صوتية', 'Sound Alerts'],
   'alerts.smsAlert': ['تنبيهات SMS', 'SMS Alerts'],

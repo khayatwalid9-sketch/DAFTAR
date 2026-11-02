@@ -3,6 +3,10 @@
 
 # Changelog
 
+## v4.7 — Distinct line icons on toolbar buttons (columns, import, template, export/PDF, advanced search, save); text glyphs removed from labels
+
+## v4.6 — Watermark more visible (panels 80% opaque, opacity .17), sidebar scrolls on short screens, emoji removed from toolbar buttons
+
 ## v4.5 — Design additions (CSS + new enhancements.js, no DB changes)
 - Ctrl/Cmd+K command palette (debtors, pages, actions) + search button in the top bar.
 - Skeleton shimmer on KPI cards until data loads; delta pill "vs last month" on the collected KPI.
