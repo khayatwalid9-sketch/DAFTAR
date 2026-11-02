@@ -1,3 +1,6 @@
+## v4.4 — Dark-mode dropdowns, no grid, full-page colour logo
+- Dropdown lists readable in dark mode; background grid squares removed; watermark now full-page in the official red/grey (`ultracrete-watermark-color.png`).
+
 # Changelog
 
 ## v4.3 — Company watermark background (CSS/markup only)

@@ -867,7 +867,7 @@ table:has(#debtorsTableBody) th:last-child,#debtorsTableBody td:last-child{posit
 /* ===== v4.0 "Ledger" identity: formwork grid, red survey markers, confident numerals, new mark ===== */
 :root{--rule:color-mix(in srgb,var(--ink) 6%,transparent)}
 body{background-image:radial-gradient(900px 420px at 88% -8%,rgba(var(--accent-rgb),.13),transparent 65%)}
-.content{background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:56px 56px;background-position:-1px -1px}
+.content{background-image:none}
 .seal{display:none}
 .seal-img{width:38px;height:38px;border-radius:11px;box-shadow:0 6px 16px rgba(var(--accent-rgb),.35)}
 .brand-text b{font-size:20px;font-weight:700;letter-spacing:-.01em}
@@ -886,7 +886,7 @@ th{font-size:12px;font-weight:600;color:var(--muted)}
 tbody tr{transition:background .12s}
 .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-inline-end:6px;vertical-align:1px}
 .call-row a.btn{text-decoration:none}
-.login-screen{background-image:radial-gradient(700px 380px at 50% 0,rgba(var(--accent-rgb),.18),transparent 70%),linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:auto,56px 56px,56px 56px}
+.login-screen{background-image:radial-gradient(700px 380px at 50% 0,rgba(var(--accent-rgb),.18),transparent 70%)}
 .login-box{border-radius:20px;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
 .login-box .lang-switch{display:flex;width:max-content;margin:12px auto}
 #loginBtn{width:100%;height:44px}
@@ -903,14 +903,19 @@ tbody tr{transition:background .12s}
 img.login-logo{background:#fff;padding:10px;box-sizing:border-box;border-radius:20px;object-fit:contain}
 .mark .i{width:34px;height:34px}
 
-/* ===== v4.3: company watermark (UltraCrete) behind every page and the login screen ===== */
-:root{--wm-opacity:.07}
-.bg-watermark{position:fixed;inset-block:0;inset-inline-start:250px;inset-inline-end:0;z-index:-1;pointer-events:none;
-  background:url('ultracrete-watermark.png') center/min(58vmin,520px) auto no-repeat;opacity:var(--wm-opacity);filter:grayscale(1) brightness(1.7)}
-[data-mode=light] .bg-watermark{filter:grayscale(1);--wm-opacity:.08}
-.panel,.stat-card{background-color:color-mix(in srgb,var(--surface) 88%,transparent)}
-.login-screen::before{content:'';position:absolute;inset:0;pointer-events:none;background:url('ultracrete-watermark.png') center/min(72vmin,640px) auto no-repeat;opacity:.06;filter:grayscale(1) brightness(1.7)}
-[data-mode=light] .login-screen::before{filter:grayscale(1);opacity:.07}
+/* ===== v4.4: full-page colour watermark + dark-mode dropdown fix ===== */
+:root{--wm-opacity:.10;color-scheme:dark}
+html[data-mode=light]{color-scheme:light}
+.bg-watermark{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:url('ultracrete-watermark-color.png') center/min(72vmin,720px) auto no-repeat;opacity:var(--wm-opacity);filter:none}
+html[data-mode=light] .bg-watermark{--wm-opacity:.09}
+.sidebar,.panel,.stat-card{background-color:color-mix(in srgb,var(--surface) 90%,transparent)}
+.login-screen::before{content:'';position:absolute;inset:0;pointer-events:none;background:url('ultracrete-watermark-color.png') center/min(72vmin,720px) auto no-repeat;opacity:.12;filter:none}
+html[data-mode=light] .login-screen::before{opacity:.10}
 .login-box{position:relative;z-index:1}
-@media(max-width:700px){.bg-watermark{inset-inline-start:0;background-size:min(78vw,340px) auto}}
+/* dropdowns: readable list in dark mode (options were white-on-white until hovered) */
+select option,select optgroup{background-color:var(--surface-2);color:var(--ink)}
+select option:checked{background-color:var(--accent-dim);color:#fff}
+select:focus{outline:2px solid var(--accent-text);outline-offset:1px}
+@media(max-width:700px){.bg-watermark{background-size:92vw auto}}
 @media print{.bg-watermark,.login-screen::before{display:none}}
