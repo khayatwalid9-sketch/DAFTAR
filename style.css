@@ -919,3 +919,72 @@ select option:checked{background-color:var(--accent-dim);color:#fff}
 select:focus{outline:2px solid var(--accent-text);outline-offset:1px}
 @media(max-width:700px){.bg-watermark{background-size:92vw auto}}
 @media print{.bg-watermark,.login-screen::before{display:none}}
+
+/* ===== v4.5: design additions ===== */
+:root{--r-sm:8px;--r-md:12px;--r-lg:16px;--shadow-1:0 1px 2px rgba(0,0,0,.18);--shadow-2:0 8px 24px rgba(0,0,0,.22);--steel:#6E8CB5}
+html[data-mode=light]{--shadow-1:0 1px 2px rgba(20,25,40,.08);--shadow-2:0 8px 24px rgba(20,25,40,.12)}
+/* watermark from the vector logo (sharp at any size) */
+.bg-watermark{background-image:url('ultracrete-logo.svg')}
+.login-screen::before{background-image:url('ultracrete-logo.svg')}
+/* 2) one icon weight, one radius scale, raised surfaces */
+svg.i{stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.panel,.stat-card,.modal,.drawer{border-radius:var(--r-md)}
+.panel,.stat-card{box-shadow:var(--shadow-1)}
+.modal,.notification-panel,.search-results{box-shadow:var(--shadow-2)}
+.btn,.field input,.field select,.field textarea,select.field{border-radius:var(--r-sm)}
+/* 1) KPI values + delta pills */
+.stat-card .val{font-size:30px;line-height:1.1;letter-spacing:-.01em}
+.stat-card .trend{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:color-mix(in srgb,currentColor 12%,transparent)}
+.stat-card .trend.up{color:var(--success-text)}.stat-card .trend.down{color:var(--danger-text)}
+.stat-card .trend:not(:empty)::after{content:attr(data-vs);font-weight:500;opacity:.8}
+/* 3) overdue debtor: side line instead of a tinted row */
+#debtorsTableBody tr:has(.badge.overdue) td:first-child{box-shadow:inset -3px 0 0 var(--red)}
+html[dir=ltr] #debtorsTableBody tr:has(.badge.overdue) td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+#debtorsTableBody tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+/* 4) figures: tabular, right-aligned, small currency suffix */
+td.figures,th.figures{text-align:right;direction:ltr;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+#debtorsTableBody td:nth-child(n+4):nth-child(-n+6)::after{content:' ر.ق';font-size:.7em;font-weight:500;color:var(--muted)}
+html[lang=en] #debtorsTableBody td:nth-child(n+4):nth-child(-n+6)::after{content:' QAR'}
+/* 5) skeleton loading */
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.is-loading .stat-card .val,.is-loading .stat-card .delta{color:transparent!important;border-radius:6px;user-select:none;
+  background:linear-gradient(90deg,var(--surface-3) 25%,var(--surface-2) 50%,var(--surface-3) 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+.is-loading .stat-card .val{min-width:60%;display:inline-block}
+@media(prefers-reduced-motion:reduce){.is-loading .stat-card .val,.is-loading .stat-card .delta{animation:none}}
+/* 6) command palette */
+.cmdk-trigger{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);color:var(--muted)}
+.cmdk-trigger kbd{font:inherit;font-size:11px;padding:1px 6px;border-radius:5px;background:var(--surface-3);color:var(--muted)}
+.cmdk-overlay{position:fixed;inset:0;z-index:2000;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(6,10,20,.55);backdrop-filter:blur(3px)}
+.cmdk-overlay.show{display:flex}
+.cmdk{width:min(560px,92vw);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2);overflow:hidden}
+.cmdk-input{box-shadow:none;width:100%;padding:16px 18px;background:transparent;border:0;border-bottom:1px solid var(--border);color:var(--ink);font:inherit;font-size:15px;outline:0}
+.cmdk-list{max-height:min(52vh,380px);overflow:auto;padding:6px}
+.cmdk-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:14px}
+.cmdk-item.sel{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.cmdk-kind{font-size:11px;font-weight:700;color:var(--muted);min-width:46px}
+.cmdk-label{flex:1}
+.cmdk-hint{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cmdk-empty{padding:18px;text-align:center;color:var(--muted)}
+.cmdk-foot{padding:8px 14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted)}
+/* 8) per-debtor progress bar, status coloured */
+.mini-bar{height:4px;border-radius:99px;background:var(--border);margin-top:6px;overflow:hidden;min-width:70px}
+.mini-bar>i{display:block;height:100%;border-radius:99px;background:var(--steel)}
+.mini-bar.is-paid>i{background:var(--teal)}.mini-bar.is-overdue>i{background:var(--red)}.mini-bar.is-promise>i{background:var(--amber)}
+/* 7) mobile: 44px touch targets + clearer bottom nav */
+@media(max-width:768px){
+  .btn,.icon-btn,select.field,.field input,.field select,.mobile-menu-toggle{min-height:44px}
+  .icon-btn{min-width:44px}
+  .bnav-item{min-height:48px;gap:4px}
+  .bnav-item .i{width:22px;height:22px}
+  .bnav-item.active{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+  .cmdk-trigger kbd{display:none}
+  .cmdk-overlay{padding-top:6vh}
+}
+/* 10) print / PDF: always light, with the colour logo */
+@media print{
+  html{color-scheme:light;--bg:#fff;--surface:#fff;--surface-2:#f6f7fa;--surface-3:#e9ecf2;--ink:#111;--muted:#555;--border:#ccc}
+  body{background:#fff!important;background-image:none!important;color:#111}
+  .print-document{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cmdk-overlay,.cmdk-trigger{display:none!important}
+}
+.cmdk-input:focus-visible{outline:none}

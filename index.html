@@ -35,13 +35,14 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L18 10l-4-4L4 16v4zM13 7l4 4"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></symbol>
 </svg>
 
 <!-- ===== Login Screen ===== -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <img class="login-logo" src="ultracrete-logo.png" alt="UltraCrete">
+    <img class="login-logo" src="ultracrete-logo.svg" alt="UltraCrete">
     <div class="lang-switch">
       <button type="button" data-login-lang="ar">AR</button>
       <button type="button" data-login-lang="en">EN</button>
@@ -100,6 +101,7 @@
       <button class="icon-btn notification-btn" id="notificationsBtn" title="الإشعارات" aria-label="الإشعارات"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span id="notificationCount" class="notification-count">0</span></button>
       <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي" aria-label="الوضع الليلي"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
       <div class="search-wrap"><input class="search" id="globalSearch" data-i18n-ph="topbar.search" placeholder="بحث عن مدين، هاتف..." autocomplete="off" aria-controls="globalSearchResults"><div class="search-results" id="globalSearchResults" role="listbox" hidden></div></div>
+      <button class="btn btn-ghost cmdk-trigger" id="cmdkBtn" type="button" title="Ctrl+K" aria-label="Command palette"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><kbd>Ctrl K</kbd></button>
       <button class="btn" id="addDebtorBtn" data-i18n="topbar.addDebtor">+ إضافة مدين</button>
     </div>
   </div>
@@ -1298,6 +1300,7 @@
 <nav class="bottom-nav" aria-label="تنقل سريع"><button type="button" class="bnav-item active" data-page="dashboard"><svg class="i" aria-hidden="true"><use href="#i-dashboard"/></svg><span data-i18n="nav.dashboard">لوحة التحكم</span></button><button type="button" class="bnav-item" data-page="debtors"><svg class="i" aria-hidden="true"><use href="#i-debtors"/></svg><span data-i18n="nav.debtors">المدينون</span></button><button type="button" class="bnav-item" data-page="followups"><svg class="i" aria-hidden="true"><use href="#i-followups"/></svg><span data-i18n="nav.followups">المتابعات</span></button><button type="button" class="bnav-item" data-page="payments"><svg class="i" aria-hidden="true"><use href="#i-payments"/></svg><span data-i18n="nav.payments">سجل السداد</span></button><button type="button" class="bnav-item" id="bnavMore"><svg class="i" aria-hidden="true"><use href="#i-more"/></svg><span data-i18n="nav.more">المزيد</span></button></nav>
 <script src="i18n.js"></script>
 <script src="app.js"></script>
+<script src="enhancements.js"></script>
 
 </body>
 </html>

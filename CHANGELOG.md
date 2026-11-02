@@ -3,6 +3,16 @@
 
 # Changelog
 
+## v4.5 — Design additions (CSS + new enhancements.js, no DB changes)
+- Ctrl/Cmd+K command palette (debtors, pages, actions) + search button in the top bar.
+- Skeleton shimmer on KPI cards until data loads; delta pill "vs last month" on the collected KPI.
+- Overdue debtors: red side line instead of a tinted row; per-debtor progress bar coloured by status (paid / overdue / promise / active).
+- Amounts: tabular, right-aligned, small currency suffix in the debtors table.
+- Unified icon stroke, radius scale and card shadows; 44px touch targets and clearer bottom nav on mobile.
+- Vector logo `ultracrete-logo.svg` (traced from the PNG; replace with the designer's original when available) used on login and as the watermark.
+- Print: forced light palette. Not changed: PDF letterhead still uses the PNG (canvas needs raster).
+- Only the collected KPI has a real month-over-month trend; the others need creation dates the data does not store.
+
 ## v4.3 — Company watermark background (CSS/markup only)
 - UltraCrete logo as a fixed, monochrome watermark behind every page (`.bg-watermark`) and behind the login card; cards are 88% opaque so it shows through softly. Light/dark aware, hidden when printing. Intensity: `--wm-opacity` in style.css (default .07).
 - New cleaned asset `ultracrete-watermark.png` (smooth silhouette, 65 KB) — the supplied logo has compression noise that showed at large sizes.
