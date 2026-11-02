@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.3 — Company watermark background (CSS/markup only)
+- UltraCrete logo as a fixed, monochrome watermark behind every page (`.bg-watermark`) and behind the login card; cards are 88% opaque so it shows through softly. Light/dark aware, hidden when printing. Intensity: `--wm-opacity` in style.css (default .07).
+- New cleaned asset `ultracrete-watermark.png` (smooth silhouette, 65 KB) — the supplied logo has compression noise that showed at large sizes.
+- Monthly-target card caption shortened ("This month: X · Y%").
+
 ## v4.2 — Real logo, saved columns, leftovers
 - UltraCrete logo replaced by the transparent PNG (`ultracrete-logo.png`, 41 KB); old JPG removed. Login shows it on a white tile; documents/PDF use it directly.
 - Debtors column choice is now saved per user (profiles.prefs, no DB change).

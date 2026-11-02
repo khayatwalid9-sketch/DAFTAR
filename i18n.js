@@ -264,5 +264,5 @@ Object.assign(translations,{
   'dsum.remaining':['المتبقي','Remaining'],'dsum.payment':['تسجيل دفعة','Record payment'],'dsum.promise':['وعد دفع','Promise to pay'],
   'call.title':['اتصل اليوم','Call today'],'call.call':['اتصال','Call'],'call.open':['فتح','Open'],'call.empty':['لا توجد حالات عاجلة اليوم','Nothing urgent today'],'cols.btn':['الأعمدة','Columns'],
   'chart.cases':['حالة','cases'],
-  'stat.monthCollected':['المحصّل هذا الشهر','Collected this month'],
+  'stat.monthCollected':['هذا الشهر','This month'],
 });

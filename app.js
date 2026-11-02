@@ -3696,7 +3696,7 @@ function renderStats(){
   document.getElementById('statMonthlyTarget').textContent = currency(monthlyTarget);
   { const tEl=document.getElementById('statMonthlyTarget'); let sub=document.getElementById('statMonthlyProgress');
     if(!sub){ sub=document.createElement('div'); sub.id='statMonthlyProgress'; sub.className='delta'; tEl.insertAdjacentElement('afterend',sub); }
-    sub.textContent=`${t('stat.monthCollected')}: ${currency(monthlyCollected)} (${targetProgress}%)`; }
+    sub.textContent=`${t('stat.monthCollected')}: ${currency(monthlyCollected)} · ${targetProgress}%`; }
   document.getElementById('statCollectionRate').textContent = collectionRate + '%';
   document.getElementById('statAvgDays').textContent = avgDays;
   
