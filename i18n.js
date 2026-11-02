@@ -221,7 +221,8 @@ Object.assign(translations,{
 Object.assign(translations,{
   'quot.dayValue':['قيمة العروض','Quotations value'],'quot.closedRatio':['مغلق','Closed'],
   'quot.inlineStatusNote':['تغيير الحالة من القائمة','Status changed from the list'],
-  'quot.sortFollowup':['⏰ فرز حسب المتابعة القادمة','⏰ Sort by next follow-up'],
+  'quot.more':['المزيد','More'],'quot.grpImport':['استيراد','Import'],'quot.grpOutput':['تصدير وطباعة','Export & print'],
+  'quot.sortFollowup':['فرز حسب المتابعة القادمة','Sort by next follow-up'],
   'quot.sortByDay':['↩ الترتيب العادي','↩ Normal order'],
   'quot.overdueWord':['متأخرة','overdue'],'quot.followupToday':['المتابعة اليوم','Follow-up today'],'quot.followupOverdue':['متابعة متأخرة','Follow-up overdue'],
   'quot.daySheet':['ملخص الأيام','Daily summary'],'quot.daySheetHeaders':['التاريخ|عدد العروض|إجمالي القيمة|المغلقة','Date|Quotations|Total value|Closed'],

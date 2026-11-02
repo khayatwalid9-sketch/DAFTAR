@@ -1014,3 +1014,51 @@ thead th{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
 #advancedSearchBtn::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")}
 #saveSearchBtn::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z'/%3E%3Cpath d='M17 21v-8H7v8'/%3E%3Cpath d='M7 3v5h8'/%3E%3C/svg%3E")}
 @media print{.btn::before{display:none}}
+
+/* ===== v4.8: sticky actions column in the quotations list (same as debtors) ===== */
+table:has(#quotationsTableBody) th:last-child,
+#quotationsTableBody tr:not(.quot-date-group) td:last-child{position:sticky;inset-inline-end:0;z-index:2;background:var(--surface);border-inline-start:1px solid var(--ln);box-shadow:-6px 0 8px -6px rgba(0,0,0,.35)}
+html[dir=ltr] table:has(#quotationsTableBody) th:last-child,
+html[dir=ltr] #quotationsTableBody tr:not(.quot-date-group) td:last-child{box-shadow:6px 0 8px -6px rgba(0,0,0,.35)}
+table:has(#quotationsTableBody) th:last-child,table:has(#debtorsTableBody) th:last-child{background:var(--surface-2);z-index:3}
+/* keep the sticky cell solid on row hover (the row tint must not make it see-through) */
+#quotationsTableBody tr:not(.quot-date-group):hover td:last-child,
+#debtorsTableBody tr:hover td:last-child{background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+
+/* ===== v4.9: inputs that carry class "field" themselves (quotations search/date, payments dates) match the selects ===== */
+input.field,input.qcal-input{box-sizing:border-box;height:38px;padding:0 12px;border:1px solid var(--ln);border-radius:8px;background-color:var(--surface-2);color:var(--ink);font:inherit;font-size:13px;min-width:0;transition:border-color .15s,box-shadow .15s}
+input.field::placeholder{color:var(--muted);opacity:.85}
+input.field:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--ln))}
+input.field:focus,input.field:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+input.qcal-input{cursor:pointer;min-width:140px;text-align:center}
+input[type=date].field{color-scheme:dark}
+html[data-mode=light] input[type=date].field{color-scheme:light}
+#quotSearch{min-width:240px}
+@media(max-width:768px){input.field{height:44px}#quotSearch{min-width:0;flex:1 1 100%}}
+
+/* quotations toolbar: clock icon, title on its own line, equal control heights */
+#quotSortFollowupBtn::before{content:'';display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-2px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center/contain no-repeat}
+#page-quotations .panel-head{flex-wrap:wrap;row-gap:12px}
+#page-quotations .panel-head>h3{flex:1 0 100%;white-space:nowrap}
+#page-quotations .panel-head select.field{height:38px}
+@media print{#quotSortFollowupBtn::before{display:none}}
+
+/* ===== v5.0: quotations toolbar "More" menu ===== */
+[data-i18n="quot.print"]::before,[data-i18n="quot.printOptions"]::before,[data-i18n="quot.more"]::before{content:'';display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-2px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+[data-i18n="quot.print"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9V2h12v7'/%3E%3Cpath d='M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2'/%3E%3Crect x='6' y='14' width='12' height='8'/%3E%3C/svg%3E")}
+[data-i18n="quot.printOptions"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 21v-7'/%3E%3Cpath d='M4 10V3'/%3E%3Cpath d='M12 21v-9'/%3E%3Cpath d='M12 8V3'/%3E%3Cpath d='M20 21v-5'/%3E%3Cpath d='M20 12V3'/%3E%3Cpath d='M1 14h6'/%3E%3Cpath d='M9 8h6'/%3E%3Cpath d='M17 16h6'/%3E%3C/svg%3E")}
+[data-i18n="quot.more"]::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='5' cy='12' r='1.2'/%3E%3Ccircle cx='12' cy='12' r='1.2'/%3E%3Ccircle cx='19' cy='12' r='1.2'/%3E%3C/svg%3E")}
+.more-wrap{position:relative;display:inline-block}
+.more-pop{position:absolute;inset-inline-start:0;top:calc(100% + 6px);z-index:40;width:270px;max-width:88vw;padding:8px;background:var(--surface);border:1px solid var(--ln);border-radius:12px;box-shadow:var(--shadow-2)}
+.more-pop[hidden]{display:none}
+.more-grp{padding:6px 10px 4px;font-size:11px;font-weight:700;color:var(--muted)}
+.more-sep{height:1px;background:var(--ln);margin:6px 4px}
+.more-pop .file-btn-wrap{display:block;position:relative}
+.more-pop .btn{display:flex;align-items:center;width:100%;height:38px;justify-content:flex-start;text-align:start;border:0;background:transparent;box-shadow:none;white-space:normal}
+.more-pop .btn:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+@media(max-width:768px){.more-pop .btn{height:44px}}
+@media print{.more-wrap{display:none}}
+/* let the More menu overflow the card instead of being clipped */
+#page-quotations>.panel{overflow:visible}
+#page-quotations .panel-head{position:relative;z-index:5}
+#page-quotations .table-scroll{border-end-start-radius:16px;border-end-end-radius:16px}

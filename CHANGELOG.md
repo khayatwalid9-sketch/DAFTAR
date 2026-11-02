@@ -3,6 +3,12 @@
 
 # Changelog
 
+## v5.0 — Quotations toolbar: import/template/export/print grouped under a "More" menu (same button ids, handlers untouched)
+
+## v4.9 — Quotations toolbar: search/date inputs styled like selects (dark + light), clock icon replaces emoji, title on its own line
+
+## v4.8 — Quotations list: actions column sticky (like debtors); solid on hover; date-group rows excluded
+
 ## v4.7 — Distinct line icons on toolbar buttons (columns, import, template, export/PDF, advanced search, save); text glyphs removed from labels
 
 ## v4.6 — Watermark more visible (panels 80% opaque, opacity .17), sidebar scrolls on short screens, emoji removed from toolbar buttons

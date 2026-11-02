@@ -403,7 +403,7 @@
             <input id="quotSearch" class="field" data-i18n-ph="quot.search" placeholder="بحث باسم الشركة أو المسؤول..." title="بحث عروض الأسعار" aria-label="بحث عروض الأسعار">
             <input type="text" id="quotDateFilter" class="field qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
             <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">عرض جميع عروض الأسعار</button>
-            <button type="button" class="btn secondary small" id="quotSortFollowupBtn" aria-pressed="false">⏰ فرز حسب المتابعة القادمة</button>
+            <button type="button" class="btn secondary small" id="quotSortFollowupBtn" aria-pressed="false">فرز حسب المتابعة القادمة</button>
             <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="open" data-i18n="quot.status.open">مفتوح</option>
@@ -426,6 +426,10 @@
               <option value="newClient" data-i18n="quot.subject.newClient">عميل مستهدف جديد</option>
               <option value="payment" data-i18n="quot.subject.payment">متابعة دفعة</option>
             </select>
+            <div class="more-wrap" id="quotMoreWrap">
+              <button class="btn secondary small" id="quotMoreBtn" type="button" aria-haspopup="true" aria-expanded="false" data-i18n="quot.more">المزيد</button>
+              <div class="more-pop" id="quotMorePop" hidden>
+                <div class="more-grp" data-i18n="quot.grpImport">استيراد</div>
             <div class="file-btn-wrap">
               <button class="btn secondary small" type="button" data-i18n="quot.importExcel">استيراد من إكسل</button>
               <input type="file" id="importQuotationsFile" accept=".xlsx,.xls,.csv" title="استيراد عروض الأسعار من Excel" aria-label="استيراد عروض الأسعار من Excel">
@@ -435,9 +439,13 @@
               <input type="file" id="importQuotationDocFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/*" multiple title="استيراد عرض سعر من ملف PDF أو صورة أو Word" aria-label="استيراد عرض سعر من ملف PDF أو صورة أو Word">
             </div>
             <button class="btn secondary small" id="downloadQuotTemplateBtn" data-i18n="quot.downloadTemplate">نموذج الاستيراد</button>
+                <div class="more-sep"></div>
+                <div class="more-grp" data-i18n="quot.grpOutput">تصدير وطباعة</div>
             <button class="btn secondary small" id="quotPrintBtn" data-i18n="quot.print">طباعة القائمة</button>
             <button class="btn secondary small" id="quotPrintOptionsBtn" data-i18n="quot.printOptions">خيارات الطباعة</button>
             <button class="btn secondary small" id="quotExcelBtn" data-i18n="quot.exportExcel">تصدير إكسل</button>
+              </div>
+            </div>
             <button class="btn small" id="addQuotationBtn" data-i18n="quot.add">+ إضافة عرض سعر</button>
           </div>
         </div>

@@ -108,4 +108,16 @@
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); overlay && overlay.classList.contains('show') ? close() : open(); }
   });
   const btn = document.getElementById('cmdkBtn'); if(btn) btn.addEventListener('click', open);
+
+  /* ---------- "More" menu in the quotations toolbar ---------- */
+  (function(){
+    const btn = document.getElementById('quotMoreBtn'), pop = document.getElementById('quotMorePop');
+    if(!btn || !pop) return;
+    const setOpen = o => { pop.hidden = !o; btn.setAttribute('aria-expanded', String(o)); };
+    btn.addEventListener('click', e => { e.stopPropagation(); setOpen(pop.hidden); });
+    document.addEventListener('click', e => { if(!pop.hidden && !pop.contains(e.target)) setOpen(false); });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape' && !pop.hidden){ setOpen(false); btn.focus(); } });
+    pop.addEventListener('click', e => { const b = e.target.closest('button'); if(b && !b.closest('.file-btn-wrap')) setTimeout(() => setOpen(false), 0); });
+    pop.addEventListener('change', () => setOpen(false));
+  })();
 })();
