@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.2 — Real logo, saved columns, leftovers
+- UltraCrete logo replaced by the transparent PNG (`ultracrete-logo.png`, 41 KB); old JPG removed. Login shows it on a white tile; documents/PDF use it directly.
+- Debtors column choice is now saved per user (profiles.prefs, no DB change).
+- "Monthly target" card now shows what was collected this month (payments dated this month) and the % of target.
+- Money: balances are rounded to 2 decimals and shown with at most 2 decimals (no float drift). Full integer-cents storage NOT done.
+- Empty-state emoji replaced with line icons.
+- Not done: app.js ES-module split; scheduled e-mail reports (needs an e-mail provider + Edge Function + pg_cron).
+
+## v4.1 — Data-viz, icons and letterhead (no DB changes)
+- Charts: palette comes from CSS tokens (new `--steel`, `--violet`); status colours are now consistent everywhere (active = steel, paid = teal, overdue = red, promise = amber); donut shows the total in the centre and percentages; legend/axis text colours fixed (they were invisible on dark); grid softened; charts redraw when switching light/dark.
+- Dashboard trend chart: collected per month as bars + dashed monthly-target line (target rule unchanged: 15% of total debts).
+- Icons: table/row action glyphs (◎ ☎ ✎ ✕ ⚙) replaced with line icons; decorative emoji removed from labels.
+- PDF + print: documents with the brand header now show the UltraCrete logo + the new mark; any other document gets a letterhead (logo, system name, date, user).
+- Known: the monthly-target KPI uses all-time paid vs 15% of total (pre-existing); some emoji remain in a few HTML strings; vector UltraCrete logo needs the original file.
+
 ## v4.0 — "Ledger" visual identity (CSS/markup only, no DB changes)
 - New product mark (`logo-mark.svg`, a ledger page with a red margin line) in the sidebar and as the browser favicon; UltraCrete logo kept on the login screen.
 - Concrete-formwork grid + soft red glow backgrounds, red survey-marker on every panel title, active-nav marker, status badges with dots, larger tabular numerals, gentler entrance motion (respects reduced-motion).
