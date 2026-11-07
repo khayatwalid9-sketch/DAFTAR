@@ -81,6 +81,7 @@ create table if not exists public.quotations (
   quotation_no text,
   invoice_no text,
   project_no text,
+  project_status text,
   subject text,
   next_followup date,
   status text not null default 'open' check (status in ('open','submitted','followup','paymentPending','closed')),

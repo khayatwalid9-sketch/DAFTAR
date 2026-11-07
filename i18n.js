@@ -95,7 +95,7 @@ Object.assign(translations,{
   'quot.quotationNo':['رقم عرض السعر','Quotation No.'],
   'quot.quotationNoPh':['مثال: QTN-2026-00123','e.g. QTN-2026-00123'],
   'quot.invoiceNo':['رقم الفاتورة','Invoice No.'],
-  'quot.projectNo':['رقم المشروع','Project No.'],
+  'quot.projectNo':['رقم المشروع','Project No.'],'quot.projectStatus':['حالة المشروع','Project Status'],'quot.allProjectStatuses':['كل حالات المشروع','All project statuses'],'quot.filter':['تصفية','Filter'],'quot.allScopes':['كل الأنشطة','All activities'],'quot.allSubjects':['كل المواضيع','All subjects'],
   'quot.subject':['الموضوع','Subject'],
   'quot.nextFollowup':['المتابعة القادمة','Next follow-up'],
   'quot.requirement':['تفاصيل / متطلبات العميل','Details / client requirement'],

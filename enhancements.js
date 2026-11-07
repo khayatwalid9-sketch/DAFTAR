@@ -120,4 +120,15 @@
     pop.addEventListener('click', e => { const b = e.target.closest('button'); if(b && !b.closest('.file-btn-wrap')) setTimeout(() => setOpen(false), 0); });
     pop.addEventListener('change', () => setOpen(false));
   })();
+
+  /* ---------- Mobile: group quotation filters under one "Filter" button ---------- */
+  (function(){
+    const wrap = document.getElementById('quotFilterWrap'), btn = document.getElementById('quotFilterBtn');
+    if(!wrap || !btn) return;
+    const selects = [...wrap.querySelectorAll('select')];
+    const count = () => { const n = selects.filter(s => s.value !== 'all').length; btn.classList.toggle('has-filters', n > 0); btn.dataset.count = n; };
+    selects.forEach(s => s.addEventListener('change', count)); count();
+    btn.addEventListener('click', e => { e.stopPropagation(); const o = !wrap.classList.contains('open'); wrap.classList.toggle('open', o); btn.setAttribute('aria-expanded', String(o)); });
+    document.addEventListener('click', e => { if(wrap.classList.contains('open') && !wrap.contains(e.target)){ wrap.classList.remove('open'); btn.setAttribute('aria-expanded','false'); } });
+  })();
 })();

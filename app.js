@@ -526,7 +526,7 @@ function buildSyncRows(){
     debtors: debtors.map(debtor=>({id:debtor.id,name:debtor.name,type:debtor.type,company_number:debtor.companyNumber||'',cr_number:debtor.crNumber||'',phone:debtor.phone||'',total:debtor.total,paid:debtor.paid,due:debtor.due||null,notes:debtor.notes||'',rep_id:debtor.repId||null,promise_date:debtor.promiseDate||null,promise_amount:debtor.promiseAmount||null})),
     debtors_activity: debtors.flatMap(debtor=>(debtor.log||[]).map(activity=>({id:activity.id,debtor_id:debtor.id,type:activity.type,activity_date:activity.date,amount:activity.amount||null,method:activity.method||null,note:activity.note||null}))),
     reps: reps.map(rep=>({id:rep.id,name:rep.name,phone:rep.phone||'',area:rep.area||''})),
-    quotations: quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''})),
+    quotations: quotations.map(q=>({id:q.id,date:q.date||null,visit_time:q.visitTime||'',company_name:q.companyName||'',company_scope:q.companyScope||'',contact_person:q.contactPerson||'',mobile:q.mobile||'',email:q.email||'',amount:q.amount||null,quotation_no:q.quotationNo||'',invoice_no:q.invoiceNo||'',project_no:q.projectNo||'',project_status:q.projectStatus||'',subject:q.subject||'',next_followup:q.nextFollowup||null,status:q.status||'open',requirement:q.requirement||'',followup_action:q.followupAction||'',notes:q.notes||''})),
     quotations_activity: quotations.flatMap(q=>(q.log||[]).map(entry=>({id:entry.id,quotation_id:q.id,log_date:entry.date,status:entry.status||'',note:entry.note||''})))
   };
 }
@@ -743,7 +743,7 @@ async function loadFromSupabase() {
     quotations = (quotationsData || []).map(q => ({
       id: q.id, date: q.date, visitTime: q.visit_time || '', companyName: q.company_name || '', companyScope: q.company_scope || '',
       contactPerson: q.contact_person || '', mobile: q.mobile || '', email: q.email || '', amount: q.amount,
-      quotationNo: q.quotation_no || '', invoiceNo: q.invoice_no || '', projectNo: q.project_no || '',
+      quotationNo: q.quotation_no || '', invoiceNo: q.invoice_no || '', projectNo: q.project_no || '', projectStatus: q.project_status || '',
       subject: q.subject || '', nextFollowup: q.next_followup, status: q.status || 'open',
       requirement: q.requirement || '', followupAction: q.followup_action || '', notes: q.notes || '', log: []
     }));
@@ -2007,12 +2007,14 @@ function scopedQuotations(){
   const statusF = document.getElementById('quotStatusFilter')?.value || 'all';
   const scopeF = document.getElementById('quotScopeFilter')?.value || 'all';
   const subjectF = document.getElementById('quotSubjectFilter')?.value || 'all';
+  const projF = document.getElementById('quotProjectStatusFilter')?.value || 'all';
   const dateF = document.getElementById('quotDateFilter')?.value || latestQuotationDate();
   return quotations.filter(q=>{
     if(!quotShowAll && dateF && q.date !== dateF) return false;
     if(statusF!=='all' && q.status!==statusF) return false;
     if(scopeF!=='all' && q.companyScope!==scopeF) return false;
     if(subjectF!=='all' && q.subject!==subjectF) return false;
+    if(projF!=='all' && (q.projectStatus||'')!==projF) return false;
     if(query){
       const hay = `${q.companyName||''} ${q.contactPerson||''} ${q.mobile||''} ${q.email||''}`.toLowerCase();
       if(!hay.includes(query)) return false;
@@ -2021,6 +2023,10 @@ function scopedQuotations(){
   }).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
 }
 
+const PROJ_STATUS = {tender:'TENDER', jobInHand:'JOB IN HAND'};
+function projStatusLabel(v){ return PROJ_STATUS[v] || '—'; }
+function projStatusBadge(q){ return q && PROJ_STATUS[q.projectStatus] ? ` <span class="proj-badge proj-${q.projectStatus}">${PROJ_STATUS[q.projectStatus]}</span>` : ''; }
+function normProjectStatus(v){ const s=String(v||'').toLowerCase().replace(/[^a-z]/g,''); return s==='tender'?'tender':(s==='jobinhand'?'jobInHand':''); }
 const QUOT_STATUSES = ['open','followup','submitted','paymentPending','closed'];
 let quotSortFollowup = false;
 function quotFollowupState(q){
@@ -2041,7 +2047,7 @@ function quotationRowHtml(q, n){
   return `<tr data-id="${q.id}"${fu==='overdue'?' class="quot-row-overdue"':''}>
     <td class="figures">${n}</td><td>${esc(q.date)||'—'}</td><td class="figures">${esc(q.visitTime)||'—'}</td><td>${esc(q.companyName)}</td><td>${quotScopeLabel(q.companyScope)}</td>
     <td>${esc(q.contactPerson)||'—'}</td><td class="figures">${esc(q.mobile)||'—'}</td><td>${esc(q.email)||'—'}</td>
-    <td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}</td>
+    <td>${quotSubjectLabel(q.subject)}</td><td>${esc(q.quotationNo)||'—'}</td><td>${esc(q.invoiceNo)||'—'}</td><td>${esc(q.projectNo)||'—'}${projStatusBadge(q)}</td>
     <td>${statusCell}</td><td>${fuCell}</td>
     <td><button type="button" class="link-btn" data-quot-edit="${q.id}">${t('action.edit')}</button> · <button type="button" class="link-btn" data-quot-delete="${q.id}">${t('action.delete')}</button></td>
   </tr>`;
@@ -2218,6 +2224,7 @@ attachQuotationCalendar(document.getElementById('quotDateFilter'));
 attachQuotationCalendar(document.getElementById('quotVisitReportDate'));
 document.getElementById('quotStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotScopeFilter')?.addEventListener('change', renderQuotationsTable);
+document.getElementById('quotProjectStatusFilter')?.addEventListener('change', renderQuotationsTable);
 document.getElementById('quotSubjectFilter')?.addEventListener('change', renderQuotationsTable);
 
 document.getElementById('quotationsTableBody')?.addEventListener('change', (ev)=>{
@@ -2256,6 +2263,7 @@ document.getElementById('addQuotationBtn')?.addEventListener('click', ()=>{
   document.getElementById('saveQuotationBtn').textContent = t('quot.save');
   ['q_company','q_contact','q_mobile','q_email','q_amount','q_time','q_nextFollowup','q_requirement','q_followupAction','q_notes','q_quotationNo','q_invoiceNo','q_projectNo'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('q_scope').value = 'mainContractor';
+  document.getElementById('q_projectStatus').value = '';
   document.getElementById('q_subject').value = 'quoteFollowup';
   document.getElementById('q_status').value = 'open';
   document.getElementById('q_date').value = todayISO();
@@ -2280,6 +2288,7 @@ function openQuotationEditModal(id){
   document.getElementById('q_quotationNo').value = q.quotationNo||'';
   document.getElementById('q_invoiceNo').value = q.invoiceNo||'';
   document.getElementById('q_projectNo').value = q.projectNo||'';
+  document.getElementById('q_projectStatus').value = q.projectStatus||'';
   document.getElementById('q_date').value = q.date||todayISO();
   document.getElementById('q_time').value = q.visitTime||'';
   document.getElementById('q_nextFollowup').value = q.nextFollowup||'';
@@ -2304,6 +2313,7 @@ document.getElementById('saveQuotationBtn')?.addEventListener('click', async ()=
     quotationNo: document.getElementById('q_quotationNo').value.trim(),
     invoiceNo: document.getElementById('q_invoiceNo').value.trim(),
     projectNo: document.getElementById('q_projectNo').value.trim(),
+    projectStatus: document.getElementById('q_projectStatus').value,
     date: document.getElementById('q_date').value || todayISO(),
     visitTime: document.getElementById('q_time').value || '',
     nextFollowup: document.getElementById('q_nextFollowup').value || '',
@@ -2402,6 +2412,7 @@ function openQuotationDrawer(id){
   document.getElementById('qd_quotationNo').textContent = q.quotationNo||'—';
   document.getElementById('qd_invoiceNo').textContent = q.invoiceNo||'—';
   document.getElementById('qd_projectNo').textContent = q.projectNo||'—';
+  document.getElementById('qd_projectStatus').textContent = projStatusLabel(q.projectStatus);
   document.getElementById('qd_date').textContent = q.date||'—';
   document.getElementById('qd_time').textContent = q.visitTime||'—';
   document.getElementById('qd_subject').textContent = quotSubjectLabel(q.subject);
@@ -3069,7 +3080,7 @@ document.getElementById('importQuotationsFile')?.addEventListener('change', asyn
           amount: Number(String(pick(row,['amount','quotation value','قيمة العرض'])).replace(/[^\d.-]/g,''))||0,
           quotationNo: String(pick(row,['quotation no.','quotation no','رقم عرض السعر'])),
           invoiceNo: String(pick(row,['invoice no.','invoice no','رقم الفاتورة'])),
-          projectNo: String(pick(row,['project no.','project no','رقم المشروع'])),
+          projectNo: String(pick(row,['project no.','project no','رقم المشروع'])), projectStatus: normProjectStatus(pick(row,['project status','حالة المشروع'])),
           subject: subjectMap[subjectRaw] || 'quoteFollowup',
           nextFollowup: followupDate,
           status: statusMap[statusRaw] || 'open',
@@ -3114,9 +3125,9 @@ document.getElementById('downloadQuotTemplateBtn')?.addEventListener('click', ()
 document.getElementById('quotExcelBtn')?.addEventListener('click', ()=>{
   const rows = scopedQuotations();
   const headers = currentLang==='en'
-    ? ['No.','Date','Time','Company Name','Company Scope','Contact Person','Mobile','Email','Amount','Quotation No.','Invoice No.','Project No.','Visit Purpose','Status','Next Follow-up','Requirement','Follow-up Action','Notes']
-    : ['م.','التاريخ','الوقت','اسم الشركة','نشاط الشركة','المسؤول','الجوال','البريد الإلكتروني','قيمة العرض','رقم عرض السعر','رقم الفاتورة','رقم المشروع','الموضوع','الحالة','المتابعة القادمة','التفاصيل','إجراء المتابعة','ملاحظات'];
-  const data = [headers, ...rows.map((q,i)=>[i+1, q.date||'', q.visitTime||'', q.companyName||'', quotScopeLabel(q.companyScope), q.contactPerson||'', q.mobile||'', q.email||'', q.amount||0, q.quotationNo||'', q.invoiceNo||'', q.projectNo||'', quotSubjectLabel(q.subject), quotStatusLabel(q.status), q.nextFollowup||'', q.requirement||'', q.followupAction||'', q.notes||''])];
+    ? ['No.','Date','Time','Company Name','Company Scope','Contact Person','Mobile','Email','Amount','Quotation No.','Invoice No.','Project No.','Project Status','Visit Purpose','Status','Next Follow-up','Requirement','Follow-up Action','Notes']
+    : ['م.','التاريخ','الوقت','اسم الشركة','نشاط الشركة','المسؤول','الجوال','البريد الإلكتروني','قيمة العرض','رقم عرض السعر','رقم الفاتورة','رقم المشروع','حالة المشروع','الموضوع','الحالة','المتابعة القادمة','التفاصيل','إجراء المتابعة','ملاحظات'];
+  const data = [headers, ...rows.map((q,i)=>[i+1, q.date||'', q.visitTime||'', q.companyName||'', quotScopeLabel(q.companyScope), q.contactPerson||'', q.mobile||'', q.email||'', q.amount||0, q.quotationNo||'', q.invoiceNo||'', q.projectNo||'', projStatusLabel(q.projectStatus).replace('—',''), quotSubjectLabel(q.subject), quotStatusLabel(q.status), q.nextFollowup||'', q.requirement||'', q.followupAction||'', q.notes||''])];
   const sheet = XLSX.utils.aoa_to_sheet(data);
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, currentLang==='en'?'Quotations':'عروض الأسعار');
@@ -3184,6 +3195,7 @@ const QUOT_PRINT_COLUMNS = [
   {key:'quotationNo', ar:'رقم العرض', en:'Quotation No.', get:q=>esc(q.quotationNo)||'—'},
   {key:'invoiceNo', ar:'رقم الفاتورة', en:'Invoice No.', get:q=>esc(q.invoiceNo)||'—'},
   {key:'projectNo', ar:'رقم المشروع', en:'Project No.', get:q=>esc(q.projectNo)||'—'},
+  {key:'projectStatus', ar:'حالة المشروع', en:'Project Status', get:q=>projStatusLabel(q.projectStatus)},
   {key:'status', ar:'الحالة', en:'Status', get:q=>quotStatusLabel(q.status)},
   {key:'nextFollowup', ar:'المتابعة القادمة', en:'Next Follow-up', get:q=>esc(q.nextFollowup)||'—'},
   {key:'followupAction', ar:'إجراء المتابعة', en:'Follow-up Action', get:q=>esc(q.followupAction)||'—'},

@@ -404,7 +404,7 @@
             <input type="text" id="quotDateFilter" class="field qcal-input" dir="ltr" readonly autocomplete="off" aria-haspopup="dialog" placeholder="YYYY-MM-DD" title="تاريخ عرض السعر" aria-label="تاريخ عرض السعر">
             <button type="button" class="btn secondary small" id="quotShowAllBtn" aria-pressed="false" data-i18n="quot.showAll">عرض جميع عروض الأسعار</button>
             <button type="button" class="btn secondary small" id="quotSortFollowupBtn" aria-pressed="false">فرز حسب المتابعة القادمة</button>
-            <select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
+            <div class="filter-wrap" id="quotFilterWrap"><button class="btn secondary small filter-toggle" id="quotFilterBtn" type="button" aria-expanded="false" data-i18n="quot.filter">تصفية</button><div class="filter-pop" id="quotFilterPop"><select id="quotStatusFilter" class="field" title="فلترة حسب الحالة" aria-label="فلترة حسب الحالة">
               <option value="all" data-i18n="debtors.allStatuses">كل الحالات</option>
               <option value="open" data-i18n="quot.status.open">مفتوح</option>
               <option value="followup" data-i18n="quot.status.followup">بانتظار المتابعة</option>
@@ -413,7 +413,7 @@
               <option value="closed" data-i18n="quot.status.closed">مغلق</option>
             </select>
             <select id="quotScopeFilter" class="field" title="فلترة حسب نشاط الشركة" aria-label="فلترة حسب نشاط الشركة">
-              <option value="all" data-i18n="debtors.allStatuses">كل الأنشطة</option>
+              <option value="all" data-i18n="quot.allScopes">كل الأنشطة</option>
               <option value="mainContractor" data-i18n="quot.scope.mainContractor">مقاول رئيسي</option>
               <option value="subcontractor" data-i18n="quot.scope.subcontractor">مقاول من الباطن</option>
               <option value="consultant" data-i18n="quot.scope.consultant">استشاري</option>
@@ -421,11 +421,16 @@
               <option value="supplier" data-i18n="quot.scope.supplier">مورّد / مصنّع</option>
             </select>
             <select id="quotSubjectFilter" class="field" title="فلترة حسب الموضوع" aria-label="فلترة حسب الموضوع">
-              <option value="all" data-i18n="debtors.allStatuses">كل المواضيع</option>
+              <option value="all" data-i18n="quot.allSubjects">كل المواضيع</option>
               <option value="quoteFollowup" data-i18n="quot.subject.quoteFollowup">متابعة عرض سعر</option>
               <option value="newClient" data-i18n="quot.subject.newClient">عميل مستهدف جديد</option>
               <option value="payment" data-i18n="quot.subject.payment">متابعة دفعة</option>
             </select>
+            <select id="quotProjectStatusFilter" class="field" title="فلترة حسب حالة المشروع" aria-label="فلترة حسب حالة المشروع">
+              <option value="all" data-i18n="quot.allProjectStatuses">كل حالات المشروع</option>
+              <option value="tender">TENDER</option>
+              <option value="jobInHand">JOB IN HAND</option>
+            </select></div></div>
             <div class="more-wrap" id="quotMoreWrap">
               <button class="btn secondary small" id="quotMoreBtn" type="button" aria-haspopup="true" aria-expanded="false" data-i18n="quot.more">المزيد</button>
               <div class="more-pop" id="quotMorePop" hidden>
@@ -1042,6 +1047,7 @@
         <div class="field"><label data-i18n="quot.quotationNo">رقم عرض السعر</label><input id="q_quotationNo" data-i18n-ph="quot.quotationNoPh" placeholder="مثال: QTN-2026-00123" title="رقم عرض السعر" aria-label="رقم عرض السعر"></div>
         <div class="field"><label data-i18n="quot.invoiceNo">رقم الفاتورة</label><input id="q_invoiceNo" title="رقم الفاتورة" aria-label="رقم الفاتورة"></div>
         <div class="field"><label data-i18n="quot.projectNo">رقم المشروع</label><input id="q_projectNo" title="رقم المشروع" aria-label="رقم المشروع"></div>
+        <div class="field"><label data-i18n="quot.projectStatus">حالة المشروع</label><select id="q_projectStatus" title="حالة المشروع" aria-label="حالة المشروع"><option value="">—</option><option value="tender">TENDER</option><option value="jobInHand">JOB IN HAND</option></select></div>
       </div>
       <div class="field-row">
         <div class="field"><label data-i18n="th.date">تاريخ العرض</label><input id="q_date" type="date" title="تاريخ العرض" aria-label="تاريخ العرض"></div>
@@ -1225,6 +1231,7 @@
     <div class="dr-stat"><span data-i18n="quot.quotationNo">رقم عرض السعر</span><span id="qd_quotationNo">—</span></div>
     <div class="dr-stat"><span data-i18n="quot.invoiceNo">رقم الفاتورة</span><span id="qd_invoiceNo">—</span></div>
     <div class="dr-stat"><span data-i18n="quot.projectNo">رقم المشروع</span><span id="qd_projectNo">—</span></div>
+    <div class="dr-stat"><span data-i18n="quot.projectStatus">حالة المشروع</span><span id="qd_projectStatus">—</span></div>
     <div class="dr-stat"><span data-i18n="th.date">تاريخ العرض</span><span id="qd_date">—</span></div>
     <div class="dr-stat"><span data-i18n="quot.time">وقت الزيارة</span><span id="qd_time">—</span></div>
     <div class="dr-stat"><span data-i18n="quot.subject">الموضوع</span><span id="qd_subject">—</span></div>

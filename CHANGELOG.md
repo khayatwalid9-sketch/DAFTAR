@@ -3,6 +3,8 @@
 
 # Changelog
 
+## v5.1 — Quotations: new "Project Status" field (TENDER / JOB IN HAND): form, badge in list, filter, drawer, Excel export, print column, Excel import. REQUIRES running supabase/project-status-migration.sql first. Mobile: filters grouped under a "Filter" button.
+
 ## v5.0 — Quotations toolbar: import/template/export/print grouped under a "More" menu (same button ids, handlers untouched)
 
 ## v4.9 — Quotations toolbar: search/date inputs styled like selects (dark + light), clock icon replaces emoji, title on its own line

@@ -1062,3 +1062,26 @@ html[data-mode=light] input[type=date].field{color-scheme:light}
 #page-quotations>.panel{overflow:visible}
 #page-quotations .panel-head{position:relative;z-index:5}
 #page-quotations .table-scroll{border-end-start-radius:16px;border-end-end-radius:16px}
+
+/* ===== v5.1: project status badge + mobile filter popover ===== */
+.proj-badge{display:inline-block;margin-inline-start:6px;padding:1px 8px;border-radius:99px;font-size:10.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;vertical-align:middle}
+.proj-tender{color:#E8B04A;background:color-mix(in srgb,#E8B04A 16%,transparent);border:1px solid color-mix(in srgb,#E8B04A 40%,transparent)}
+.proj-jobInHand{color:var(--success-text,#3DD6A3);background:color-mix(in srgb,#2FBF8F 16%,transparent);border:1px solid color-mix(in srgb,#2FBF8F 40%,transparent)}
+html[data-mode=light] .proj-tender{color:#8A5A00}
+html[data-mode=light] .proj-jobInHand{color:#0C7A57}
+.filter-wrap,.filter-pop{display:contents}
+.filter-toggle{display:none}
+@media(max-width:768px){
+  .filter-wrap{display:block;position:relative;order:-1}
+  .filter-toggle{display:inline-flex;align-items:center}
+  .filter-toggle.has-filters::after{content:attr(data-count);margin-inline-start:6px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;line-height:18px;text-align:center}
+  .filter-pop{display:none;position:absolute;inset-inline-start:0;top:calc(100% + 6px);z-index:40;width:280px;max-width:88vw;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1px solid var(--ln);border-radius:12px;box-shadow:var(--shadow-2)}
+  .filter-wrap.open .filter-pop{display:flex}
+  .filter-pop select.field{width:100%}
+}
+@media print{.filter-toggle{display:none!important}}
+@media(max-width:768px){
+  #page-quotations .panel-head>div{overflow:visible;flex-wrap:wrap;gap:8px}
+  #page-quotations #quotSearch{flex:1 1 100%;min-width:0;order:-2}
+  #page-quotations .qcal-input{flex:1 1 140px}
+}
