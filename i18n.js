@@ -95,7 +95,7 @@ Object.assign(translations,{
   'quot.quotationNo':['رقم عرض السعر','Quotation No.'],
   'quot.quotationNoPh':['مثال: QTN-2026-00123','e.g. QTN-2026-00123'],
   'quot.invoiceNo':['رقم الفاتورة','Invoice No.'],
-  'quot.projectNo':['رقم المشروع','Project No.'],'quot.projectStatus':['حالة المشروع','Project Status'],'quot.allProjectStatuses':['كل حالات المشروع','All project statuses'],'quot.filter':['تصفية','Filter'],'quot.allScopes':['كل الأنشطة','All activities'],'quot.allSubjects':['كل المواضيع','All subjects'],
+  'quot.projectNo':['رقم المشروع','Project No.'],'quot.projectStatus':['حالة المشروع','Project Status'],'quot.allProjectStatuses':['كل حالات المشروع','All project statuses'],'quot.filter':['تصفية','Filter'],'dash.projectStatus':['المشاريع حسب الحالة','Projects by status'],'dash.notSet':['غير محدد','Not set'],'quot.lowConfHint':['الحقول المظللة بالأصفر استُخرجت بثقة منخفضة — راجعها قبل الحفظ','Fields highlighted in yellow were read with low confidence — please review'],'quot.previewTitle':['المستند الأصلي','Original document'],'quot.previewOpen':['فتح في تبويب','Open in tab'],'quot.allScopes':['كل الأنشطة','All activities'],'quot.allSubjects':['كل المواضيع','All subjects'],
   'quot.subject':['الموضوع','Subject'],
   'quot.nextFollowup':['المتابعة القادمة','Next follow-up'],
   'quot.requirement':['تفاصيل / متطلبات العميل','Details / client requirement'],

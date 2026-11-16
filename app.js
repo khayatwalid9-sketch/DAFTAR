@@ -2264,6 +2264,7 @@ document.getElementById('addQuotationBtn')?.addEventListener('click', ()=>{
   ['q_company','q_contact','q_mobile','q_email','q_amount','q_time','q_nextFollowup','q_requirement','q_followupAction','q_notes','q_quotationNo','q_invoiceNo','q_projectNo'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('q_scope').value = 'mainContractor';
   document.getElementById('q_projectStatus').value = '';
+  clearQuotPreview(); clearLowConf();
   document.getElementById('q_subject').value = 'quoteFollowup';
   document.getElementById('q_status').value = 'open';
   document.getElementById('q_date').value = todayISO();
@@ -2289,6 +2290,7 @@ function openQuotationEditModal(id){
   document.getElementById('q_invoiceNo').value = q.invoiceNo||'';
   document.getElementById('q_projectNo').value = q.projectNo||'';
   document.getElementById('q_projectStatus').value = q.projectStatus||'';
+  clearQuotPreview(); clearLowConf();
   document.getElementById('q_date').value = q.date||todayISO();
   document.getElementById('q_time').value = q.visitTime||'';
   document.getElementById('q_nextFollowup').value = q.nextFollowup||'';
@@ -2861,29 +2863,46 @@ function parseQuotationFromText(rawText, fileName=''){
   const flat = lines.join('\n');
   const found = {};
   const grab = (re, group=1)=>{ const m = flat.match(re); return m ? String(m[group]||'').trim() : ''; };
+  const DATE_RE = '([0-9]{1,4}[-\\/.][0-9]{1,2}[-\\/.][0-9]{2,4}|[0-9]{1,2}[-\\s][A-Za-z]{3,}[-\\s,]*[0-9]{4})';
+  const CHECK = '[\\u2714\\u2713\\u2611\\u2705\\u221A\\u2612\\u25A0\\u25A3]';
 
   found.email = grab(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, 0);
 
   const mobileLabelled = grab(/(?:mobile|mob|tel|phone|contact\s*no|جوال|موبايل|هاتف|تليفون)\s*(?:no\.?|#)?\s*[:\-]?\s*((?:\+?\d[\d\s\-()]{6,17}\d))/i);
   found.mobile = (mobileLabelled || grab(/(\+974[\s-]?\d{4}[\s-]?\d{4})/) || grab(/(?:^|\s)([3567]\d{3}[\s-]?\d{4})(?:\s|$)/)).replace(/\s+/g,' ').trim();
 
-  // Reference numbers must sit on the SAME line as their label and must contain a
-  // digit — otherwise a bare "QUOTATION" heading swallows the next word as the number.
+  // Many quotations print a header row ("Date  Quote No.  Validity") and put the values on the
+  // next line. Read that row first: it is the most reliable source for date, number and validity.
+  let rowDate = '', rowRef = '', rowDays = '';
+  const hdrIdx = lines.findIndex(l=>/\bdate\b/i.test(l) && /quot(?:e|ation)\s*(?:no|number|ref)/i.test(l));
+  if(hdrIdx >= 0 && lines[hdrIdx+1]){
+    const row = lines[hdrIdx+1];
+    rowDate = (row.match(new RegExp(DATE_RE)) || [])[1] || '';
+    rowRef = (row.match(/[A-Za-z]{2,6}[-\/]\d{2,4}[-\/]\d{2,6}(?:[-\/]\d{1,3})?/) || [])[0] || '';
+    rowDays = (row.match(/(\d{1,3})\s*(?:days|day|يوم)/i) || [])[1] || '';
+  }
+
+  // Reference numbers must sit on the SAME line as their label and must contain a digit.
   const grabRef = (labels)=>{
-    const re = new RegExp(`(?:${labels})[^\\S\\n]*(?:no\\.?|number|ref\\.?|code|#|رقم)?[^\\S\\n]*[:\\-.]?[^\\S\\n]*([A-Za-z0-9][A-Za-z0-9\\/\\-_]{2,25})`, 'i');
+    const re = new RegExp(`(?:^|[^A-Za-z0-9])(?:${labels})[^\\S\\n]*(?:no\\.?|number|ref\\.?|code|#|رقم)?[^\\S\\n]*[:\\-.]?[^\\S\\n]*([A-Za-z0-9][A-Za-z0-9\\/\\-_]{2,25})`, 'i');
     for(const line of lines){
       const m = line.match(re);
       if(m && /\d/.test(m[1])) return m[1].replace(/[.,;:]+$/,'');
     }
     return '';
   };
-  found.quotationNo = grabRef('quotation|quote|quot|offer|عرض\\s*سعر|عرض\\s*الأسعار|رقم\\s*العرض');
+  found.quotationNo = rowRef
+    || grabRef('quotation|quote|quot|offer|عرض\\s*سعر|عرض\\s*الأسعار|رقم\\s*العرض')
+    || ((flat.match(/\b(?!INV|TAX|TI-)[A-Z]{2,5}-\d{4}-\d{3,6}(?:-\d{1,3})?\b/) || [])[0] || '');
+  const qnSure = !!(rowRef || grabRef('quotation|quote|quot|offer|عرض\\s*سعر|عرض\\s*الأسعار|رقم\\s*العرض'));
   found.invoiceNo = grabRef('tax\\s*invoice|invoice|inv|فاتورة|رقم\\s*الفاتورة');
+  if(found.invoiceNo && found.quotationNo === found.invoiceNo) found.quotationNo = '';
   found.projectNo = grabRef('project|job|مشروع|رقم\\s*المشروع');
 
   // Prefer an explicit grand total; otherwise take the largest money-looking figure.
   const amountLabelled = grab(/(?:grand\s*total|total\s*amount|net\s*total|total|الإجمالي|المجموع|الإجمالي\s*النهائي|القيمة\s*الإجمالية)\s*(?:\(?\s*(?:qar|qr|ر\.?ق)\s*\)?)?\s*[:\-]?\s*([\d][\d,\.\s]{0,18})/i);
   let amount = Number(String(amountLabelled).replace(/[,\s]/g,'')) || 0;
+  const amountSure = amount > 0;
   if(!amount){
     const candidates = (flat.match(/\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{4,}(?:\.\d{1,2})?/g)||[])
       .map(v=>Number(v.replace(/,/g,''))).filter(v=>isFinite(v) && v>0 && v<1e12);
@@ -2891,44 +2910,176 @@ function parseQuotationFromText(rawText, fileName=''){
   }
   found.amount = amount;
 
-  const dateLabelled = grab(/(?:date|dated|تاريخ|التاريخ)\s*[:\-]?\s*([0-9]{1,4}[-\/.][0-9]{1,2}[-\/.][0-9]{2,4}|[0-9]{1,2}[-\s][A-Za-z]{3,}[-\s,]*[0-9]{4})/i);
+  // Quotation date: header row > a plain "Date:" line (never enquiry / validity / due dates) > any date.
+  let dateLabelled = rowDate;
+  if(!dateLabelled){
+    for(const l of lines){
+      if(/enquiry|inquiry|expiry|valid|due|استفسار|انتهاء/i.test(l)) continue;
+      const m = l.match(new RegExp('(?:date|dated|تاريخ|التاريخ)\\s*[:\\-]?\\s*' + DATE_RE, 'i'));
+      if(m){ dateLabelled = m[1]; break; }
+    }
+  }
+  const dateSure = !!(dateLabelled && toISODate(dateLabelled));
   found.date = toISODate(dateLabelled) || toISODate(grab(/([0-9]{4}[-\/.][0-9]{1,2}[-\/.][0-9]{1,2})/)) || toISODate(grab(/([0-9]{1,2}[-\/.][0-9]{1,2}[-\/.][0-9]{4})/)) || '';
 
-  const validityDays = Number(grab(/(?:valid(?:ity)?|صالح)\s*(?:for)?\s*[:\-]?\s*(\d{1,3})\s*(?:days|يوم)/i));
+  const validityDays = Number(rowDays) || Number(grab(/(?:valid(?:ity)?|صالح)\s*(?:for)?\s*[:\-]?\s*(\d{1,3})\s*(?:days|يوم)/i));
   if(found.date && validityDays){
-    const d = new Date(found.date); d.setDate(d.getDate() + validityDays);
+    const d = new Date(found.date + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + validityDays);
     found.nextFollowup = d.toISOString().slice(0,10);
   }
 
-  found.contactPerson = grab(/(?:attn|attention|kind\s*attention|contact\s*person|عناية|السيد|المهندس)[^\S\n]*[:\-.]?[^\S\n]*((?:Mr\.?|Mrs\.?|Ms\.?|Eng\.?|م\.)?[^\S\n]*[A-Za-z\u0621-\u064A][A-Za-z\u0621-\u064A. \t]{2,40})/i)
-    .replace(/\s{2,}/g,' ').replace(/[.,;:]+$/,'').trim();
+  // Contact person: only a real "Contact:" / "Attn:" LABEL at the start of a line counts.
+  // (The old pattern matched the word "attention" inside "...our best attention at all the time".)
+  const NOT_NAME = /^(?:address|tel|telephone|mobile|phone|email|e-mail|fax|date|po\s*box|website|sales|company)\b/i;
+  const cleanName = s => String(s||'').replace(/[\u2714\u2713]/g,'').replace(/\(?\+?\d[\d\s\-()]{5,}\)?/g,'').replace(/\S+@\S+/g,'').replace(/\s{2,}/g,' ').replace(/^[\s:،,.\-]+|[\s:،,.\-]+$/g,'').trim();
+  const LABEL = /^(?:contact(?:\s*person)?|attn\.?|attention|kind\s*attention|عناية|السيد|المهندس|المسؤول|الشخص\s*المسؤول)\s*[:\-]\s*(.*)$/i;
+  const LABEL_NO_COLON = /^(?:attn\.?|attention)\s+((?:Mr|Mrs|Ms|Eng|Dr|م)\.?\s+.+)$/i;
+  let contact = '';
+  for(let i=0;i<lines.length && !contact;i++){
+    const m = lines[i].match(LABEL) || lines[i].match(LABEL_NO_COLON);
+    if(!m) continue;
+    let v = cleanName(m[1]);
+    if(!v && lines[i+1] && !NOT_NAME.test(lines[i+1]) && !/[:：]\s*$/.test(lines[i+1])) v = cleanName(lines[i+1]);
+    if(v && v.length >= 3 && v.length <= 60 && /[A-Za-z\u0621-\u064A]{2,}/.test(v) && !NOT_NAME.test(v)) contact = v;
+  }
+  found.contactPerson = contact;
 
-  // Company name: an explicit "To / M/s / Client" label wins, otherwise the first
-  // line that looks like a company, otherwise the file name as a last resort.
-  let company = grab(/(?:^|\n)\s*(?:to|m\/?s\.?|messrs\.?|client|customer|bill\s*to|company\s*name|إلى|السادة|العميل|اسم\s*الشركة)\s*[:\-.]?\s*([^\n]{3,70})/i);
+  // Sales in-charge (our own staff, not the client contact) and a few extra facts for the notes.
+  const salesIdx = lines.findIndex(l=>/sales\s*in[-\s]?charge|مسؤول\s*المبيعات|المندوب/i.test(l));
+  if(salesIdx >= 0){
+    const same = cleanName(lines[salesIdx].replace(/.*?(?:sales\s*in[-\s]?charge|مسؤول\s*المبيعات|المندوب)\s*[:\-]?/i,''));
+    found.salesRep = same || cleanName(lines[salesIdx+1] || '');
+  }
+  const enq = grab(new RegExp('(?:enquiry|inquiry)\\s*date\\s*[:\\-]?\\s*' + DATE_RE, 'i'));
+  found.enquiryDate = toISODate(enq) || '';
+
+  // Project name ("Project Name and Location :" then the value on the same or the next line).
+  const pnIdx = lines.findIndex(l=>/project\s*name/i.test(l));
+  if(pnIdx >= 0){
+    const same = lines[pnIdx].replace(/.*project\s*name(?:\s*(?:and|&)\s*location)?\s*[:\-]?/i,'').trim();
+    const next = lines[pnIdx+1] && !/^(?:initial|project\s*status|date|sl\b)/i.test(lines[pnIdx+1]) ? lines[pnIdx+1] : '';
+    found.projectName = (same || next).slice(0,160);
+  }
+
+  // Project status: "Tender" / "Job In Hand" with a tick mark in front of the chosen one.
+  const psLine = lines.find(l=>/project\s*status/i.test(l));
+  if(psLine){
+    const rest = psLine.replace(/.*project\s*status\s*[:\-]?/i,'');
+    if(new RegExp(CHECK + '\\s*job\\s*in\\s*hand','i').test(rest)) found.projectStatus = 'jobInHand';
+    else if(new RegExp(CHECK + '\\s*tender','i').test(rest)) found.projectStatus = 'tender';
+    else {
+      const hasT = /tender/i.test(rest), hasJ = /job\s*in\s*hand/i.test(rest);
+      found.projectStatus = hasT && !hasJ ? 'tender' : (hasJ && !hasT ? 'jobInHand' : '');
+    }
+  } else found.projectStatus = '';
+
+  // Company name: a labelled value (same line or the next one) wins; header-like lines are skipped.
+  const HEADERISH = /^(?:date|quote|quotation|validity|contact|address|tel|telephone|email|sales|project|sl\b)/i;
+  let company = '', companySure = false;
+  for(let i=0;i<lines.length && !company;i++){
+    const m = lines[i].match(/^(?:to|m\/?s\.?|messrs\.?|client|customer|bill\s*to|company\s*name|إلى|السادة|العميل|اسم\s*الشركة)\s*[:\-.]?\s*(.*)$/i);
+    if(!m) continue;
+    let v = m[1].trim();
+    if(!v || HEADERISH.test(v)) v = (lines[i+1] && !HEADERISH.test(lines[i+1])) ? lines[i+1] : '';
+    if(v){ company = v; companySure = true; }
+  }
   if(!company){
     const companyLine = lines.find(l=>/(?:w\.?l\.?l|l\.?l\.?c|co\.|company|contracting|trading|establishment|est\.|group|est|شركة|مؤسسة|مقاولات|للتجارة)/i.test(l) && l.length<80);
     company = companyLine || '';
   }
+  // a values row such as "ACME LLC  02-11-2026  QTN-2026-00931  30 Days" must not leak into the name
+  company = company.replace(/\s+\d{1,4}[-\/.]\d{1,2}[-\/.]\d{2,4}.*$/,'').replace(/\s+[A-Z]{2,6}-\d{4}-\d{2,6}.*$/,'');
   company = company.replace(/^[\s:،,.-]+/,'').replace(/\s{2,}/g,' ').trim();
   if(company.length > 70) company = company.slice(0,70).trim();
   if(!company) company = String(fileName).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
   found.companyName = company;
 
-  const lower = flat.toLowerCase();
-  found.companyScope = /consultant|استشار/.test(lower) ? 'consultant'
-    : /sub[-\s]?contract|من الباطن/.test(lower) ? 'subcontractor'
-    : /developer|مطور/.test(lower) ? 'developer'
-    : /supplier|manufactur|مورد|مصنع/.test(lower) ? 'supplier'
-    : 'mainContractor';
-  found.subject = /invoice|payment|دفع|فاتورة/.test(lower) ? 'payment'
-    : /new\s*client|عميل\s*جديد/.test(lower) ? 'newClient'
+  // Scope / subject are decided from the company name and the top of the document only —
+  // the long terms & conditions mention "consultant", "payment" etc. and must not decide this.
+  const head = lines.slice(0, 30).join('\n').toLowerCase();
+  const nameL = company.toLowerCase();
+  const scopeOf = s =>
+      /consult|استشار/.test(s) ? 'consultant'
+    : /sub[-\s]?contract|من الباطن/.test(s) ? 'subcontractor'
+    : /develop|real\s*estate|properties|مطور|عقار/.test(s) ? 'developer'
+    : /suppl|manufactur|trading|مورد|مصنع|للتجارة/.test(s) ? 'supplier'
+    : /contract|construct|engineering|مقاول|إنشاء/.test(s) ? 'mainContractor'
+    : '';
+  const scopeSure = !!(scopeOf(nameL) || scopeOf(head));
+  found.companyScope = scopeOf(nameL) || scopeOf(head) || 'mainContractor';
+  const isQuote = /\bquotation\b|\bquote\b|عرض\s*سعر/.test(head) || (!!found.quotationNo && !found.invoiceNo);
+  found.subject = isQuote ? 'quoteFollowup'
+    : /invoice|payment|دفع|فاتورة/.test(head) ? 'payment'
+    : /new\s*client|عميل\s*جديد/.test(head) ? 'newClient'
     : 'quoteFollowup';
   found.status = found.invoiceNo ? 'paymentPending' : found.quotationNo ? 'submitted' : 'open';
 
-  // A short, readable excerpt of the source so the record is traceable later.
-  found.requirement = lines.slice(0, 12).join(' · ').slice(0, 500);
+  // Requirement: the project name plus the first line item — never the page header.
+  const itemLine = lines.find(l=>/^1\s+\S{3}/.test(l) && l.length > 25);
+  const item = itemLine ? itemLine.replace(/^1\s+/,'') : '';
+  const parts = [found.projectName, item].filter(Boolean);
+  found.requirement = (parts.length ? parts.join(' — ')
+    : lines.filter(l=>!/^page\s*\d+\s*of\s*\d+$/i.test(l)).slice(0, 12).join(' · ')).slice(0, 500);
+  // Fields read by a guess (not from a clear label) are reported so the review form can highlight them.
+  const low = [];
+  if(!companySure) low.push('q_company');
+  if(!found.contactPerson) low.push('q_contact');
+  if(!amountSure) low.push('q_amount');
+  if(!dateSure) low.push('q_date');
+  if(!qnSure && !found.invoiceNo) low.push('q_quotationNo');
+  if(!scopeSure) low.push('q_scope');
+  if(!found.mobile) low.push('q_mobile');
+  if(!found.email) low.push('q_email');
+  found.lowConf = low;
   return found;
+}
+
+function clearLowConf(){ document.querySelectorAll('#quotationModal .low-conf').forEach(e=>e.classList.remove('low-conf')); }
+function applyLowConf(ids){
+  clearLowConf();
+  (ids||[]).forEach(id=>{
+    const el = document.getElementById(id), f = el && el.closest('.field');
+    if(!f) return;
+    f.classList.add('low-conf');
+    const done = ()=>f.classList.remove('low-conf');
+    el.addEventListener('input', done, {once:true}); el.addEventListener('change', done, {once:true});
+  });
+}
+let quotPreviewUrl = null;
+function clearQuotPreview(){
+  if(quotPreviewUrl){ URL.revokeObjectURL(quotPreviewUrl); quotPreviewUrl = null; }
+  const pane = document.getElementById('quotPreviewPane'), m = document.querySelector('#quotationModal .modal');
+  if(pane){ pane.hidden = true; const b = pane.querySelector('.qp-body'); if(b) b.textContent = ''; }
+  if(m) m.classList.remove('with-preview');
+}
+function setQuotPreview(file, text){
+  clearQuotPreview();
+  const pane = document.getElementById('quotPreviewPane'), m = document.querySelector('#quotationModal .modal');
+  const body = pane && pane.querySelector('.qp-body');
+  if(!pane || !body || !m) return;
+  const name = file.name || '', type = (file.type || '').toLowerCase(), ext = name.split('.').pop().toLowerCase();
+  let el;
+  if(type.includes('pdf') || ext === 'pdf'){
+    quotPreviewUrl = URL.createObjectURL(file);
+    el = document.createElement('iframe'); el.src = quotPreviewUrl + '#toolbar=0&navpanes=0'; el.title = name;
+  } else if(type.startsWith('image/') || ['jpg','jpeg','png','webp'].includes(ext)){
+    quotPreviewUrl = URL.createObjectURL(file);
+    el = document.createElement('img'); el.src = quotPreviewUrl; el.alt = name;
+  } else {
+    el = document.createElement('pre'); el.textContent = String(text || '').slice(0, 6000);
+  }
+  body.appendChild(el);
+  pane.querySelector('.qp-name').textContent = name;
+  const open = pane.querySelector('.qp-open');
+  if(open){ if(quotPreviewUrl){ open.href = quotPreviewUrl; open.hidden = false; } else open.hidden = true; }
+  pane.hidden = false; m.classList.add('with-preview');
+}
+
+function quotationNotesFrom(f){
+  const n=[];
+  if(f.salesRep) n.push('Sales In-Charge: '+f.salesRep);
+  if(f.enquiryDate) n.push('Initial Enquiry: '+f.enquiryDate);
+  return n.join(' · ');
 }
 
 function fillQuotationModalFrom(fields){
@@ -2946,10 +3097,12 @@ function fillQuotationModalFrom(fields){
   set('q_nextFollowup', fields.nextFollowup||'');
   set('q_requirement', fields.requirement||'');
   set('q_followupAction', '');
-  set('q_notes', '');
+  set('q_notes', quotationNotesFrom(fields));
+  set('q_projectStatus', fields.projectStatus||'');
   const scope = document.getElementById('q_scope'); if(scope) scope.value = fields.companyScope || 'mainContractor';
   const subject = document.getElementById('q_subject'); if(subject) subject.value = fields.subject || 'quoteFollowup';
   const status = document.getElementById('q_status'); if(status) status.value = fields.status || 'open';
+  applyLowConf(fields.lowConf || []);
 }
 
 function buildQuotationFromFields(fields, fallbackDate){
@@ -2966,12 +3119,13 @@ function buildQuotationFromFields(fields, fallbackDate){
     quotationNo: fields.quotationNo || '',
     invoiceNo: fields.invoiceNo || '',
     projectNo: fields.projectNo || '',
+    projectStatus: fields.projectStatus || '',
     subject: fields.subject || 'quoteFollowup',
     nextFollowup: fields.nextFollowup || '',
     status: fields.status || 'open',
     requirement: fields.requirement || '',
     followupAction: '',
-    notes: '',
+    notes: quotationNotesFrom(fields),
     log: []
   };
 }
@@ -2995,8 +3149,9 @@ document.getElementById('importQuotationDocFile')?.addEventListener('change', as
       document.getElementById('quotationModalTitle').textContent = t('quot.reviewTitle');
       document.getElementById('saveQuotationBtn').textContent = t('quot.save');
       const banner = document.getElementById('quotExtractBanner');
-      if(banner){ banner.style.display = 'block'; banner.textContent = `${t('quot.extractedFrom')} ${file.name}`; }
+      if(banner){ banner.style.display = 'block'; banner.textContent = `${t('quot.extractedFrom')} ${file.name}` + (fields.lowConf && fields.lowConf.length ? ` — ${t('quot.lowConfHint')}` : ''); }
       fillQuotationModalFrom({...fields, date: fields.date || fallbackDate});
+      setQuotPreview(file, text);
       document.getElementById('quotationModal').classList.add('show');
       toast(t('quot.extracted'));
     }catch(err){
@@ -3235,34 +3390,61 @@ ${printBrandHeader(title)}
 </body></html>`;
 }
 function quotationDetailDocumentHtml(q){
+  const L = (ar,en)=>currentLang==='en' ? en : ar;
   const title = `${t('quot.title')} — ${q.companyName}`;
+  const days = (q.date && q.nextFollowup) ? Math.round((new Date(q.nextFollowup) - new Date(q.date)) / 86400000) : 0;
+  const validity = days > 0 ? `${days} ${L('يوم','Days')}` : '—';
+  const total = q.amount ? Number(q.amount).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+  const cb = on => `<span class="qd-cb">${on ? '&#10003;' : ''}</span>`;
+  const css = `.qd-title{font-size:20px;font-weight:800;color:#9B0000;margin:14px 0 10px;letter-spacing:.04em}
+.qd-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.qd-bar{background:#9B0000;color:#fff;font-weight:700;padding:6px 10px;font-size:13px}
+.qd-kv{width:100%;border-collapse:collapse;margin:8px 0 6px}.qd-kv td{border:0;padding:3px 6px;font-size:12px;vertical-align:top}.qd-kv td:first-child{font-weight:700;width:34%;color:#333}
+.qd-meta{width:100%;border-collapse:collapse;border:2px solid #111}.qd-meta th{background:#9B0000;color:#fff;font-size:11.5px;padding:5px 8px;text-align:start;border:1px solid #111}.qd-meta td{font-weight:800;padding:6px 8px;border:1px solid #111;font-size:12px}
+.qd-cb{display:inline-block;width:13px;height:13px;border:1.5px solid #111;margin-inline-end:5px;text-align:center;line-height:12px;font-size:11px;vertical-align:-2px}
+.qd-opt{margin-inline-end:16px;white-space:nowrap}
+.qd-text{border:1px solid #bbb;padding:10px;font-size:12px;white-space:pre-wrap;min-height:40px;margin-top:6px}
+.qd-total{display:flex;justify-content:space-between;background:#9B0000;color:#fff;font-weight:800;padding:9px 14px;font-size:14px;margin-top:12px}
+.qd-bar,.qd-meta th,.qd-total{-webkit-print-color-adjust:exact;print-color-adjust:exact}`;
+  const logRows = [...q.log].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(e=>`<tr><td>${esc(e.date)}</td><td>${quotStatusLabel(e.status)}</td><td>${esc(e.note)||'—'}</td></tr>`).join('') || `<tr><td colspan="3" class="empty">—</td></tr>`;
   return `<!doctype html><html lang="${currentLang}" dir="${currentLang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="stylesheet" href="${new URL('fonts/fonts.css', location.href).href}">
-<style>${printSharedStyle()}</style></head><body>
+<style>${printSharedStyle()} ${css}</style></head><body>
 ${printBrandHeader(title)}
-<table>
-  <tr><td>${t('quot.company')}</td><td class="num">${esc(q.companyName)}</td></tr>
-  <tr><td>${t('quot.scope')}</td><td class="num">${quotScopeLabel(q.companyScope)}</td></tr>
-  <tr><td>${t('quot.contact')}</td><td class="num">${esc(q.contactPerson)||'—'}</td></tr>
-  <tr><td>${t('quot.mobile')}</td><td class="num">${esc(q.mobile)||'—'}</td></tr>
-  <tr><td>${t('quot.email')}</td><td class="num">${esc(q.email)||'—'}</td></tr>
-  <tr><td>${t('quot.amount')}</td><td class="num">${q.amount?currency(q.amount):'—'}</td></tr>
-  <tr><td>${t('quot.quotationNo')}</td><td class="num">${esc(q.quotationNo)||'—'}</td></tr>
-  <tr><td>${t('quot.invoiceNo')}</td><td class="num">${esc(q.invoiceNo)||'—'}</td></tr>
-  <tr><td>${t('quot.projectNo')}</td><td class="num">${esc(q.projectNo)||'—'}</td></tr>
-  <tr><td>${t('th.date')}</td><td class="num">${esc(q.date)||'—'}</td></tr>
-  <tr><td>${t('quot.time')}</td><td class="num">${esc(q.visitTime)||'—'}</td></tr>
-  <tr><td>${t('quot.subject')}</td><td class="num">${quotSubjectLabel(q.subject)}</td></tr>
-  <tr><td>${t('th.status')}</td><td class="num">${quotStatusLabel(q.status)}</td></tr>
-  <tr><td>${t('quot.nextFollowup')}</td><td class="num">${esc(q.nextFollowup)||'—'}</td></tr>
-  <tr><td>${t('quot.followupAction')}</td><td class="num">${esc(q.followupAction)||'—'}</td></tr>
-  <tr><td>${t('th.notes')}</td><td class="num">${esc(q.notes)||'—'}</td></tr>
+<div class="qd-title">${L('عرض سعر','QUOTATION')}</div>
+<div class="qd-grid">
+  <div>
+    <div class="qd-bar">${L('اسم الشركة (العميل)','Company Name')}</div>
+    <table class="qd-kv">
+      <tr><td></td><td><strong>${esc(q.companyName)}</strong></td></tr>
+      <tr><td>${t('quot.scope')}</td><td>${quotScopeLabel(q.companyScope)}</td></tr>
+      <tr><td>${t('quot.contact')}</td><td>${esc(q.contactPerson)||'—'}</td></tr>
+      <tr><td>${t('quot.mobile')}</td><td dir="ltr" style="text-align:start">${esc(q.mobile)||'—'}</td></tr>
+      <tr><td>${t('quot.email')}</td><td dir="ltr" style="text-align:start">${esc(q.email)||'—'}</td></tr>
+    </table>
+  </div>
+  <div>
+    <table class="qd-meta"><thead><tr><th>${t('th.date')}</th><th>${t('quot.quotationNo')}</th><th>${L('الصلاحية','Validity')}</th></tr></thead>
+      <tbody><tr><td>${esc(q.date)||'—'}</td><td>${esc(q.quotationNo)||'—'}</td><td>${validity}</td></tr></tbody></table>
+    <table class="qd-kv" style="margin-top:10px">
+      <tr><td>${t('quot.invoiceNo')}</td><td>${esc(q.invoiceNo)||'—'}</td></tr>
+      <tr><td>${t('quot.projectNo')}</td><td>${esc(q.projectNo)||'—'}</td></tr>
+      <tr><td>${t('quot.projectStatus')}</td><td dir="ltr" style="text-align:start"><span class="qd-opt">${cb(q.projectStatus==='tender')}Tender</span><span class="qd-opt">${cb(q.projectStatus==='jobInHand')}Job In Hand</span></td></tr>
+      <tr><td>${t('quot.subject')}</td><td>${quotSubjectLabel(q.subject)}</td></tr>
+    </table>
+  </div>
+</div>
+<div class="qd-bar" style="margin-top:14px">${t('quot.requirement')}</div>
+<div class="qd-text">${esc(q.requirement)||'—'}</div>
+<div class="qd-total"><span>TOTAL QAR :</span><span>${total}</span></div>
+<table class="qd-kv" style="margin-top:12px">
+  <tr><td>${t('th.status')}</td><td>${quotStatusLabel(q.status)}</td></tr>
+  <tr><td>${t('quot.nextFollowup')}</td><td>${esc(q.nextFollowup)||'—'}</td></tr>
+  <tr><td>${t('quot.followupAction')}</td><td>${esc(q.followupAction)||'—'}</td></tr>
+  <tr><td>${t('th.notes')}</td><td>${esc(q.notes)||'—'}</td></tr>
 </table>
-<h1>${t('quot.requirement')}</h1>
-<p>${esc(q.requirement)||'—'}</p>
-<h1>${t('quot.statusLog')}</h1>
-<table><thead><tr><th>${t('th.date')}</th><th>${t('th.status')}</th><th>${t('th.notes')}</th></tr></thead>
-<tbody>${[...q.log].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(e=>`<tr><td>${esc(e.date)}</td><td>${quotStatusLabel(e.status)}</td><td>${esc(e.note)||'—'}</td></tr>`).join('') || `<tr><td colspan="3" class="empty">${t('quot.noLog')}</td></tr>`}</tbody></table>
+<div class="qd-bar" style="margin-top:12px">${t('quot.statusLog')}</div>
+<table><thead><tr><th>${t('th.date')}</th><th>${t('th.status')}</th><th>${t('th.notes')}</th></tr></thead><tbody>${logRows}</tbody></table>
 <div class="doc-footer">${t('msg.printedOn')} ${todayISO()}.</div>
 </body></html>`;
 }
@@ -3638,6 +3820,7 @@ function renderAll(){
   renderDashboardExtras();
   renderDueReminders();
   renderQuotFollowupReminders();
+  renderProjectStatusCard();
   renderCharts();
 }
 
@@ -4794,6 +4977,23 @@ function getDueQuotationFollowups(){
   return scopedQuotations()
     .filter(q=>q.nextFollowup && q.status!=='closed' && q.nextFollowup<=today)
     .sort((a,b)=> a.nextFollowup.localeCompare(b.nextFollowup));
+}
+function renderProjectStatusCard(){
+  const el = document.getElementById('projectStatusBody'); if(!el) return;
+  const agg = {tender:{n:0,sum:0}, jobInHand:{n:0,sum:0}, none:{n:0,sum:0}};
+  quotations.forEach(q=>{ const k = PROJ_STATUS[q.projectStatus] ? q.projectStatus : 'none'; agg[k].n++; agg[k].sum += Number(q.amount)||0; });
+  const known = agg.tender.n + agg.jobInHand.n;
+  const pct = known ? Math.round(agg.jobInHand.n / known * 100) : 0;
+  const tile = (key,label)=>`<button type="button" class="ps-tile ps-${key}" data-ps="${key}"><span class="ps-label">${label}</span><span class="ps-count figures">${agg[key].n}</span><span class="ps-sum figures">${currency(agg[key].sum)}</span></button>`;
+  el.innerHTML = `<div class="ps-grid">${tile('tender','TENDER')}${tile('jobInHand','JOB IN HAND')}</div>`
+    + `<div class="ps-bar"><i style="width:${pct}%"></i></div>`
+    + `<div class="ps-foot"><span>${pct}% JOB IN HAND</span>${agg.none.n ? `<span>${t('dash.notSet')}: ${agg.none.n}</span>` : ''}</div>`;
+  el.querySelectorAll('[data-ps]').forEach(b=>{ b.onclick = ()=>{
+    document.querySelector('.nav-item[data-page="quotations"]')?.click();
+    const sa = document.getElementById('quotShowAllBtn'); if(sa && sa.getAttribute('aria-pressed') !== 'true') sa.click();
+    const f = document.getElementById('quotProjectStatusFilter'); if(f) f.value = b.dataset.ps;
+    renderQuotationsTable();
+  }; });
 }
 function renderQuotFollowupReminders(){
   const el = document.getElementById('quotFollowupReminders');

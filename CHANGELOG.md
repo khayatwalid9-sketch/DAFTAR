@@ -3,6 +3,10 @@
 
 # Changelog
 
+## v5.3 — (1) printable quotation sheet restyled like the company quotation (dark-red bars, Date/Quote No/Validity box, ☑ Tender ☐ Job In Hand, TOTAL QAR bar); (2) dashboard card "Projects by status" (counts + values, click to filter); (3) low-confidence imported fields highlighted yellow with a review hint; (4) original document preview beside the import review form (PDF/image/text).
+
+## v5.2 — Document import (PDF/image/Word) rewritten: contact person read only from a real "Contact:/Attn:" label (was matching "best attention at all the time"); quotation no. + date + validity read from the header row; company scope/subject no longer decided by the T&C text; Project Status (tick mark) imported; project name used as requirement; sales in-charge + enquiry date go to notes. Parser tests added.
+
 ## v5.1 — Quotations: new "Project Status" field (TENDER / JOB IN HAND): form, badge in list, filter, drawer, Excel export, print column, Excel import. REQUIRES running supabase/project-status-migration.sql first. Mobile: filters grouped under a "Filter" button.
 
 ## v5.0 — Quotations toolbar: import/template/export/print grouped under a "More" menu (same button ids, handlers untouched)

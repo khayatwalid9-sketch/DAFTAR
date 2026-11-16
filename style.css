@@ -1085,3 +1085,39 @@ html[data-mode=light] .proj-jobInHand{color:#0C7A57}
   #page-quotations #quotSearch{flex:1 1 100%;min-width:0;order:-2}
   #page-quotations .qcal-input{flex:1 1 140px}
 }
+
+/* ===== v5.3: project-status dashboard card, low-confidence fields, document preview ===== */
+.ps-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ps-tile{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--ln);background:var(--surface-2);color:var(--ink);font:inherit;cursor:pointer;text-align:start;transition:border-color .15s,transform .15s}
+.ps-tile:hover{transform:translateY(-1px)}
+.ps-label{font-size:11px;font-weight:700;letter-spacing:.04em}
+.ps-count{font-size:28px;font-weight:800;line-height:1.1}
+.ps-sum{font-size:12px;color:var(--muted)}
+.ps-tender{border-color:color-mix(in srgb,#E8B04A 45%,var(--ln))}.ps-tender .ps-label{color:#E8B04A}
+.ps-jobInHand{border-color:color-mix(in srgb,#2FBF8F 45%,var(--ln))}.ps-jobInHand .ps-label{color:var(--success-text,#3DD6A3)}
+html[data-mode=light] .ps-tender .ps-label{color:#8A5A00}html[data-mode=light] .ps-jobInHand .ps-label{color:#0C7A57}
+.ps-bar{height:6px;border-radius:99px;margin-top:12px;overflow:hidden;background:color-mix(in srgb,#E8B04A 55%,transparent)}
+.ps-bar>i{display:block;height:100%;background:#2FBF8F}
+.ps-foot{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--muted)}
+/* low-confidence import fields */
+.field.low-conf input,.field.low-conf select,.field.low-conf textarea{border-color:#E8B04A;background-color:color-mix(in srgb,#E8B04A 14%,var(--surface-2))}
+.field.low-conf>label::after{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#E8B04A;margin-inline-start:6px;vertical-align:1px}
+/* document preview next to the review form */
+#quotationModal .modal.with-preview{width:min(1180px,96vw);max-width:none;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;max-height:92vh}
+#quotationModal .with-preview .modal-head{grid-column:1/-1}
+#quotationModal .with-preview .modal-body{grid-column:1;grid-row:2;overflow:auto}
+#quotationModal .with-preview .modal-foot{grid-column:1;grid-row:3}
+#quotationModal .with-preview .quot-preview{grid-column:2;grid-row:2/4}
+.quot-preview{display:flex;flex-direction:column;min-height:0;background:var(--surface-2);border-inline-start:1px solid var(--ln)}
+.quot-preview[hidden]{display:none}
+.qp-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--ln);font-size:12.5px}
+.qp-name{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:start}
+.qp-open{color:var(--accent-text,var(--accent));text-decoration:none;font-weight:700}
+.qp-body{flex:1;min-height:0;overflow:auto;background:#fff}
+.qp-body iframe{width:100%;height:100%;min-height:60vh;border:0;display:block}
+.qp-body img{max-width:100%;display:block;margin:0 auto}
+.qp-body pre{margin:0;padding:12px;white-space:pre-wrap;font:12px/1.6 monospace;color:#222}
+@media(max-width:960px){
+  #quotationModal .modal.with-preview{display:block;width:auto;max-height:none}
+  .quot-preview{border-inline-start:0}.qp-body{display:none}
+}

@@ -2,7 +2,7 @@
   "name": "daftar-debt-collection",
   "private": true,
   "scripts": {
-    "test": "node --test tests/behavior.test.js"
+    "test": "node --test tests/behavior.test.js && node --test tests/quotation-parser.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.0.0"

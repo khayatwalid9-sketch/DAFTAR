@@ -132,6 +132,12 @@
           </div>
           <div class="panel-body" id="quotFollowupReminders"></div>
         </div>
+        <div class="panel today-panel" id="projectStatusPanel">
+          <div class="panel-head">
+            <h3 data-i18n="dash.projectStatus">المشاريع حسب الحالة</h3>
+          </div>
+          <div class="panel-body" id="projectStatusBody"></div>
+        </div>
       </div>
 
       <!-- 2) Headline KPIs -->
@@ -1021,6 +1027,7 @@
 <div class="overlay" id="quotationModal">
   <div class="modal">
     <div class="modal-head"><h3 id="quotationModalTitle" data-i18n="quot.addTitle">إضافة عرض سعر جديد</h3><button class="modal-close" data-close="quotationModal">✕</button></div>
+    <aside class="quot-preview" id="quotPreviewPane" hidden><div class="qp-head"><strong data-i18n="quot.previewTitle">المستند الأصلي</strong><span class="qp-name"></span><a class="qp-open" target="_blank" rel="noopener" hidden data-i18n="quot.previewOpen">فتح في تبويب</a></div><div class="qp-body"></div></aside>
     <div class="modal-body">
       <div id="quotExtractBanner" class="extract-banner" style="display:none"></div>
       <div class="field-row">
